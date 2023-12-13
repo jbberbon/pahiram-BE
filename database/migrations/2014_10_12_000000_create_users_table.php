@@ -12,12 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->uuid('id')->primary();
+            $table->string('apc_id')->unique();
+            $table->string('first_name');
+            $table->string('last_name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->boolean('is_admin')->default(0);
+            
+            // FKs to be assigned on a separate migration file
+            $table->uuid('user_role_id')->nullable();
+            $table->uuid('course_id')->nullable();
+            $table->uuid('acc_status_id')->nullable();
+            $table->uuid('department_id')->nullable();
             $table->timestamps();
         });
     }
