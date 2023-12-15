@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('user_tokens', function (Blueprint $table) {
+        Schema::table('apcis_tokens', function (Blueprint $table) {
             $table->foreign('user_id')->references('id')->on('users')
                 ->onDelete('set null')
                 ->cascadeOnUpdate();
@@ -23,7 +23,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('user_tokens', function (Blueprint $table) {
+        Schema::table('apcis_tokens', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
         });
     }

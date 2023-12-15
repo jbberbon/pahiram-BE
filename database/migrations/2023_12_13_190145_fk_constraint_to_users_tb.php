@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->foreign('acc_status_id')->references('id')->on('account_statuses')
                 ->onDelete('set null')
                 ->cascadeOnUpdate();
-            $table->foreign('department_id')->references('id')->on('account_statuses')
+            $table->foreign('department_id')->references('id')->on('departments')
                 ->onDelete('set null')
                 ->cascadeOnUpdate();
         });

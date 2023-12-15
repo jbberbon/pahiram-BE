@@ -6,17 +6,18 @@ use App\Traits\Uuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class UserToken extends Model
+class ApcisToken extends Model
 {
     use HasFactory, Uuids;
 
     protected $fillable = [
         'token',
         'user_id',
-        'expiry'
+        'expires_at'
     ];
 
     protected $hidden = [
+        'id',
         'created_at',
         'updated_at'
     ];

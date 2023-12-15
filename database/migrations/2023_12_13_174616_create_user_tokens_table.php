@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_tokens', function (Blueprint $table) {
-            $table->uuid('id');
+        Schema::create('apcis_tokens', function (Blueprint $table) {
+            $table->uuid('id')->primary();
             $table->uuid('user_id')->nullable();
             $table->string('token')->unique();
-            $table->dateTime('expiry');
+            $table->dateTime('expires_at')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_tokens');
+        Schema::dropIfExists('apcis_tokens');
     }
 };

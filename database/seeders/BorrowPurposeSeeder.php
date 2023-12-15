@@ -40,7 +40,7 @@ class BorrowPurposeSeeder extends Seeder
                 "description" => "For personal hobbies or leisure activities."
             ],
             [
-                "purpose_code" => 5050,
+                "purpose_code" => 6060,
                 "general_purpose" => "Special Event",
                 "description" => "For a special event or occasion."
             ],

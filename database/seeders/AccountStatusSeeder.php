@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AccountStatus;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -29,5 +30,8 @@ class AccountStatusSeeder extends Seeder
                 'description' => 'The account is no longer active'
             ],
         ];
+        foreach ($statuses as $status) {
+            AccountStatus::create($status);
+        }
     }
 }
