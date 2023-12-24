@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Utils\ValidatorReturnDataCleanup;
 
-class RequestValidationFaledMsg extends Exception
+class RequestValidationFailedMsg extends Exception
 {
     /**
      * Throw an exception with request validation errors.

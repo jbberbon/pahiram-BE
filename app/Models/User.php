@@ -37,7 +37,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'id',
+        // 'id',
         'password',
         'created_at',
         'updated_at'
@@ -51,4 +51,34 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
     ];
+
+    public function getUserRoleId()
+    {
+        return $this->belongsTo(Role::class, 'user_role_id');
+    }
+    public function getUserRole()
+    {
+        return $this->belongsTo(Role::class, 'user_role');
+    }
+    public function getAccountStatusCode()
+    {
+        $statusId = $this->acc_status_id;
+        $accountStatus = AccountStatus::where('id', $statusId)->first();
+
+        return $accountStatus ? $accountStatus->acc_status_code : null;
+    }
+    public function getAccountStatus()
+    {
+        $statusId = $this->acc_status_id;
+        $accountStatus = AccountStatus::where('id', $statusId)->first();
+
+        return $accountStatus ? $accountStatus->acc_status : null;
+    }
+
+    public static function getUserIdBasedOnApcId($apcId) {
+        $user = self::where('apc_id', $apcId)->first();
+
+        return $user ? $user->id : null;
+    }
 }
+

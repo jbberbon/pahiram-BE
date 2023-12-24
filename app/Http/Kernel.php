@@ -2,6 +2,8 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\IsEmployee;
+use App\Http\Middleware\IsSuspended;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -64,5 +66,13 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+
+        /**
+         * 
+         * Pahiram Middlewares
+         * 
+         */
+        'is_employee' => IsEmployee::class,
+        'is_suspended' => IsSuspended::class,
     ];
 }

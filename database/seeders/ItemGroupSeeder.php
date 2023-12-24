@@ -21,8 +21,8 @@ class ItemGroupSeeder extends Seeder
                 "available_quantity"  => 3,
 
                 //FKs
-                "group_category_id" => "",
-                "department_id" => "",
+                // "group_category_id" => "",
+                // "department_id" => "",
             ],
             [
                 "model_name" => "Spalding x86",
@@ -31,8 +31,8 @@ class ItemGroupSeeder extends Seeder
                 "available_quantity"  => 10,
 
                 //FKs
-                "group_category_id" => "",
-                "department_id" => "",
+                // "group_category_id" => "",
+                // "department_id" => "",
             ],
         ];
         foreach ($groups as $group) {

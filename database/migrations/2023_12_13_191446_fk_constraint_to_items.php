@@ -26,9 +26,6 @@ return new class extends Migration {
             $table->foreign('possessed_by')->references('id')->on('users')
                 ->onDelete('set null')
                 ->cascadeOnUpdate();
-            $table->foreign('borrowed_by')->references('id')->on('users')
-                ->onDelete('set null')
-                ->cascadeOnUpdate();
         });
     }
 
@@ -43,7 +40,6 @@ return new class extends Migration {
             $table->dropForeign(['purchase_order_id']);
             $table->dropForeign(['located_at']);
             $table->dropForeign(['possessed_by']);
-            $table->dropForeign(['borrowed_by']);
         });
     }
 };

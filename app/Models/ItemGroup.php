@@ -24,4 +24,22 @@ class ItemGroup extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function getGroupItems()
+    {
+        return $this->belongsTo(Item::class, 'item_group_id');
+    }
+    public function getActiveItemCount()
+    {
+        $activeStatus = ItemStatus::where('item_status_code', 2010)->first();
+        if (!$activeStatus) {
+            // Throw an exception if the active status is not found
+            throw new \RuntimeException(response([
+                'status' => false,
+                'type' => "Exception",
+                'message' => "Active status is not found in ItemGroup model getActiveItemCount()",
+            ], 404));
+        }
+        return $this->items()->where('item_status_id', $activeStatus->id)->count();
+    }
 }

@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->uuid('purchase_order_id')->nullable();
             $table->uuid('located_at')->nullable();
             $table->uuid('possessed_by')->nullable();
-            $table->uuid('borrowed_by')->nullable();
 
             $table->string('manufacturer_serial_num')->unique()->nullable();
             $table->date('warranty_expiration')->nullable();

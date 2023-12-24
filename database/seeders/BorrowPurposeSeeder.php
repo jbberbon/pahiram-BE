@@ -44,6 +44,11 @@ class BorrowPurposeSeeder extends Seeder
                 "general_purpose" => "Special Event",
                 "description" => "For a special event or occasion."
             ],
+            [
+                "purpose_code" => 7070,
+                "general_purpose" => "Others",
+                "description" => "User will be prompted to input the purpose"
+            ],
         ];
         foreach ($purposes as $purpose) {
             BorrowPurpose::create($purpose);

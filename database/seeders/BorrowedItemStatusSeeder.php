@@ -16,42 +16,42 @@ class BorrowedItemStatusSeeder extends Seeder
         $borrowed_item_status = [
             [
                 "borrowed_item_status_code" => 1010,
-                "borrowed_item_status" => "reserved",
+                "borrowed_item_status" => "Pending Approval",
                 "description" => "Item is awaiting approval"
             ],
             [
                 "borrowed_item_status_code" => 2020,
-                "borrowed_item_status" => "borrowed",
+                "borrowed_item_status" => "Borrowed",
                 "description" => "Item currently borrowed"
             ],
             [
                 "borrowed_item_status_code" => 3030,
-                "borrowed_item_status" => "declined",
+                "borrowed_item_status" => "Declined",
                 "description" => "Item is declined to be borrowed"
             ],
             [
                 "borrowed_item_status_code" => 4040,
-                "borrowed_item_status" => "overdue return",
+                "borrowed_item_status" => "Overdue Return",
                 "description" => "Item is overdue for return"
             ],
             [
                 "borrowed_item_status_code" => 5050,
-                "borrowed_item_status" => "returned",
+                "borrowed_item_status" => "Returned",
                 "description" => "Item has been returned after a borrowing transaction"
             ],
             [
                 "borrowed_item_status_code" => 6060,
-                "borrowed_item_status" => "for repair",
+                "borrowed_item_status" => "For Repair",
                 "description" => "Returned item requires repair / maintenance"
             ],
             [
                 "borrowed_item_status_code" => 7070,
-                "borrowed_item_status" => "unrepairable",
+                "borrowed_item_status" => "Unrepairable",
                 "description" => "Returned item beyond fixing"
             ],
             [
                 "borrowed_item_status_code" => 8080,
-                "borrowed_item_status" => "lost",
+                "borrowed_item_status" => "Lost",
                 "description" => "Item is lost by the borrower"
             ]
         ];

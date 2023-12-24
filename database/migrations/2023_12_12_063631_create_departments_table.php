@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('department_code');
             $table->string('department_acronym')->unique();
             $table->uuid('supervisor_id')->nullable();
+            $table->boolean('is_lending_office')->default(0); 
             $table->timestamps();
         });
     }

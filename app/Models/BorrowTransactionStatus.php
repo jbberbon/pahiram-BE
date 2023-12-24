@@ -20,4 +20,18 @@ class BorrowTransactionStatus extends Model
         'created_at',
         'updated_at'
     ];
+
+    /**
+     * Get the id of a specific transaction status by code.
+     *
+     * @param int $statusCode
+     * @return string|null
+     */
+    public static function getStatusIdByCode($statusCode)
+    {
+        $status = self::where('transac_status_code', $statusCode)->first();
+
+        return $status ? $status->id : null;
+    }
+
 }
