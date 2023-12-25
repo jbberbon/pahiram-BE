@@ -21,4 +21,11 @@ class Department extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getDepartmentBasedOnId($departmentId)
+    {
+        $department = self::where('id', $departmentId)->first();
+
+        return $department->department . ' ' . '(' . $department->department_acronym . ')';
+    }
 }

@@ -29,8 +29,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Route::get('/courses', [CourseController::class, 'index']);
 
     Route::group(['middleware' => ['is_suspended']], function () {
-        Route::get('/user/borrowing-request', [ManageBorrowingRequestController::class, 'index']);
-        Route::post('/user/borrowing-request/submit', [ManageBorrowingRequestController::class, 'submitBorrowRequest']);
+        Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
+        Route::post('/user/borrow-request/submit', [ManageBorrowingRequestController::class, 'submitBorrowRequest']);
 
 
 
@@ -39,4 +39,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // Route::patch('/courses/{course}', [CourseController::class, 'update']);
         // Route::delete('/courses/{course}', [CourseController::class, 'destroy']);
     });
+    Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
+    Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
 });

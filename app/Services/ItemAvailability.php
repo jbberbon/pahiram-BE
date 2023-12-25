@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils;
+namespace App\Services;
 
 use App\Models\BorrowedItem;
 use Carbon\Carbon;

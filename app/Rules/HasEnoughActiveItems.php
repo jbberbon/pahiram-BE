@@ -6,7 +6,7 @@ use App\Models\Item;
 use App\Models\ItemStatus;
 use Illuminate\Contracts\Validation\Rule;
 
-class HasActiveItems implements Rule
+class HasEnoughActiveItems implements Rule
 {
     public function passes($attribute, $value): bool
     {

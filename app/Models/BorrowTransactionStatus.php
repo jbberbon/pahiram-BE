@@ -34,4 +34,19 @@ class BorrowTransactionStatus extends Model
         return $status ? $status->id : null;
     }
 
+    public static function getStatusById($statusId)
+    {
+        $status = self::where('id', $statusId)->first();
+
+        return $status ? $status->transac_status : null;
+    }
+    public static function getStatusCodeById($statusId)
+    {
+        $status = self::where('id', $statusId)->first();
+
+        return $status ? $status->transac_status_code : null;
+    }
+
+
+
 }

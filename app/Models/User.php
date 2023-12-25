@@ -75,10 +75,20 @@ class User extends Authenticatable
         return $accountStatus ? $accountStatus->acc_status : null;
     }
 
-    public static function getUserIdBasedOnApcId($apcId) {
+    public static function getUserIdBasedOnApcId($apcId)
+    {
         $user = self::where('apc_id', $apcId)->first();
 
         return $user ? $user->id : null;
+    }
+
+    public static function getNameBasedOnId($userId)
+    {
+        $user = self::where('id', $userId)->first();
+        $firstName = $user->first_name;
+        $lastName = $user->last_name;
+
+        return $firstName . ' ' . $lastName;
     }
 }
 

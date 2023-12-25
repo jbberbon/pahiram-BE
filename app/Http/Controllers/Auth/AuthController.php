@@ -9,7 +9,6 @@ use App\Models\Course;
 use App\Models\User;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
@@ -19,11 +18,7 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request)
     {
-        /**
-         * 1. Validate request body
-         */
         $validatedData = $request->validated();
-
         try {
             /**
              * 2. Access APCIS login API
