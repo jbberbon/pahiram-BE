@@ -1,8 +1,9 @@
 <?php
 
+use App\Http\Controllers\BorrowTransaction\BorrowedItemController;
+use App\Http\Controllers\BorrowTransaction\ItemGroupController;
 use App\Http\Controllers\BorrowTransaction\ManageBorrowingRequestController;
 use App\Http\Controllers\Auth\AuthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,14 +32,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::group(['middleware' => ['is_suspended']], function () {
         Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
         Route::post('/user/borrow-request/submit', [ManageBorrowingRequestController::class, 'submitBorrowRequest']);
-
-
-
-        // Route::get('/courses/{course}', [CourseController::class, 'show']);
-        // Route::post('/courses', [CourseController::class, 'store']);
-        // Route::patch('/courses/{course}', [CourseController::class, 'update']);
-        // Route::delete('/courses/{course}', [CourseController::class, 'destroy']);
     });
+    Route::patch('/user/borrow-request/{requestId}/edit', [ManageBorrowingRequestController::class, 'editBorrowRequest']);
     Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
     Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
+
+    Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
 });

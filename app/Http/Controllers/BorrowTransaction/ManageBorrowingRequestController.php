@@ -4,32 +4,23 @@ namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BorrowTransaction\CancelBorrowRequest;
+use App\Http\Requests\BorrowTransaction\EditBorrowRequest;
 use App\Http\Requests\BorrowTransaction\GetBorrowRequest;
 use App\Http\Requests\BorrowTransaction\SubmitBorrowRequest;
 use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
-use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
-use App\Models\Item;
-use App\Models\ItemGroup;
-use App\Models\ItemStatus;
-use App\Models\User;
 use App\Services\BorrowingRequestService;
-use App\Utils\ItemAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-use App\Utils\Constants\ItemStatusConst;
-use App\Utils\Constants\BorrowedItemStatusConst;
 
 class ManageBorrowingRequestController extends Controller
 {
     protected $borrowingRequestService;
-    private $activeItemStatusCode = ItemStatusConst::ACTIVE;
-    private $pendingBorrowedItemStatusCode = BorrowedItemStatusConst::PENDING;
-    private $maxActiveTransactions = 3;
+    // private $activeItemStatusCode = ItemStatusConst::ACTIVE;
+    // private $pendingBorrowedItemStatusCode = BorrowedItemStatusConst::PENDING;
+    // private $maxActiveTransactions = 3;
 
     public function __construct(BorrowingRequestService $borrowingRequestService)
     {
@@ -175,11 +166,12 @@ class ManageBorrowingRequestController extends Controller
 
     /**
      *  Edit borrow request  
-     *  !!!!!------> Not a priority
      */
-    public function editBorrowRequest(Request $request, BorrowTransaction $borrowTransaction)
+    public function editBorrowRequest(EditBorrowRequest $editBorrowRequest)
     {
+        $validatedData = $editBorrowRequest->validated();
 
+        return $validatedData;
     }
     /**
      *  Cancel Borrow Request
@@ -209,4 +201,5 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
+
 }

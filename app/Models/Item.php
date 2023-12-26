@@ -32,6 +32,9 @@ class Item extends Model
         'created_at',
         'updated_at'
     ];
+    public function itemGroup()
+    {
+        return $this->belongsTo(ItemGroup::class);
+    }
 
-    
 }
