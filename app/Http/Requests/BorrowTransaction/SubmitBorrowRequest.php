@@ -53,6 +53,9 @@ class SubmitBorrowRequest extends FormRequest
                 'min:5',
                 'max:50'
             ],
+            /**
+             * Borrowed Items ----------------------------------------------------
+             */
             'items' => [
                 'required',
                 'array',
@@ -64,6 +67,7 @@ class SubmitBorrowRequest extends FormRequest
                 'required',
                 'array',
                 'size:4',
+                // Checks the count of the currently Active Status item in Items Table
                 new HasEnoughActiveItems
             ],
             'items.*.item_group_id' => [

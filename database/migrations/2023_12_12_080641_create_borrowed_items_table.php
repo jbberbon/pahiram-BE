@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('borrowed_item_status_id')->nullable();
             $table->uuid('item_id')->nullable();
             
-            $table->dateTime('start_date');
+            $table->dateTime('start_date'); // Made nullable in another migration file
             $table->dateTime('due_date')->nullable();
             $table->dateTime('date_returned')->nullable();
             $table->decimal('penalty')->nullable();

@@ -9,13 +9,12 @@ class RequestBelongsToUser implements Rule
 {
     public function passes($attribute, $value)
     {
-        // Check if the borrowRequest ID belongs to the authenticated user
         $user = auth()->user();
-        $belongsToUser = BorrowTransaction::where('id', $value)
+
+        // True OR False
+        return BorrowTransaction::where('id', $value)
             ->where('borrower_id', $user->id)
             ->exists();
-
-        return $belongsToUser;
     }
 
     public function message()

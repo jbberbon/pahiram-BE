@@ -15,7 +15,7 @@ use App\Utils\Constants\ItemStatusConst;
 use App\Services\ItemAvailability;
 use Illuminate\Http\Response;
 
-class BorrowingRequestService
+class SubmitBorrowRequestService
 {
     private $maxActiveTransactions = 3;
     private $activeItemStatusCode = ItemStatusConst::ACTIVE;
