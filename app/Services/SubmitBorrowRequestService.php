@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
+use App\Models\BorrowPurpose;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
+use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
@@ -20,7 +22,7 @@ class SubmitBorrowRequestService
     private $maxActiveTransactions = 3;
     private $activeItemStatusCode = ItemStatusConst::ACTIVE;
     private $pendingBorrowedItemStatusCode = BorrowedItemStatusConst::PENDING;
-    
+
     /**
      *  01. Check if user has > 3 active transactions
      */
@@ -146,10 +148,19 @@ class SubmitBorrowRequestService
         if (isset($transactionData['endorsed_by'])) {
             $transactionData['endorsed_by'] = User::where('apc_id', $transactionData['endorsed_by'])->first()->id;
         }
+
+        $purposeId = BorrowPurpose::where('purpose_code', $transactionData['purpose_code'])->first()->id;
+        $departmentId = Department::where('department_code', $transactionData['department_code'])->first()->id;
+        $userDefinedPurpose = $transactionData['user_defined_purpose'];
+
         $newBorrowRequestArgs = [
+            'endorsed_by' => $transactionData['endorsed_by'],
             'borrower_id' => $userId,
             'transac_status_id' => BorrowTransactionStatus::getStatusIdByCode(1010),
-            ...$transactionData
+            'purpose_id' => $purposeId,
+            'department_id' => $departmentId,
+            'user_defined_purpose' => $userDefinedPurpose
+
         ];
         $newBorrowRequest = BorrowTransaction::create($newBorrowRequestArgs);
 

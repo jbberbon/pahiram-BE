@@ -110,6 +110,7 @@ class ManageBorrowingRequestController extends Controller
         $validatedData = $borrowRequest->validated();
         $userId = Auth::user()->id;
 
+        // return $validatedData;
         // 01. Check if user has > 3 active transactions
         $maxTransactionCheck = $this->submitBorrowRequestService->checkMaxTransactions($userId);
         if ($maxTransactionCheck) {
