@@ -25,7 +25,7 @@ class SubmitBorrowRequest extends FormRequest
         return [
             'endorsed_by' => [
                 'string',
-                'min:6',
+                'min:5',
                 'max:15',
                 Rule::notIn([auth()->user()->apc_id,]),
                 new ExistsInDbOrApcis,
@@ -35,23 +35,43 @@ class SubmitBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
-            'department_id' => [
+            // 'department_code' => [
+            //     'required',
+            //     'integer',
+            //     'digits:4',
+            //     'exists:departments,department_code'
+            // ],
+            // 'purpose_code' => [
+            //     'required',
+            //     'integer',
+            //     'digits:4',
+            //     'exists:borrow_purposes,purpose_code'
+            // ],
+            // 'user_defined_purpose' => [
+            //     'required',
+            //     'string',
+            //     'regex:/^[a-zA-Z0-9\s|]+$/',
+            //     'min:5',
+            //     'max:30'
+            // ],
+            'department_id' => [ // EDIT
                 'required',
                 'string',
                 'regex:/^[a-zA-Z0-9-]+$/',
                 'exists:departments,id'
             ],
-            'purpose_id' => [
+            'purpose_id' => [ // EDIT
                 'required',
                 'string',
                 'regex:/^[a-zA-Z0-9-]+$/',
                 'exists:borrow_purposes,id'
             ],
-            'user_defined_purpose' => [
+            'user_defined_purpose' => [ // EDIT
                 'required_if:purpose_id,' . $purposeOther->id,
                 'string',
+                'regex:/^[a-zA-Z0-9\s|]+$/',
                 'min:5',
-                'max:50'
+                'max:30'
             ],
             /**
              * Borrowed Items ----------------------------------------------------

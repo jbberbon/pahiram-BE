@@ -4,10 +4,13 @@ namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BorrowTransaction\BookedDatesRequest;
+use App\Http\Requests\BorrowTransaction\GetItemGroupByOfficeRequest;
+use App\Http\Resources\ItemGroupBasedOnOfficeCollection;
+use App\Http\Resources\ItemGroupBasedOnOfficeResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
+use App\Models\Department;
 use App\Models\ItemGroup;
-use App\Models\Item;
 use Illuminate\Http\Request;
 
 class ItemGroupController extends Controller
@@ -20,11 +23,23 @@ class ItemGroupController extends Controller
         $this->borrowedStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first()->id;
     }
     /**
-     * Display a listing of the resource.
+     * Search ItemGroup according to office
      */
-    public function index()
+    public function index(GetItemGroupByOfficeRequest $request)
     {
-        //
+        $validatedData = $request->validated();
+        $itemGroups = ItemGroup::where('department_id', function ($query) use ($validatedData) {
+            $query->select('id')
+                ->from('departments')
+                ->where('department_code', $validatedData['officeCode']);
+        })->get();
+
+        return response([
+            'status' => true,
+            'data' => new ItemGroupBasedOnOfficeCollection(ItemGroupBasedOnOfficeResource::collection($itemGroups)),
+            'method' => 'GET',
+        ], 200);
+
     }
     /**
      *  Retrieve UNAVAILABLE dates

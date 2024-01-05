@@ -41,7 +41,7 @@ class EditBorrowRequest extends FormRequest
             ],
             'request_data.endorsed_by' => [
                 'string',
-                'min:6',
+                'min:5',
                 'max:15',
                 Rule::notIn([auth()->user()->apc_id,]),
                 new ExistsInDbOrApcis,
@@ -51,6 +51,22 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
+            // 'department_code' => [
+            //     'integer',
+            //     'digits:4',
+            //     'exists:departments,department_code'
+            // ],
+            // 'purpose_code' => [
+            //     'integer',
+            //     'digits:4',
+            //     'exists:borrow_purposes,purpose_code'
+            // ],
+            // 'user_defined_purpose' => [
+            //     'string',
+            //     'regex:/^[a-zA-Z0-9\s|]+$/',
+            //     'min:5',
+            //     'max:30'
+            // ],
             'request_data.department_id' => [
                 'string',
                 'regex:/^[a-zA-Z0-9-]+$/',
@@ -62,7 +78,6 @@ class EditBorrowRequest extends FormRequest
                 'exists:borrow_purposes,id'
             ],
             'request_data.user_defined_purpose' => [
-                'required_if:purpose_id,' . $purposeOther->id,
                 'string',
                 'min:5',
                 'max:50'
