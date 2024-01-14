@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('borrow_transaction_statuses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('transac_status')->unique();
-            $table->integer('transac_status_code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
         });

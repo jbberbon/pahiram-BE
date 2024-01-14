@@ -23,11 +23,11 @@ class LocationSeeder extends Seeder
                 "floor" => "3"
             ],
             [
-                "room" => "Library",
+                "room" => "LIBRARY",
                 "floor" => "7"
             ],
             [
-                "room" => "Cafeteria",
+                "room" => "CAFETERIA",
                 "floor" => "1"
             ],
         ];

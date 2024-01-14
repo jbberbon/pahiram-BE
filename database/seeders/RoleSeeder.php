@@ -15,28 +15,31 @@ class RoleSeeder extends Seeder
     {
         $roles = [
             [
-                'role' => 'Borrower',
-                'role_code' => 1010,
-                'description' => 'System borrowers'
+                'role' => 'BORROWER',
+                'description' => 'System borrower'
             ],
             [
-                'role' => 'Inventory Manager',
-                'role_code' => 2020,
+                'role' => 'ENDORSER',
+                'description' => 'Borrowing Endorser'
+            ],
+            [
+                'role' => 'BORROWING_MANAGER',
+                'description' => 'Manages borrowing transactions'
+            ],
+            [
+                'role' => 'INVENTORY_MANAGER',
                 'description' => 'Manages inventory'
             ],
             [
-                'role' => 'Lending Manager',
-                'role_code' => 3030,
-                'description' => 'Manages lending transactions'
+                'role' => 'PENALTY_MANAGER',
+                'description' => 'Manages borrowing panalties'
             ],
             [
-                'role' => 'Co-supervisor',
-                'role_code' => 4040,
-                'description' => ''
+                'role' => 'CO_SUPERVISOR',
+                'description' => 'Alter ego of Supervisor but cannot designate office roles'
             ],
             [
-                'role' => 'Supervisor',
-                'role_code' => 5050,
+                'role' => 'SUPERVISOR',
                 'description' => 'Office supervisor'
             ],
         ];

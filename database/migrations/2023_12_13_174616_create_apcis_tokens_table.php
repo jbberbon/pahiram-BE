@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('apcis_tokens', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id')->nullable();
+            $table->uuid('user_id');
             $table->string('token')->unique();
             $table->dateTime('expires_at')->nullable();
             $table->timestamps();

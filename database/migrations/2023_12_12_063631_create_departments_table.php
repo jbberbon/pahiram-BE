@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('departments', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('department')->unique();
-            $table->unsignedBigInteger('department_code');
             $table->string('department_acronym')->unique();
             $table->uuid('supervisor_id')->nullable();
             $table->boolean('is_lending_office')->default(0); 

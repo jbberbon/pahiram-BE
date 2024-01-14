@@ -15,38 +15,28 @@ class BorrowPurposeSeeder extends Seeder
     {
         $purposes = [
             [
-                "purpose_code" => 1010,
-                "general_purpose" => "General Academic Requirement/s",
+                "purpose" => "ACADEMIC_REQUIREMENT",
                 "description" => "For general academic projects, assignments, or coursework"
             ],
+
             [
-                "purpose_code" => 2020,
-                "general_purpose" => "Thesis / Research / Experiment",
-                "description" => "For a specific research project or experiment"
-            ],
-            [
-                "purpose_code" => 3030,
-                "general_purpose" => "Org / Club Activity",
+                "purpose" => "ORG_CLUB_ACTIVITY",
                 "description" => "For org or club-related events and activities."
             ],
             [
-                "purpose_code" => 4040,
-                "general_purpose" => "Upskilling",
+                "purpose" => "UPSKILLING",
                 "description" => "For the purpose of skill development and upskilling"
             ],
             [
-                "purpose_code" => 5050,
-                "general_purpose" => "Hobby / Leisure",
+                "purpose" => "HOBBY",
                 "description" => "For personal hobbies or leisure activities."
             ],
             [
-                "purpose_code" => 6060,
-                "general_purpose" => "Special Event",
+                "purpose" => "SPECIAL_EVENT",
                 "description" => "For a special event or occasion."
             ],
             [
-                "purpose_code" => 7070,
-                "general_purpose" => "Others",
+                "purpose" => "OTHERS",
                 "description" => "User will be prompted to input the purpose"
             ],
         ];

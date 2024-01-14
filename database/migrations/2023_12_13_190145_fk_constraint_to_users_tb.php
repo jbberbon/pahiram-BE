@@ -12,15 +12,15 @@ return new class extends Migration {
     {
         Schema::table('users', function (Blueprint $table) {
             $table->foreign('user_role_id')->references('id')->on('roles')
-                ->onDelete('set null')
-                ->cascadeOnUpdate();
-            $table->foreign('course_id')->references('id')->on('courses')
-                ->onDelete('set null')
+                ->onDelete('restrict')
                 ->cascadeOnUpdate();
             $table->foreign('acc_status_id')->references('id')->on('account_statuses')
-                ->onDelete('set null')
+                ->onDelete('restrict')
                 ->cascadeOnUpdate();
             $table->foreign('department_id')->references('id')->on('departments')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
+            $table->foreign('course_id')->references('id')->on('courses')
                 ->onDelete('set null')
                 ->cascadeOnUpdate();
         });
@@ -32,11 +32,12 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['user_role_id']);
-            $table->dropForeign(['course_id']);
-            $table->dropForeign(['acc_status_id']);
-            $table->dropForeign(['department_id']);
-
+            $table->dropForeign([
+                'user_role_id',
+                'acc_status_id',
+                'department_id',
+                'course_id',
+            ]);
         });
     }
 };

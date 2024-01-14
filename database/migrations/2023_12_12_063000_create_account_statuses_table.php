@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('account_statuses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('acc_status')->unique();
-            $table->integer('acc_status_code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
         });

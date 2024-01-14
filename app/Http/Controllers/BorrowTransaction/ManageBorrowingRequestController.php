@@ -48,7 +48,7 @@ class ManageBorrowingRequestController extends Controller
                     'status' => true,
                     'message' => "No Borrowing Request Sent",
                     'method' => "GET"
-                ], 204);
+                ], 200);
             }
 
             $requestCollection = new BorrowRequestCollection($requestList);
@@ -61,7 +61,7 @@ class ManageBorrowingRequestController extends Controller
         } catch (\Exception $e) {
             return response([
                 'status' => false,
-                'message' => 'An error occurred while fetching borrowing requests.',
+                'message' => 'An error occurred while fetching borrowing requests',
                 'error' => $e->getMessage(),
                 'method' => 'GET',
             ], 500);
@@ -196,8 +196,6 @@ class ManageBorrowingRequestController extends Controller
         $requestId = $validatedData['requestId'];
         $requestData = $validatedData['request_data'];
 
-        $editExistingItems = $validatedData['edit_existing_items'];
-
         $cancelledItems = [];
         $editedItems = [];
         $addNewItems = [];
@@ -229,6 +227,7 @@ class ManageBorrowingRequestController extends Controller
         }
 
         // 02. Segregate edit_existing_items into TWO :: with is_cancelled && without is_cancelled
+        $editExistingItems = $validatedData['edit_existing_items'];
         foreach ($editExistingItems as $currentExistingItem) {
             $currentExistingItemId = $currentExistingItem['item_group_id'];
 
@@ -392,7 +391,7 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      *  Cancel Borrow Request
      */
@@ -401,10 +400,17 @@ class ManageBorrowingRequestController extends Controller
         try {
             $validatedData = $cancelBorrowRequest->validated();
 
-            $cancelledStatus = BorrowTransactionStatus::where('transac_status_code', 'cancelled')->firstOrFail();
+            $cancelledTransacStatus = BorrowTransactionStatus::where('transac_status_code', 7070)->firstOrFail();
 
             BorrowTransaction::where('id', $validatedData['borrowRequest'])
-                ->update(['transac_status_id' => $cancelledStatus->id]);
+                ->update(['transac_status_id' => $cancelledTransacStatus->id]);
+
+            $cancelledItemStatusCode = BorrowedItemStatusConst::CANCELLED;
+            $cancelledItemStatusId = BorrowedItemStatus::where('borrowed_item_status_code', $cancelledItemStatusCode)->firstOrFail()->id;
+
+            BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
+                ->update(['borrowed_item_status_id' => $cancelledItemStatusId]);
+
 
             return response([
                 'status' => true,
@@ -420,5 +426,4 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
-
 }

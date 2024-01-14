@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::table('item_groups', function (Blueprint $table) {
             $table->foreign('group_category_id')->references('id')->on('item_group_categories')
-                ->onDelete('set null')
+                ->onDelete('restrict')
                 ->cascadeOnUpdate();
             $table->foreign('department_id')->references('id')->on('departments')
                 ->onDelete('set null')

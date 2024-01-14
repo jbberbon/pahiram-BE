@@ -15,34 +15,33 @@ class ItemStatusSeeder extends Seeder
     {
         $item_status = [
             [
-                "item_status_code" => 1010,
-                "item_status" => "Active",
+                "item_status" => "ACTIVE",
                 "description" => "Item is in circulation",
             ],
+            
             [
-                "item_status_code" => 2020,
-                "item_status" => "Possessed",
-                "description" => "Not borrowed but item is currently deployed to a user",
+                "item_status" => "INACTIVE",
+                "description" => "Item is undergoing repair / maintenance but will be active later",
             ],
             [
-                "item_status_code" => 3030,
-                "item_status" => "For Repair",
-                "description" => "Item is ready / undergoing repair",
+                "item_status" => "DESIGNATED",
+                "description" => "Not borrowed but item is currently deployed to an APC employee",
             ],
             [
-                "item_status_code" => 4040,
-                "item_status" => "Unrepairable",
+                "item_status" => "FOR_REPAIR",
+                "description" => "Item is damaged thus, for repair",
+            ],
+            [
+                "item_status" => "BEYOND_REPAIR",
                 "description" => "Item is unfixable",
             ],
             [
-                "item_status_code" => 5050,
-                "item_status" => "Lost",
-                "description" => "Item is lost",
+                "item_status" => "RETIRED",
+                "description" => "Item retired due to age",
             ],
             [
-                "item_status_code" => 6060,
-                "item_status" => "Retired",
-                "description" => "Item retired due to age",
+                "item_status" => "LOST",
+                "description" => "Item is lost",
             ],
         ];
 

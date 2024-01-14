@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\ApcisToken;
 use App\Models\Course;
+use App\Models\Department;
+use App\Models\Role;
 use App\Models\User;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
@@ -47,7 +49,7 @@ class AuthController extends Controller
             /**
              * 4. Check USER if already exist in pahiram-BE Database
              */
-            $user = User::where('email', $apiUserData['email'])->first();
+            $user = User::where('email', $apiUserData['email'])->firstOrFail();
             // Does not exist yet, add user to db
             if (!$user) {
                 $defaultData = NewUserDefaultData::defaultData($course);
@@ -71,11 +73,26 @@ class AuthController extends Controller
             ];
             $apcisToken = ApcisToken::create($newToken);
 
+            
+            // Success return values 
+            // make dept_id as code, role also,
+            $roleCode = Role::where('id', $user->user_role_id)->firstOrFail()->role_code;
 
+            $departmentCode = null;
+            if ($user->department_id !== null) {
+                $departmentCode = Department::where('id', $user->department_id)->firstOrFail()->department_code;
+            }
+
+            unset($user['department_id']);
+            unset($user['user_role_id']);
             return response([
                 'status' => true,
                 'data' => [
-                    'user' => $user,
+                    'user' => [
+                        ...$user->toArray(),
+                        'department_code' => $departmentCode,
+                        'role_code' => $roleCode
+                    ],
                     'pahiram_token' => $pahiramToken,
                     'apcis_token' => $apcisToken['token']
                 ],

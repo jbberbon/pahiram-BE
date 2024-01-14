@@ -19,11 +19,12 @@ class BorrowTransaction extends Model
         'user_defined_purpose',
         'penalty',
         'remarks_by_endorser',
-        'remarks_by_approver'
+        'remarks_by_approver',
+        'created_at',
+
     ];
 
     protected $hidden = [
-        'created_at',
         'updated_at'
     ];
 }

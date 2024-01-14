@@ -15,11 +15,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('model_name');
             $table->boolean('is_required_supervisor_approval')->default(0);
-            $table->integer('total_quantity');
-            $table->integer('available_quantity');
 
             // FKs
-            $table->uuid('group_category_id')->nullable();
+            $table->uuid('group_category_id');
             $table->uuid('department_id')->nullable();
             $table->timestamps();
         });

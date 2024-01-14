@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('borrowed_item_statuses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('borrowed_item_status')->unique();
-            $table->integer('borrowed_item_status_code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
         });

@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('borrow_purposes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->integer('purpose_code')->unique();
-            $table->string('general_purpose')->unique();
+            $table->string('purpose')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
         });

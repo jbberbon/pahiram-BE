@@ -39,7 +39,7 @@ class GetBorrowRequest extends FormRequest
     }
     public function failedValidation(Validator $validator)
     {
-        $message = "Failed to cancel borrowing request";
+        $message = "Failed to retrieve borrow request";
         $errorCode = $this->errorCode;
         RequestValidationFailedMsg::errorResponse($validator, $message, $errorCode);
     }

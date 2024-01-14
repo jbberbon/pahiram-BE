@@ -32,10 +32,12 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('purchase_orders', function (Blueprint $table) {
-            $table->dropForeign(['requested_by']);
-            $table->dropForeign(['verified_by']);
-            $table->dropForeign(['funding_assured_by']);
-            $table->dropForeign(['approved_by']);
+            $table->dropForeign([
+                'requested_by',
+                'verified_by',
+                'funding_assured_by',
+                'approved_by'
+            ]);
         });
     }
 };

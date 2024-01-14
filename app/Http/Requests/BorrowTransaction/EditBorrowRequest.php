@@ -51,41 +51,42 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
-            // 'department_code' => [
-            //     'integer',
-            //     'digits:4',
-            //     'exists:departments,department_code'
-            // ],
-            // 'purpose_code' => [
-            //     'integer',
-            //     'digits:4',
-            //     'exists:borrow_purposes,purpose_code'
-            // ],
-            // 'user_defined_purpose' => [
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9\s|]+$/',
-            //     'min:5',
-            //     'max:30'
-            // ],
-            'request_data.department_id' => [
-                'string',
-                'regex:/^[a-zA-Z0-9-]+$/',
-                'exists:departments,id'
+            'request_data.department_code' => [
+                'integer',
+                'digits:4',
+                'exists:departments,department_code'
             ],
-            'request_data.purpose_id' => [
-                'string',
-                'regex:/^[a-zA-Z0-9-]+$/',
-                'exists:borrow_purposes,id'
+            'request_data.purpose_code' => [
+                'integer',
+                'digits:4',
+                'exists:borrow_purposes,purpose_code'
             ],
             'request_data.user_defined_purpose' => [
                 'string',
+                'regex:/^[a-zA-Z0-9\s|]+$/',
                 'min:5',
-                'max:50'
+                'max:30'
             ],
+            // 'request_data.department_id' => [
+            //     'string',
+            //     'regex:/^[a-zA-Z0-9-]+$/',
+            //     'exists:departments,id'
+            // ],
+            // 'request_data.purpose_id' => [
+            //     'string',
+            //     'regex:/^[a-zA-Z0-9-]+$/',
+            //     'exists:borrow_purposes,id'
+            // ],
+            // 'request_data.user_defined_purpose' => [
+            //     'string',
+            //     'min:5',
+            //     'max:50'
+            // ],
             /**
              * Edit Existing items ----------------------------------------------------
              */
             'edit_existing_items' => [
+                'sometimes',
                 'array',
                 'min:1',
                 'max:10',

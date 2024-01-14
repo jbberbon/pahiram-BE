@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
+use App\Models\BorrowPurpose;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
 use App\Models\Item;
@@ -36,10 +37,15 @@ class EditBorrowRequestService
         $borrowRequestArgs = $validatedData;
         $borrowRequestArgs['endorsed_by'] = User::getUserIdBasedOnApcId($validatedData['endorsed_by']);
 
+
+        if (isset($borrowRequestArgs['purpose_code'])) {
+            unset($borrowRequestArgs['purpose_code']);
+        }
         if (isset($borrowRequestArgs['apcis_token'])) {
             unset($borrowRequestArgs['apcis_token']);
         }
-        // unset($borrowRequestArgs['requestId'], $borrowRequestArgs['borrowed_items']);
+
+        $borrowRequestArgs['purpose_id'] = BorrowPurpose::where('purpose_code', $validatedData['purpose_code'])->first()->id;
 
         return $borrowRequestArgs;
     }

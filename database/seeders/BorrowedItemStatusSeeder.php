@@ -15,48 +15,47 @@ class BorrowedItemStatusSeeder extends Seeder
     {
         $borrowed_item_status = [
             [
-                "borrowed_item_status_code" => 1010,
-                "borrowed_item_status" => "Pending Approval",
+                "borrowed_item_status" => "PENDING_ENDORSER_APPROVAL",
                 "description" => "Item is awaiting approval"
             ],
             [
-                "borrowed_item_status_code" => 2020,
-                "borrowed_item_status" => "Borrowed",
+                "borrowed_item_status" => "PENDING_BORROWING_APPROVAL",
+                "description" => "Item is awaiting approval"
+            ],
+            [
+                "borrowed_item_status" => "APPROVED",
+                "description" => "Item is approved"
+            ],
+            [
+                "borrowed_item_status" => "IN_POSSESSION",
                 "description" => "Item currently borrowed"
             ],
             [
-                "borrowed_item_status_code" => 3030,
-                "borrowed_item_status" => "Cancelled",
-                "description" => "Item cancelled by borrowe"
+                "borrowed_item_status" => "CANCELLED",
+                "description" => "Item is cancelled by borrower"
             ],
             [
-                "borrowed_item_status_code" => 4040,
-                "borrowed_item_status" => "Declined",
+                "borrowed_item_status" => "DISAPPROVED",
                 "description" => "Item is declined to be borrowed"
             ],
             [
-                "borrowed_item_status_code" => 5050,
-                "borrowed_item_status" => "Overdue Return",
+                "borrowed_item_status" => "OVERDUE_RETURN",
                 "description" => "Item is overdue for return"
             ],
             [
-                "borrowed_item_status_code" => 6060,
-                "borrowed_item_status" => "Returned",
+                "borrowed_item_status" => "RETURNED",
                 "description" => "Item has been returned after a borrowing transaction"
             ],
             [
-                "borrowed_item_status_code" => 7070,
-                "borrowed_item_status" => "For Repair",
+                "borrowed_item_status" => "DAMAGED_BUT_REPAIRABLE",
                 "description" => "Returned item requires repair / maintenance"
             ],
             [
-                "borrowed_item_status_code" => 8080,
-                "borrowed_item_status" => "Unrepairable",
+                "borrowed_item_status" => "UNREPAIRABLE",
                 "description" => "Returned item beyond fixing"
             ],
             [
-                "borrowed_item_status_code" => 9090,
-                "borrowed_item_status" => "Lost",
+                "borrowed_item_status" => "LOST",
                 "description" => "Item is lost by the borrower"
             ]
         ];

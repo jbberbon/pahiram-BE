@@ -23,12 +23,27 @@ class SubmitBorrowRequestService
     private $activeItemStatusCode = ItemStatusConst::ACTIVE;
     private $pendingBorrowedItemStatusCode = BorrowedItemStatusConst::PENDING;
 
+    private $pendingApprovalTransactionId;
+    private $approvedTransactionId;
+
+
+    public function __construct()
+    {
+        $this->pendingApprovalTransactionId = BorrowTransactionStatus::where('transac_status_code', 1010)->first()->id;
+        $this->approvedTransactionId = BorrowTransactionStatus::where('transac_status_code', 2020)->first()->id;
+    }
     /**
      *  01. Check if user has > 3 active transactions
      */
     public function checkMaxTransactions($userId)
     {
-        $activeTransactions = BorrowTransaction::where('borrower_id', $userId)->count();
+        $activeTransactions = BorrowTransaction::where('borrower_id', $userId)
+            ->where(function ($query) {
+                $query->where('transac_status_id', $this->approvedTransactionId)
+                    ->orWhere('transac_status_id', $this->pendingApprovalTransactionId);
+            })
+            ->count();
+
         if ($activeTransactions >= $this->maxActiveTransactions) {
             return response()->json([
                 'status' => false,
@@ -144,24 +159,34 @@ class SubmitBorrowRequestService
         $transactionData = $validatedData;
         unset($transactionData['items']);
 
-        // Convert APC_ID to Pahiram ID
-        if (isset($transactionData['endorsed_by'])) {
-            $transactionData['endorsed_by'] = User::where('apc_id', $transactionData['endorsed_by'])->first()->id;
-        }
-
         $purposeId = BorrowPurpose::where('purpose_code', $transactionData['purpose_code'])->first()->id;
         $departmentId = Department::where('department_code', $transactionData['department_code'])->first()->id;
         $userDefinedPurpose = $transactionData['user_defined_purpose'];
 
+
+        $newBorrowRequestArgs = null;
+        // Convert APC_ID to Pahiram ID
+        // Endorser is Indicated in the request
+        if (isset($transactionData['endorsed_by'])) {
+            $transactionData['endorsed_by'] = User::where('apc_id', $transactionData['endorsed_by'])->first()->id;
+            $newBorrowRequestArgs = [
+                'endorsed_by' => $transactionData['endorsed_by'],
+                'borrower_id' => $userId,
+                'transac_status_id' => BorrowTransactionStatus::getStatusIdByCode(1010),
+                'purpose_id' => $purposeId,
+                'department_id' => $departmentId,
+                'user_defined_purpose' => $userDefinedPurpose
+            ];
+        }
+
         $newBorrowRequestArgs = [
-            'endorsed_by' => $transactionData['endorsed_by'],
             'borrower_id' => $userId,
             'transac_status_id' => BorrowTransactionStatus::getStatusIdByCode(1010),
             'purpose_id' => $purposeId,
             'department_id' => $departmentId,
             'user_defined_purpose' => $userDefinedPurpose
-
         ];
+
         $newBorrowRequest = BorrowTransaction::create($newBorrowRequestArgs);
 
 

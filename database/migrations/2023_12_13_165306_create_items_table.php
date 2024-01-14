@@ -15,13 +15,13 @@ return new class extends Migration {
             $table->string('apc_item_id')->unique();
 
             // FKs: add constraint on separate file
-            $table->uuid('item_group_id')->nullable();
-            $table->uuid('item_status_id')->nullable();
+            $table->uuid('item_group_id');
+            $table->uuid('item_status_id');
             $table->uuid('purchase_order_id')->nullable();
             $table->uuid('located_at')->nullable();
-            $table->uuid('possessed_by')->nullable();
+            $table->uuid('designated_to')->nullable();
 
-            $table->string('manufacturer_serial_num')->unique()->nullable();
+            $table->string('manufacturer_serial')->unique()->nullable();
             $table->date('warranty_expiration')->nullable();
             $table->integer('unit_cost')->nullable();
             $table->string('supplier_name')->nullable();

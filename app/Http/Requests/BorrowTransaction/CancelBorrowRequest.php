@@ -5,23 +5,29 @@ namespace App\Http\Requests\BorrowTransaction;
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
 use App\Models\BorrowTransactionStatus;
+use App\Rules\CancelTransacRule;
+use App\Rules\TransactionBelongsToUser;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class CancelBorrowRequest extends FormRequest
 {
     private $errorCode = 422;
     private $pending = null;
+    private $approved = null;
     public function rules(): array
     {
         $this->pending = BorrowTransactionStatus::where('transac_status_code', 1010)->first();
+        $this->approved = BorrowTransactionStatus::where('transac_status_code', 2020)->first();
+
         return [
             'borrowRequest' => [
                 'required',
-                Rule::exists('borrow_transactions', 'id')->where(function ($query) {
-                    $query->where('transac_status_id', $this->pending->id);
-                })
+                // 'exists:borrow_transactions,id',
+                new TransactionBelongsToUser,
+                new CancelTransacRule
             ],
 
         ];

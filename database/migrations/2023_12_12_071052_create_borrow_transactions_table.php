@@ -13,11 +13,11 @@ return new class extends Migration {
         Schema::create('borrow_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             // FKs set constraint on other migration file
-            $table->uuid('borrower_id')->nullable();
+            $table->uuid('borrower_id');
             $table->uuid('endorsed_by')->nullable();
-            $table->uuid('department_id')->nullable();
-            $table->uuid('transac_status_id')->nullable();
-            $table->uuid('purpose_id')->nullable();
+            $table->uuid('department_id');
+            $table->uuid('transac_status_id');
+            $table->uuid('purpose_id');
 
             $table->string('user_defined_purpose')->nullable();
             $table->decimal('penalty')->nullable();
