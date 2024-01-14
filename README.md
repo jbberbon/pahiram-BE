@@ -6,9 +6,10 @@ Laravel backend of Pahiram web-app
 1. AccountStatus
 2. BorrowedItemStatus
 3. BorrowTransactionStatus
-4. BorrowPurpose
-5. Department
-6. Role
+4. ItemStatus
+5. BorrowPurpose
+6. Department
+7. Role
 
 # Seeding Batch 2
 1. GroupCategory

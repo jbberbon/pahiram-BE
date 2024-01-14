@@ -12,7 +12,6 @@ return new class extends Migration {
     {
         Schema::create('item_statuses', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->integer('item_status_code')->unique();
             $table->string('item_status')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
