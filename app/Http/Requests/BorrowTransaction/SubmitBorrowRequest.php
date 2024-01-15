@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\BorrowTransaction;
 
-use App\Models\BorrowPurpose;
 use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
 use App\Rules\UniqueIds;
@@ -11,19 +10,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Utils\Constants\BorrowPurposeConst;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SubmitBorrowRequest extends FormRequest
 {
-    private $otherPurposeCode = BorrowPurposeConst::OTHER;
     private $errorCode = 422;
     public function rules(): array
     {
-        $purposeOther = BorrowPurpose::where('purpose_code', $this->otherPurposeCode)->first();
         return [
             'endorsed_by' => [
+                'sometimes',
                 'string',
                 'min:5',
                 'max:15',
@@ -35,17 +31,17 @@ class SubmitBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
-            'department_code' => [
+            'department' => [
                 'required',
-                'integer',
-                'digits:4',
-                'exists:departments,department_code'
+                'string',
+                'min:2',
+                'exists:departments,department_acronym'
             ],
-            'purpose_code' => [
+            'purpose' => [
                 'required',
-                'integer',
-                'digits:4',
-                'exists:borrow_purposes,purpose_code'
+                'string',
+                'min:4',
+                'exists:borrow_purposes,purpose'
             ],
             'user_defined_purpose' => [
                 'required',
@@ -54,30 +50,12 @@ class SubmitBorrowRequest extends FormRequest
                 'min:5',
                 'max:30'
             ],
-            // 'department_id' => [ // EDIT
-            //     'required',
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9-]+$/',
-            //     'exists:departments,id'
-            // ],
-            // 'purpose_id' => [ // EDIT
-            //     'required',
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9-]+$/',
-            //     'exists:borrow_purposes,id'
-            // ],
-            // 'user_defined_purpose' => [ // EDIT
-            //     'required_if:purpose_id,' . $purposeOther->id,
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9\s|]+$/',
-            //     'min:5',
-            //     'max:30'
-            // ],
+
             /**
              * Borrowed Items ----------------------------------------------------
              */
             'items' => [
-                'required',
+                'sometimes',
                 'array',
                 'min:1',
                 'max:10',

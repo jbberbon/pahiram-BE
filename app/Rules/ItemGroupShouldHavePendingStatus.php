@@ -2,8 +2,8 @@
 
 namespace App\Rules;
 
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use Illuminate\Contracts\Validation\Rule;
-use App\Models\BorrowedItemStatus;
 use Illuminate\Support\Facades\DB;
 
 class ItemGroupShouldHavePendingStatus implements Rule
@@ -12,7 +12,7 @@ class ItemGroupShouldHavePendingStatus implements Rule
 
     public function __construct()
     {
-        $this->pendingApprovalId = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first()->id;
+        $this->pendingApprovalId = BorrowedItemStatusService::getPendingStatusId();
     }
 
     public function passes($attribute, $value)

@@ -27,8 +27,8 @@ class BorrowRequestResource extends JsonResource
                     'apc_id' => User::where('id', $this->endorsed_by)->first()->apc_id
                 ],
                 'department' => Department::getDepartmentBasedOnId($this->department_id),
-                'transac_status' => BorrowTransactionStatus::getStatusCodeById($this->transac_status_id),
-                'purpose' => BorrowPurpose::getPurposeCodeById($this->purpose_id),
+                'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
                 'user_defined_purpose' => $this->user_defined_purpose,
                 'penalty' => $this->penalty,
                 'remarks_by_endorser' => $this->remarks_by_endorser,
@@ -40,8 +40,8 @@ class BorrowRequestResource extends JsonResource
         $resource = [
             'id' => $this->id,
             'department' => Department::getDepartmentBasedOnId($this->department_id),
-            'transac_status' => BorrowTransactionStatus::getStatusCodeById($this->transac_status_id),
-            'purpose' => BorrowPurpose::getPurposeCodeById($this->purpose_id),
+            'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+            'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
             'user_defined_purpose' => $this->user_defined_purpose,
             'penalty' => $this->penalty,
             'remarks_by_endorser' => $this->remarks_by_endorser,

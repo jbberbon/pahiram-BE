@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -25,13 +26,14 @@ class AuthController extends Controller
             /**
              * 2. Access APCIS login API
              */
-            $response = Http::timeout(20)->post('http://167.172.74.157/api/login', $validatedData);
+            $response = Http::timeout(10)->post('http://167.172.74.157/api/login', $validatedData);
             $apiReturnData = json_decode($response->body(), true);
 
-            // login API returns false
+            // APCIS login API returns false
             if ($apiReturnData['status'] == false) {
                 return response($apiReturnData, 401);
             }
+
 
             $apiUserData = $apiReturnData['data']['user'];
             $apiCourseData = $apiReturnData['data']['course'];
@@ -40,7 +42,7 @@ class AuthController extends Controller
             /**
              * 3. Check COURSE if already exist in pahiram-BE Database
              */
-            $course = Course::where('course', $apiCourseData['course'])->first();
+            $course = Course::where('course_acronym', $apiCourseData['course_acronym'])->first();
             // Does not exist yet, add to db, else do nothing
             if (!$course) {
                 $course = Course::create($apiCourseData);
@@ -49,7 +51,8 @@ class AuthController extends Controller
             /**
              * 4. Check USER if already exist in pahiram-BE Database
              */
-            $user = User::where('email', $apiUserData['email'])->firstOrFail();
+            $user = User::where('apc_id', $apiUserData['apc_id'])->first();
+
             // Does not exist yet, add user to db
             if (!$user) {
                 $defaultData = NewUserDefaultData::defaultData($course);
@@ -69,32 +72,33 @@ class AuthController extends Controller
             $newToken = [
                 'user_id' => $user->id,
                 'token' => $apiTokenData['access_token'],
-                'expires_at' => $expiresAt
+                'expires_at' => $apiTokenData['expires_at']
             ];
+
             $apcisToken = ApcisToken::create($newToken);
 
-            
             // Success return values 
             // make dept_id as code, role also,
-            $roleCode = Role::where('id', $user->user_role_id)->firstOrFail()->role_code;
+            $role = Role::where('id', $user->user_role_id)->firstOrFail()->role;
 
-            $departmentCode = null;
+            $department = null;
             if ($user->department_id !== null) {
-                $departmentCode = Department::where('id', $user->department_id)->firstOrFail()->department_code;
+                $department = Department::where('id', $user->department_id)->firstOrFail()->department_acronym;
             }
 
             unset($user['department_id']);
             unset($user['user_role_id']);
+
             return response([
                 'status' => true,
                 'data' => [
                     'user' => [
                         ...$user->toArray(),
-                        'department_code' => $departmentCode,
-                        'role_code' => $roleCode
+                        'department_code' => $department,
+                        'role' => $role
                     ],
                     'pahiram_token' => $pahiramToken,
-                    'apcis_token' => $apcisToken['token']
+                    'apcis_token' => $apcisToken['token'],
                 ],
                 'method' => 'POST'
             ], 200);
@@ -123,9 +127,10 @@ class AuthController extends Controller
     /**
      * Logout current session.
      */
-    public function logout(User $user)
+    public function logout(Request $request)
     {
-        $user->currentAccessToken()->delete();
+        $currentToken = $request->user()->currentAccessToken();
+        $currentToken->delete();
 
         return response([
             'status' => true,
@@ -137,13 +142,15 @@ class AuthController extends Controller
     /**
      * Logout all devices.
      */
-    public function logoutAllDevices(User $user)
+    public function logoutAllDevices(Request $request)
     {
-        $user->tokens()->delete();
+        $allTokens = $request->user()->tokens();
+        $allTokens->delete();
+        ApcisToken::where('user_id', $request->user()->id)->delete();
 
         return response([
             'status' => true,
-            'message' => 'Logged out for all devices',
+            'message' => 'Logged out from all devices',
             'method' => 'DELETE'
         ], 200);
     }

@@ -14,18 +14,22 @@ use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
 use App\Models\User;
-use App\Services\EditBorrowRequestService;
-use App\Services\SubmitBorrowRequestService;
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
+use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use App\Utils\Constants\BorrowedItemStatusConst;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
+use App\Services\BorrowRequestService\EditBorrowRequestService;
+use App\Services\BorrowRequestService\SubmitBorrowRequestService;
 
 class ManageBorrowingRequestController extends Controller
 {
     protected $submitBorrowRequestService;
     protected $editBorrowRequestService;
-    // private $cancelledItemStatusCode = ItemStatusConsT::CANCELLED;
-    // private $maxActiveTransactions = 3;
+
+    private $cancelledTransacStatusId;
+    private $cancelledBorrowedItemStatusId;
 
     public function __construct(
         SubmitBorrowRequestService $submitBorrowRequestService,
@@ -33,26 +37,21 @@ class ManageBorrowingRequestController extends Controller
     ) {
         $this->submitBorrowRequestService = $submitBorrowRequestService;
         $this->editBorrowRequestService = $editBorrowRequestService;
+
+        $this->cancelledTransacStatusId = BorrowTransactionStatusService::getCancelledTransactionId();
+        $this->cancelledBorrowedItemStatusId = BorrowedItemStatusService::getCancelledStatusId();
     }
+
     /**
      *  Display a listing of the borrow request resource.
      */
     public function index()
     {
         try {
-            $user = Auth::user();
-            $requestList = BorrowTransaction::where('borrower_id', $user->id)->get();
-
-            if ($requestList->isEmpty()) {
-                return response([
-                    'status' => true,
-                    'message' => "No Borrowing Request Sent",
-                    'method' => "GET"
-                ], 200);
-            }
+            $userId = Auth::id();
+            $requestList = BorrowTransaction::where('borrower_id', $userId)->get();
 
             $requestCollection = new BorrowRequestCollection($requestList);
-
             return response([
                 'status' => true,
                 'data' => $requestCollection,
@@ -68,6 +67,9 @@ class ManageBorrowingRequestController extends Controller
         }
     }
 
+    /**
+     *  Display borrow request resource details
+     */
     public function getBorrowRequest(GetBorrowRequest $borrowRequest)
     {
         $validatedData = $borrowRequest->validated();
@@ -97,21 +99,26 @@ class ManageBorrowingRequestController extends Controller
         }
     }
 
-    public function getOngoingRequest()
-    {
-
-    }
-
     /** 
      *  Submit borrowing request
      */
     public function submitBorrowRequest(SubmitBorrowRequest $borrowRequest)
     {
+        /**
+         * LOGIC!!
+         * 01. Check if the user does not want to edit/add items. If true, FINISH.
+         * 02. Get all items with "active" status in the items table.
+         * 03. Check the borrowed_items table to determine which items are available on the specified date.
+         * 04. If the requested quantity is greater than the available quantity, fail.
+         * 05. If the requested quantity is less than the available quantity, shuffle and choose items.
+         * 06. Insert a new borrowing transaction.
+         * 07. Insert new borrowed items.
+         * 08. If successful, return a success response; otherwise, return an error response.
+         */
         $validatedData = $borrowRequest->validated();
-        $userId = Auth::user()->id;
+        $userId = Auth::id();
 
-        // return $validatedData;
-        // 01. Check if user has > 3 active transactions
+        // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
         $maxTransactionCheck = $this->submitBorrowRequestService->checkMaxTransactions($userId);
         if ($maxTransactionCheck) {
             return $maxTransactionCheck;
@@ -137,8 +144,9 @@ class ManageBorrowingRequestController extends Controller
         try {
             // 06. Insert new borrowing transaction
             $newBorrowRequest = $this->submitBorrowRequestService->insertNewBorrowingTransaction($validatedData, $userId);
+
             // 07. Insert new borrowed items
-            $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenItems, $newBorrowRequest);
+            $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenItems, $newBorrowRequest->id);
 
             if (!$newBorrowRequest || !$newBorrowedItems) {
                 return response([
@@ -194,19 +202,33 @@ class ManageBorrowingRequestController extends Controller
          */
         $validatedData = $editBorrowRequest->validated();
         $requestId = $validatedData['requestId'];
-        $requestData = $validatedData['request_data'];
+        $requestData = null;
+        // $requestData = $validatedData['request_data'];
 
         $cancelledItems = [];
         $editedItems = [];
         $addNewItems = [];
+        $borrowRequestArgs = null;
+
+        // Check if Request_Data field is provided 
+        if (isset($validatedData['request_data'])) {
+            $requestData = $validatedData['request_data'];
+            // Prepare Transaction Data Payload for DB UPDATE QUERY
+            $borrowRequestArgs = $this->editBorrowRequestService->prepareRequestUpdateArgs($requestData);
+        }
+
         if (isset($validatedData['add_new_items'])) {
             $addNewItems = $validatedData['add_new_items'];
         }
 
-        $borrowRequestArgs = $this->editBorrowRequestService->prepareRequestUpdateArgs($requestData);
 
         // 01. User DOES NOT want to edit any borrowed item
-        if (!isset($validatedData['edit_existing_items']) && !isset($validatedData['add_new_items'])) {
+        if (
+            isset($validatedData['request_data']) &&
+            !isset($validatedData['edit_existing_items']) &&
+            !isset($validatedData['add_new_items']
+        )
+        ) {
             try {
                 // Update Transaction
                 $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
@@ -219,7 +241,7 @@ class ManageBorrowingRequestController extends Controller
             } catch (\Exception $e) {
                 return response([
                     'status' => false,
-                    'message' => 'An error occurred while submittitng your request.',
+                    'message' => 'Transaction doesn`t exist based on ID',
                     'error' => $e->getMessage(),
                     'method' => 'POST',
                 ], 500);
@@ -244,14 +266,14 @@ class ManageBorrowingRequestController extends Controller
 
         // 03. Prepare Data for Querying for each
         // 03.1 Cancel Items
-        // $cancelQuery = $this->editBorrowRequestService->cancelQuery($cancelledItems, $requestId);
-        // if (!$cancelQuery) {
-        //     return response([
-        //         'status' => false,
-        //         'message' => 'Something went wrong while cancelling your items.',
-        //         'method' => 'PATCH',
-        //     ], 500);
-        // }
+        $cancelQuery = $this->editBorrowRequestService->cancelQuery($cancelledItems, $requestId);
+        if (!$cancelQuery) {
+            return response([
+                'status' => false,
+                'message' => 'Something went wrong while cancelling your items.',
+                'method' => 'PATCH',
+            ], 500);
+        }
 
         // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
         $chosenNewItems = [];
@@ -316,7 +338,6 @@ class ManageBorrowingRequestController extends Controller
             }
             // If all fields are being updated
             // DO NOTHING as all fields are already present
-
         }
 
         // 03.3.3 PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
@@ -340,45 +361,38 @@ class ManageBorrowingRequestController extends Controller
 
         // 04. Query DB using final data for each part
         // 04.1 Request Data
-        try {
-            // Update Transaction
-            $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
-            $currentBorrowRequest->update($borrowRequestArgs);
-        } catch (\Exception $e) {
-            return response([
-                'status' => false,
-                'message' => 'An error occurred while editing your request data.',
-                'error' => $e->getMessage(),
-                'method' => 'POST',
-            ], 500);
-        }
-
-        try {
-            // 07. Insert new borrowed items
-            $borrowRequest = BorrowTransaction::where('id', $requestId)->first();
-            $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $borrowRequest);
-            $editedBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenEditItems, $borrowRequest);
-
-            if (!$editedBorrowedItems || !$newBorrowedItems) {
+        if ($requestData && $borrowRequestArgs) {
+            try {
+                // Update Transaction
+                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
+                $currentBorrowRequest->update($borrowRequestArgs);
+            } catch (\Exception $e) {
                 return response([
                     'status' => false,
-                    'message' => 'Unable to insert new transaction and its corresponding items.',
+                    'message' => 'Couldn`t find transaction based on given ID',
+                    'error' => $e->getMessage(),
                     'method' => 'POST',
                 ], 500);
             }
+        }
 
-            // FOR Debugging ONLY
-            // return response([
-            //     'status' => true,
-            //     'message' => 'Successfully submitted borrow request',
-            //     'borrow_request' => $newBorrowRequest,
-            //     'borrowed_items' => $newBorrowedItems,
-            //     'method' => 'POST',
-            // ], 200);
+        // 07. Insert new borrowed items
+        try {
+            $borrowRequest = BorrowTransaction::findOrFail($requestId);
+            $newBorrowedItems = null;
+            $editedBorrowedItems = null;
+
+            if (count($chosenNewItems) > 0) {
+                $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $borrowRequest->id);
+            }
+
+            if (count($chosenEditItems) > 0) {
+                $editedBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenEditItems, $borrowRequest->id);
+            }
 
             return response([
                 'status' => true,
-                'message' => 'Successfully submitted borrow request',
+                'message' => 'Successfully edited borrow request',
                 'method' => 'POST',
             ], 200);
 
@@ -400,17 +414,12 @@ class ManageBorrowingRequestController extends Controller
         try {
             $validatedData = $cancelBorrowRequest->validated();
 
-            $cancelledTransacStatus = BorrowTransactionStatus::where('transac_status_code', 7070)->firstOrFail();
+            $transaction = BorrowTransaction::findOrFail($validatedData['borrowRequest']);
+            $transaction->update(['transac_status_id' => $this->cancelledTransacStatusId]);
 
-            BorrowTransaction::where('id', $validatedData['borrowRequest'])
-                ->update(['transac_status_id' => $cancelledTransacStatus->id]);
-
-            $cancelledItemStatusCode = BorrowedItemStatusConst::CANCELLED;
-            $cancelledItemStatusId = BorrowedItemStatus::where('borrowed_item_status_code', $cancelledItemStatusCode)->firstOrFail()->id;
-
+            // Cancel the BORROWED ITEMS too
             BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
-                ->update(['borrowed_item_status_id' => $cancelledItemStatusId]);
-
+                ->update(['borrowed_item_status_id' => $this->cancelledBorrowedItemStatusId]);
 
             return response([
                 'status' => true,

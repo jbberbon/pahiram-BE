@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\BorrowRequestService;
 
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
@@ -11,6 +11,7 @@ use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
 use App\Models\User;
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Utils\Constants\BorrowedItemStatusConst;
 use App\Utils\Constants\ItemStatusConst;
 use App\Services\ItemAvailability;
@@ -19,17 +20,14 @@ use Illuminate\Support\Facades\DB;
 
 class EditBorrowRequestService
 {
-    private $cancelledBorrowedItemStatusCode;
-    private $pendingApprovalCode;
-    private $pendingApprovalId;
+    private $pendingBorrowedItemStatusId;
     private $cancelledBorrowedItemStatusId;
 
     public function __construct()
     {
-        $this->cancelledBorrowedItemStatusCode = BorrowedItemStatusConst::CANCELLED;
-        $this->pendingApprovalCode = BorrowedItemStatusConst::PENDING;
-        $this->pendingApprovalId = BorrowedItemStatus::where('borrowed_item_status_code', $this->pendingApprovalCode)->first()->id;
-        $this->cancelledBorrowedItemStatusId = BorrowedItemStatus::where('borrowed_item_status_code', $this->cancelledBorrowedItemStatusCode)->first()->id;
+        // Borrowed Item Statuses
+        $this->pendingBorrowedItemStatusId = BorrowedItemStatusService::getPendingStatusId();
+        $this->cancelledBorrowedItemStatusId = BorrowedItemStatusService::getCancelledStatusId();
     }
     public function prepareRequestUpdateArgs($validatedData)
     {
@@ -38,14 +36,16 @@ class EditBorrowRequestService
         $borrowRequestArgs['endorsed_by'] = User::getUserIdBasedOnApcId($validatedData['endorsed_by']);
 
 
-        if (isset($borrowRequestArgs['purpose_code'])) {
-            unset($borrowRequestArgs['purpose_code']);
+        if (isset($borrowRequestArgs['purpose'])) {
+            // Change Purpose to Purpose_id 
+            $borrowRequestArgs['purpose_id'] = BorrowPurpose::getIdByPurpose($borrowRequestArgs['purpose']);
+            // Delete the original purpose request field as it is no longer needed
+            unset($borrowRequestArgs['purpose']);
         }
         if (isset($borrowRequestArgs['apcis_token'])) {
+            // Remove APCIS Token as it is not part of the Transaction Table
             unset($borrowRequestArgs['apcis_token']);
         }
-
-        $borrowRequestArgs['purpose_id'] = BorrowPurpose::where('purpose_code', $validatedData['purpose_code'])->first()->id;
 
         return $borrowRequestArgs;
     }
@@ -130,7 +130,7 @@ class EditBorrowRequestService
         if (count($cancelledItemGroupIds) > 0) {
             try {
                 // Initialize an array to store retrieved pending item IDs
-                $retrievedPendingItemIds = [];
+                // $retrievedPendingItemIds = [];
                 $retrievedPendingItemData = [];
 
                 // Loop through each cancelled item group ID
@@ -138,7 +138,7 @@ class EditBorrowRequestService
                     // Query the database to retrieve pending item IDs associated with the cancelled item group
                     $result = DB::table('borrowed_items')
                         ->where('borrowing_transac_id', $requestId)
-                        ->where('borrowed_item_status_id', $this->pendingApprovalId)
+                        ->where('borrowed_item_status_id', $this->pendingBorrowedItemStatusId)
                         ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                         ->where('items.item_group_id', $cancelledItemGroupId)
                         ->select('borrowed_items.id as borrowed_item_id', 'borrowed_items.start_date', 'borrowed_items.due_date')
@@ -176,6 +176,8 @@ class EditBorrowRequestService
                 return false;
 
             }
+        } else {
+            return true;
         }
     }
 

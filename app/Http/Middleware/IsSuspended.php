@@ -19,12 +19,11 @@ class IsSuspended
     {
         $user = $request->user();
         $accStatus = $user->getAccountStatus();
-        $accStatusCode = $user->getAccountStatusCode();
 
-        $activeCode = "1010";
+        $activeCode = "ACTIVE";
         $method = $request->method();
 
-        if ($accStatusCode != $activeCode) {
+        if ($accStatus != $activeCode) {
             abort(response([
                 'status' => false,
                 'message' => 'Your account is ' . $accStatus,

@@ -2,22 +2,33 @@
 
 namespace App\Rules;
 
+use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use Illuminate\Contracts\Validation\Rule;
 use App\Models\BorrowTransactionStatus;
 
 class CancelTransacRule implements Rule
 {
+    private $pendingEndorserApprovalTransacStatusId;
+    private $pendingBorrowingApprovalTransacStatusId;
+
+    private $approvedTransacStatusId;
+
+    public function __construct()
+    {
+        $this->pendingEndorserApprovalTransacStatusId = BorrowTransactionStatusService::getPendingEndorserApprovalTransactionId();
+        $this->pendingBorrowingApprovalTransacStatusId = BorrowTransactionStatusService::getPendingBorrowingApprovalTransactionId();
+        $this->approvedTransacStatusId = BorrowTransactionStatusService::getApprovedTransactionId();
+    }
+
     public function passes($attribute, $value)
     {
-        $pending = BorrowTransactionStatus::where('transac_status_code', 1010)->first();
-        $approved = BorrowTransactionStatus::where('transac_status_code', 2020)->first();
-
         return \DB::table('borrow_transactions')
             ->where('id', $value)
-            ->where(function ($query) use ($pending, $approved) {
-                $query->where('transac_status_id', $pending->id)
-                    ->orWhere('transac_status_id', $approved->id);
-            })
+            ->whereIn('transac_status_id', [
+                $this->pendingEndorserApprovalTransacStatusId,
+                $this->pendingBorrowingApprovalTransacStatusId,
+                $this->approvedTransacStatusId,
+            ])
             ->exists();
     }
 

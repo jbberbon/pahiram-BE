@@ -20,4 +20,11 @@ class ItemStatus extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getIdByStatus($status)
+    {
+        $status = self::where('item_status', $status)->first();
+
+        return $status ? $status->id : null;
+    }
 }

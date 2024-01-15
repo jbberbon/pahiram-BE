@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\BorrowTransaction;
 
-use App\Models\BorrowPurpose;
 use App\Rules\CheckMaxItemGroupCountPerRequest;
 use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
@@ -15,17 +14,14 @@ use Illuminate\Foundation\Http\FormRequest;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Utils\Constants\BorrowPurposeConst;
 use Illuminate\Validation\Rule;
 use App\Rules\ItemGroupShouldHavePendingStatus;
 
 class EditBorrowRequest extends FormRequest
 {
-    private $otherPurposeCode = BorrowPurposeConst::OTHER;
     private $errorCode = 422;
     public function rules(): array
     {
-        $purposeOther = BorrowPurpose::where('purpose_code', $this->otherPurposeCode)->first();
         return [
             'requestId' => [
                 'required',
@@ -35,15 +31,17 @@ class EditBorrowRequest extends FormRequest
              * Request Data ----------------------------------------------------
              */
             'request_data' => [
+                'sometimes',
                 'array',
                 'min:1',
                 'max:5',
             ],
             'request_data.endorsed_by' => [
+                'sometimes',
                 'string',
                 'min:5',
                 'max:15',
-                Rule::notIn([auth()->user()->apc_id,]),
+                Rule::notIn([auth()->user()->apc_id]),
                 new ExistsInDbOrApcis,
             ],
             'request_data.apcis_token' => [
@@ -51,37 +49,26 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
-            'request_data.department_code' => [
-                'integer',
-                'digits:4',
-                'exists:departments,department_code'
+            'request_data.department' => [
+                'sometimes',
+                'string',
+                'min:2',
+                'exists:departments,department_acronym'
             ],
-            'request_data.purpose_code' => [
-                'integer',
-                'digits:4',
-                'exists:borrow_purposes,purpose_code'
+            'request_data.purpose' => [
+                // 'sometimes',
+                'string',
+                'min:4',
+                'exists:borrow_purposes,purpose'
             ],
             'request_data.user_defined_purpose' => [
+                'sometimes',
                 'string',
                 'regex:/^[a-zA-Z0-9\s|]+$/',
                 'min:5',
                 'max:30'
             ],
-            // 'request_data.department_id' => [
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9-]+$/',
-            //     'exists:departments,id'
-            // ],
-            // 'request_data.purpose_id' => [
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9-]+$/',
-            //     'exists:borrow_purposes,id'
-            // ],
-            // 'request_data.user_defined_purpose' => [
-            //     'string',
-            //     'min:5',
-            //     'max:50'
-            // ],
+
             /**
              * Edit Existing items ----------------------------------------------------
              */
@@ -121,7 +108,7 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
                 'date_format:Y-m-d H:i:s',
-                'after:items.*.start_date',
+                'after:edit_existing_items.*.start_date',
             ],
             'edit_existing_items.*.quantity' => [
                 'prohibited_if:edit_existing_items.*.is_cancelled,true',
@@ -136,13 +123,14 @@ class EditBorrowRequest extends FormRequest
              * Add New items ----------------------------------------------------
              */
             'add_new_items' => [
+                'sometimes',
                 'array',
                 'min:1',
                 new UniqueIds,
                 new UniqueIdsAcrossArrays($this->all()),
 
                 // On controller because its hard to implement here
-                new CheckMaxItemGroupCountPerRequest($this->all()), 
+                new CheckMaxItemGroupCountPerRequest($this->all()),
             ],
             'add_new_items.*' => [
                 'required',
@@ -170,7 +158,7 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
                 'date_format:Y-m-d H:i:s',
-                'after:items.*.start_date',
+                'after:add_new_items.*.start_date',
             ],
             'add_new_items.*.quantity' => [
                 'required',

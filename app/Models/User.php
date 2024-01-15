@@ -24,7 +24,6 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
-        'is_admin',
         'user_role_id',
         'course_id',
         'acc_status_id',
@@ -37,7 +36,6 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        // 'id',
         'password',
         'created_at',
         'updated_at'
@@ -59,13 +57,6 @@ class User extends Authenticatable
     public function getUserRole()
     {
         return $this->belongsTo(Role::class, 'user_role');
-    }
-    public function getAccountStatusCode()
-    {
-        $statusId = $this->acc_status_id;
-        $accountStatus = AccountStatus::where('id', $statusId)->first();
-
-        return $accountStatus ? $accountStatus->acc_status_code : null;
     }
     public function getAccountStatus()
     {

@@ -5,12 +5,11 @@ namespace App\Rules;
 use App\Models\BorrowedItem;
 use App\Models\Item;
 use App\Models\ItemStatus;
-use App\Utils\Constants\ItemStatusConst;
 use Illuminate\Contracts\Validation\Rule;
 
 class HasEnoughActiveItems implements Rule
 {
-    private $ACTIVE = ItemStatusConst::ACTIVE;
+    private $ACTIVE = 'ACTIVE';
     public function passes($attribute, $value): bool
     {
         if (!isset($value['quantity'])) {
@@ -39,7 +38,7 @@ class HasEnoughActiveItems implements Rule
 
         $itemGroupId = optional($borrowedItem->item->itemGroup)->id;
         $quantityRequested = $value['quantity'];
-        $activeStatus = ItemStatus::where('item_status_code', $this->ACTIVE)->first();
+        $activeStatus = ItemStatus::where('item_status', $this->ACTIVE)->first();
 
         return $this->checkQuantity($itemGroupId, $activeStatus->id, $quantityRequested);
     }
@@ -48,7 +47,7 @@ class HasEnoughActiveItems implements Rule
     {
         $itemGroupId = $value['item_group_id'];
         $quantityRequested = $value['quantity'];
-        $activeStatus = ItemStatus::where('item_status_code', 1010)->first();
+        $activeStatus = ItemStatus::where('item_status', $this->ACTIVE)->first();
 
         return $this->checkQuantity($itemGroupId, $activeStatus->id, $quantityRequested);
     }
@@ -66,6 +65,6 @@ class HasEnoughActiveItems implements Rule
 
     public function message(): string
     {
-        return 'Borrow request quantity exceeds unit quantity in circulation';
+        return 'Requested item quantity exceeds unit quantity in circulation';
     }
 }

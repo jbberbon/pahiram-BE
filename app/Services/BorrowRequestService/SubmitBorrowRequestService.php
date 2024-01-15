@@ -1,50 +1,66 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\BorrowRequestService;
 
 use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Models\BorrowPurpose;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
 use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
-use App\Models\ItemStatus;
 use App\Models\User;
-use App\Utils\Constants\BorrowedItemStatusConst;
-use App\Utils\Constants\ItemStatusConst;
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
+use App\Services\RetrieveStatusService\ItemStatusService;
 use App\Services\ItemAvailability;
 use Illuminate\Http\Response;
 
+use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
+
 class SubmitBorrowRequestService
 {
-    private $maxActiveTransactions = 3;
-    private $activeItemStatusCode = ItemStatusConst::ACTIVE;
-    private $pendingBorrowedItemStatusCode = BorrowedItemStatusConst::PENDING;
+    private $itemAvailability;
+    const maxActiveTransactions = 3;
 
-    private $pendingApprovalTransactionId;
+    // Item Statuses
+    private $activeItemStatusId;
+
+    // Transac Statuses
+    private $pendingEndorserApprovalTransactionId;
+    private $pendingBorrowingApprovalTransactionId;
     private $approvedTransactionId;
+    private $overdueTransactionId;
 
-
-    public function __construct()
+    public function __construct(ItemAvailability $itemAvailability)
     {
-        $this->pendingApprovalTransactionId = BorrowTransactionStatus::where('transac_status_code', 1010)->first()->id;
-        $this->approvedTransactionId = BorrowTransactionStatus::where('transac_status_code', 2020)->first()->id;
+        $this->itemAvailability = $itemAvailability;
+
+        // Transac Statuses
+        $this->pendingEndorserApprovalTransactionId = BorrowTransactionStatusService::getPendingEndorserApprovalTransactionId();
+        $this->pendingBorrowingApprovalTransactionId = BorrowTransactionStatusService::getPendingBorrowingApprovalTransactionId();
+
+        $this->approvedTransactionId = BorrowTransactionStatusService::getApprovedTransactionId();
+        $this->overdueTransactionId = BorrowTransactionStatusService::getOverdueTransactionId();
+
+        // Item Statuses
+        $this->activeItemStatusId = ItemStatusService::getActiveStatusId();
     }
     /**
      *  01. Check if user has > 3 active transactions
      */
     public function checkMaxTransactions($userId)
     {
+        $transactionStatusIds = [
+            $this->approvedTransactionId,
+            $this->pendingEndorserApprovalTransactionId,
+            $this->pendingBorrowingApprovalTransactionId,
+            $this->overdueTransactionId
+        ];
         $activeTransactions = BorrowTransaction::where('borrower_id', $userId)
-            ->where(function ($query) {
-                $query->where('transac_status_id', $this->approvedTransactionId)
-                    ->orWhere('transac_status_id', $this->pendingApprovalTransactionId);
-            })
+            ->whereIn('transac_status_id', $transactionStatusIds)
             ->count();
 
-        if ($activeTransactions >= $this->maxActiveTransactions) {
+        if ($activeTransactions >= self::maxActiveTransactions) {
             return response()->json([
                 'status' => false,
                 'message' => 'Complete your other 3 or more transactions first.',
@@ -61,14 +77,13 @@ class SubmitBorrowRequestService
      */
     public function getActiveItems(array $requestedItems): array
     {
-        $activeItemStatusId = ItemStatus::where('item_status_code', $this->activeItemStatusCode)->value('id');
         $activeItems = [];
 
         foreach ($requestedItems as $item) {
             $itemGroupId = $item['item_group_id'];
             $activeItems[$itemGroupId] = [
                 'item_id' => Item::where('item_group_id', $itemGroupId)
-                    ->where('item_status_id', $activeItemStatusId)
+                    ->where('item_status_id', $this->activeItemStatusId)
                     ->pluck('id'),
                 'start_date' => $item['start_date'],
                 'return_date' => $item['return_date'],
@@ -90,7 +105,7 @@ class SubmitBorrowRequestService
                 $returnDate = $items['return_date'];
 
                 // Is the specific item available?
-                $isAvailable = ItemAvailability::isAvailable($itemId, $startDate, $returnDate);
+                $isAvailable = $this->itemAvailability->isAvailable($itemId, $startDate, $returnDate);
 
                 if (!$isAvailable) {
                     // Delete the id that has an overlapping sched
@@ -159,8 +174,9 @@ class SubmitBorrowRequestService
         $transactionData = $validatedData;
         unset($transactionData['items']);
 
-        $purposeId = BorrowPurpose::where('purpose_code', $transactionData['purpose_code'])->first()->id;
-        $departmentId = Department::where('department_code', $transactionData['department_code'])->first()->id;
+        // QUERY the purpose and department IDS
+        $purposeId = BorrowPurpose::getIdByPurpose($transactionData['purpose']);
+        $departmentId = Department::getIdBasedOnAcronym($transactionData['department']);
         $userDefinedPurpose = $transactionData['user_defined_purpose'];
 
 
@@ -168,11 +184,11 @@ class SubmitBorrowRequestService
         // Convert APC_ID to Pahiram ID
         // Endorser is Indicated in the request
         if (isset($transactionData['endorsed_by'])) {
-            $transactionData['endorsed_by'] = User::where('apc_id', $transactionData['endorsed_by'])->first()->id;
+            $transactionData['endorsed_by'] = User::getUserIdBasedOnApcId($transactionData['endorsed_by']);
             $newBorrowRequestArgs = [
                 'endorsed_by' => $transactionData['endorsed_by'],
                 'borrower_id' => $userId,
-                'transac_status_id' => BorrowTransactionStatus::getStatusIdByCode(1010),
+                'transac_status_id' => $this->pendingEndorserApprovalTransactionId,
                 'purpose_id' => $purposeId,
                 'department_id' => $departmentId,
                 'user_defined_purpose' => $userDefinedPurpose
@@ -181,7 +197,7 @@ class SubmitBorrowRequestService
 
         $newBorrowRequestArgs = [
             'borrower_id' => $userId,
-            'transac_status_id' => BorrowTransactionStatus::getStatusIdByCode(1010),
+            'transac_status_id' => $this->pendingBorrowingApprovalTransactionId,
             'purpose_id' => $purposeId,
             'department_id' => $departmentId,
             'user_defined_purpose' => $userDefinedPurpose
@@ -192,10 +208,11 @@ class SubmitBorrowRequestService
 
         return $newBorrowRequest;
     }
+
     /**
      *  07. Insert new borrowed items
      */
-    public function insertNewBorrowedItems($chosenItems, $newBorrowRequest)
+    public function insertNewBorrowedItems($chosenItems, $newBorrowRequestId)
     {
         $newBorrowedItems = [];
         foreach ($chosenItems as $borrowedItem) {
@@ -204,11 +221,11 @@ class SubmitBorrowRequestService
 
             foreach ($borrowedItem['item_id'] as $itemId) {
                 $newBorrowedItemsArgs = [
-                    'borrowing_transac_id' => $newBorrowRequest->id,
+                    'borrowing_transac_id' => $newBorrowRequestId,
                     'item_id' => $itemId,
                     'start_date' => $borrowedItem['start_date'],
                     'due_date' => $borrowedItem['return_date'],
-                    'borrowed_item_status_id' => BorrowedItemStatus::getStatusIdBasedOnCode($this->pendingBorrowedItemStatusCode)
+                    'borrowed_item_status_id' => BorrowedItemStatusService::getPendingStatusId()
                 ];
                 $newBorrowedItems[$itemId] = BorrowedItem::create($newBorrowedItemsArgs);
             }

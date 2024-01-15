@@ -12,7 +12,7 @@ class BorrowTransactionStatus extends Model
 
     protected $fillable = [
         'transac_status',
-        'transac_status_code',
+        // 'transac_status_code',
         'description'
     ];
 
@@ -24,12 +24,12 @@ class BorrowTransactionStatus extends Model
     /**
      * Get the id of a specific transaction status by code.
      *
-     * @param int $statusCode
+     * 
      * @return string|null
      */
-    public static function getStatusIdByCode($statusCode)
+    public static function getIdByStatus($status)
     {
-        $status = self::where('transac_status_code', $statusCode)->first();
+        $status = self::where('transac_status', $status)->first();
 
         return $status ? $status->id : null;
     }
@@ -40,12 +40,12 @@ class BorrowTransactionStatus extends Model
 
         return $status ? $status->transac_status : null;
     }
-    public static function getStatusCodeById($statusId)
-    {
-        $status = self::where('id', $statusId)->first();
+    // public static function getStatusById($statusId)
+    // {
+    //     $status = self::where('id', $statusId)->first();
 
-        return $status ? $status->transac_status_code : null;
-    }
+    //     return $status ? $status->transac_status : null;
+    // }
 
 
 

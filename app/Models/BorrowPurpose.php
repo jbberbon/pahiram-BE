@@ -22,16 +22,22 @@ class BorrowPurpose extends Model
         'updated_at'
     ];
 
+    public static function getIdByPurpose($purpose)
+    {
+        $purpose = self::where('purpose', $purpose)->first();
+
+        return $purpose ? $purpose->id : null;
+    }
     public static function getPurposeById($purposeId)
     {
         $purpose = self::where('id', $purposeId)->first();
 
-        return $purpose->general_purpose;
+        return $purpose ? $purpose->purpose : null;
     }
-    public static function getPurposeCodeById($purposeId)
-    {
-        $purpose = self::where('id', $purposeId)->first();
+    // public static function getPurposeCodeById($purposeId)
+    // {
+    //     $purpose = self::where('id', $purposeId)->first();
 
-        return $purpose->purpose_code;
-    }
+    //     return $purpose->purpose_code;
+    // }
 }

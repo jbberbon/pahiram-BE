@@ -4,6 +4,7 @@ namespace App\Rules;
 
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Utils\Constants\BorrowedItemStatusConst;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -20,8 +21,7 @@ class CheckMaxItemGroupCountPerRequest implements Rule
     {
         $this->requestData = $requestData;
         $this->maxCount = 10;
-        $this->pendingApprovalCode = BorrowedItemStatusConst::PENDING;
-        $this->pendingApprovalId = BorrowedItemStatus::where('borrowed_item_status_code', $this->pendingApprovalCode)->first()->id;
+        $this->pendingApprovalId = BorrowedItemStatusService::getPendingStatusId();
 
     }
     public function passes($attribute, $value)

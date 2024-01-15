@@ -4,21 +4,40 @@ namespace App\Services;
 
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use Carbon\Carbon;
 
 class ItemAvailability
 {
-    public static function isAvailable($itemId, $startDate, $returnDate)
+    private $pendingStatusBorrowedItemId;
+    private $inPossessionStatusBorrowedItemId;
+    private $overdueStatusBorrowedItemId;
+
+
+    public function __construct()
+    {
+        $this->pendingStatusBorrowedItemId = BorrowedItemStatusService::getPendingStatusId();
+        $this->inPossessionStatusBorrowedItemId = BorrowedItemStatusService::getInPossessionStatusId();
+        $this->overdueStatusBorrowedItemId = BorrowedItemStatusService::getOverdueStatusId();
+    }
+
+
+
+    public function isAvailable($itemId, $startDate, $returnDate)
     {
         $dateFormat = "Y-m-d H:i:s";
         $requestStartDate = Carbon::createFromFormat($dateFormat, $startDate);
         $requestReturnDate = Carbon::createFromFormat($dateFormat, $returnDate);
 
-        $pendingApprovalStatus = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first();
-        $borrowedStatus = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first();
-        $overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status_code', 5050)->first();
+        // $pendingApprovalStatus = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first();
+        // $borrowedStatus = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first();
+        // $overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status_code', 5050)->first();
 
-        $relevantStatuses = [$pendingApprovalStatus->id, $borrowedStatus->id];
+        $relevantStatuses = [
+            $this->pendingStatusBorrowedItemId,
+            $this->inPossessionStatusBorrowedItemId,
+            $this->overdueStatusBorrowedItemId,
+        ];
         $borrowedItems = BorrowedItem::where('item_id', $itemId)
             ->whereIn('borrowed_item_status_id', $relevantStatuses)
             ->get();
@@ -41,9 +60,9 @@ class ItemAvailability
                 }
             }
             // Check if the item is already overdue
-            if ($borrowedItem->borrowed_item_status_id == $overdueReturnStatus->id) {
-                return false;
-            }
+            // if ($borrowedItem->borrowed_item_status_id == $overdueReturnStatus->id) {
+            //     return false;
+            // }
         }
 
         // No overlap detected, item is available

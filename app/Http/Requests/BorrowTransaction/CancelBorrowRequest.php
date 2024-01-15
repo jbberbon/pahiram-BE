@@ -15,17 +15,12 @@ use Illuminate\Validation\Rule;
 class CancelBorrowRequest extends FormRequest
 {
     private $errorCode = 422;
-    private $pending = null;
-    private $approved = null;
     public function rules(): array
     {
-        $this->pending = BorrowTransactionStatus::where('transac_status_code', 1010)->first();
-        $this->approved = BorrowTransactionStatus::where('transac_status_code', 2020)->first();
-
         return [
             'borrowRequest' => [
                 'required',
-                // 'exists:borrow_transactions,id',
+                'exists:borrow_transactions,id',
                 new TransactionBelongsToUser,
                 new CancelTransacRule
             ],

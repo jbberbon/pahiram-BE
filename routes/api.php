@@ -29,19 +29,19 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::group(['middleware' => ['is_suspended']], function () {
         Route::post('/user/borrow-request/submit', [ManageBorrowingRequestController::class, 'submitBorrowRequest']);
-        Route::get('/office/{officeCode}/item-model-list', [ItemGroupController::class, 'index']);
+        Route::patch('/user/borrow-request/{requestId}/edit', [ManageBorrowingRequestController::class, 'editBorrowRequest']);
+        // Route::get('/office/{officeCode}/item-model-list', [ItemGroupController::class, 'index']);
     });
     Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
-    Route::patch('/user/borrow-request/{requestId}/edit', [ManageBorrowingRequestController::class, 'editBorrowRequest']);
     Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
     Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
 
 
-    // Route::group(['middleware' => ['is_employee']], function () {
-        // Route::group(['middleware' => ['is_lending_employee']], function () {
-            Route::get('/office/borrow-transaction', [ManageBorrowTransactionController::class, 'index']);
+    // // Route::group(['middleware' => ['is_employee']], function () {
+    //     // Route::group(['middleware' => ['is_lending_employee']], function () {
+    //         Route::get('/office/borrow-transaction', [ManageBorrowTransactionController::class, 'index']);
 
-        // });
-    // });
-    Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
+    //     // });
+    // // });
+    // Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
 });
