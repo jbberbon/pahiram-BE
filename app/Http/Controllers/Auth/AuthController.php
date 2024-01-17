@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Models\AccountStatus;
 use App\Models\ApcisToken;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Role;
+use App\Models\SystemAdmin;
 use App\Models\User;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
@@ -16,6 +18,15 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    private $systemAdmin;
+
+    private $course;
+
+    public function __construct(SystemAdmin $systemAdmin, Course $course)
+    {
+        $this->systemAdmin = $systemAdmin;
+        $this->course = $course;
+    }
     /**
      * Login Method
      */
@@ -86,16 +97,37 @@ class AuthController extends Controller
                 $department = Department::where('id', $user->department_id)->firstOrFail()->department_acronym;
             }
 
+            $accStatus = null;
+            if ($user->acc_status_id !== null) {
+                $accStatus = AccountStatus::where('id', $user->acc_status_id)->firstOrFail()->acc_status;
+            }
+
+            $isAdmin = false;
+            $isAdmin = $this->systemAdmin->isAdmin($user->id);
+
+            $course = null;
+            $course = $this->course->getCourseAcronymById($user->course_id);
+
+
+            // return $user;
             unset($user['department_id']);
             unset($user['user_role_id']);
+            unset($user['acc_status_id']);
+            unset($user['course_id']);
+            unset($user['id']);
+
+            // return $user;
 
             return response([
                 'status' => true,
                 'data' => [
                     'user' => [
                         ...$user->toArray(),
+                        'course' => $course,
                         'department_code' => $department,
-                        'role' => $role
+                        'role' => $role,
+                        'acc_status' => $accStatus,
+                        'is_admin' => $isAdmin,
                     ],
                     'pahiram_token' => $pahiramToken,
                     'apcis_token' => $apcisToken['token'],

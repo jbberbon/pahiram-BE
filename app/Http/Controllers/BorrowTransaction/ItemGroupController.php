@@ -19,8 +19,9 @@ class ItemGroupController extends Controller
     private $borrowedStatusId;
     public function __construct()
     {
-        $this->pendingStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first()->id;
-        $this->borrowedStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first()->id;
+        // FIXX
+        // $this->pendingStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first()->id;
+        // $this->borrowedStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first()->id;
     }
     /**
      * Search ItemGroup according to office
@@ -31,7 +32,7 @@ class ItemGroupController extends Controller
         $itemGroups = ItemGroup::where('department_id', function ($query) use ($validatedData) {
             $query->select('id')
                 ->from('departments')
-                ->where('department_code', $validatedData['officeCode']);
+                ->where('department_acronym', $validatedData['departmentAcronym']);
         })->get();
 
         return response([
@@ -44,6 +45,7 @@ class ItemGroupController extends Controller
     /**
      *  Retrieve UNAVAILABLE dates
      */
+    
     public function retrieveBookedDates(BookedDatesRequest $bookedDatesRequest)
     {
         $validatedData = $bookedDatesRequest->validated();

@@ -10,13 +10,12 @@ use Illuminate\Foundation\Http\FormRequest;
 class GetItemGroupByOfficeRequest extends FormRequest
 {
     private $errorCode = 422;
-    private $pending = null;
     public function rules(): array
     {
         return [
-            'officeCode' => [
+            'departmentAcronym' => [
                 'required',
-                'exists:departments,department_code'
+                'exists:departments,department_acronym'
             ],
 
         ];
@@ -24,7 +23,7 @@ class GetItemGroupByOfficeRequest extends FormRequest
     public function all($keys = null)
     {
         $data = parent::all($keys);
-        $data['officeCode'] = $this->route('officeCode');
+        $data['departmentAcronym'] = $this->route('departmentAcronym');
 
         return $data;
     }

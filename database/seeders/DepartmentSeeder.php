@@ -45,12 +45,12 @@ class DepartmentSeeder extends Seeder
                 'supervisor_id' => '',
                 'is_lending_office' => 0
             ],
-            [
-                'department' => 'Human Resources Office',
-                'department_acronym' => 'HR',
-                'supervisor_id' => '',
-                'is_lending_office' => 0
-            ],
+            // [ No longer needed according to business rule
+            //     'department' => 'Human Resources Office',
+            //     'department_acronym' => 'HR',
+            //     'supervisor_id' => '',
+            //     'is_lending_office' => 0
+            // ],
             [
                 'department' => 'No Designation',
                 'department_acronym' => 'N/A',

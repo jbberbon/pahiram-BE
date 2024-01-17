@@ -40,7 +40,7 @@ class RoleSeeder extends Seeder
             ],
             [
                 'role' => 'SUPERVISOR',
-                'description' => 'Office supervisor'
+                'description' => 'Head of the designated office'
             ],
         ];
         foreach ($roles as $role) {

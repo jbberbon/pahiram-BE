@@ -116,6 +116,7 @@ class ManageBorrowingRequestController extends Controller
          * 08. If successful, return a success response; otherwise, return an error response.
          */
         $validatedData = $borrowRequest->validated();
+        // return $validatedData;
         $userId = Auth::id();
 
         // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions

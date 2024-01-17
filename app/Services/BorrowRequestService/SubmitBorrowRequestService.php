@@ -180,6 +180,7 @@ class SubmitBorrowRequestService
         $userDefinedPurpose = $transactionData['user_defined_purpose'];
 
 
+
         $newBorrowRequestArgs = null;
         // Convert APC_ID to Pahiram ID
         // Endorser is Indicated in the request
@@ -193,15 +194,15 @@ class SubmitBorrowRequestService
                 'department_id' => $departmentId,
                 'user_defined_purpose' => $userDefinedPurpose
             ];
+        } else {
+            $newBorrowRequestArgs = [
+                'borrower_id' => $userId,
+                'transac_status_id' => $this->pendingBorrowingApprovalTransactionId,
+                'purpose_id' => $purposeId,
+                'department_id' => $departmentId,
+                'user_defined_purpose' => $userDefinedPurpose
+            ];
         }
-
-        $newBorrowRequestArgs = [
-            'borrower_id' => $userId,
-            'transac_status_id' => $this->pendingBorrowingApprovalTransactionId,
-            'purpose_id' => $purposeId,
-            'department_id' => $departmentId,
-            'user_defined_purpose' => $userDefinedPurpose
-        ];
 
         $newBorrowRequest = BorrowTransaction::create($newBorrowRequestArgs);
 

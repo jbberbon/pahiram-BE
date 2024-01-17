@@ -21,7 +21,7 @@ class NewUserDefaultData
 
         return [
             'user_role_id' => $role ? $role->id : null,
-            'course_id' => $course ? $course->id : null,
+            'course_id' => $course->id,
             'acc_status_id' => $accStatus ? $accStatus->id : null,
             'department_id' => $department ? $department->id : null,
         ];

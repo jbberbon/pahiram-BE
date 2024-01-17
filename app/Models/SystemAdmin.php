@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use App\Traits\Uuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Uuids;
 
-class Course extends Model
+class SystemAdmin extends Model
 {
     use HasFactory, Uuids;
 
     protected $fillable = [
-        'course',
-        'course_acronym',
+        'user_id'
     ];
 
     protected $hidden = [
@@ -20,10 +19,8 @@ class Course extends Model
         'updated_at'
     ];
 
-    public function getCourseAcronymById($courseId)
+    public function isAdmin($user)
     {
-        $course = self::where('id', $courseId)->first();
-
-        return $course ? $course->course_acronym : null;
+        return self::where('user_id', $user)->exists();
     }
 }
