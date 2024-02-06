@@ -14,12 +14,12 @@ class BorrowedItemStatusSeeder extends Seeder
     public function run(): void
     {
         $borrowed_item_status = [
+            // [
+            //     "borrowed_item_status" => "PENDING_ENDORSER_APPROVAL",
+            //     "description" => "Item is awaiting approval"
+            // ],
             [
-                "borrowed_item_status" => "PENDING_ENDORSER_APPROVAL",
-                "description" => "Item is awaiting approval"
-            ],
-            [
-                "borrowed_item_status" => "PENDING_BORROWING_APPROVAL",
+                "borrowed_item_status" => "PENDING_APPROVAL",
                 "description" => "Item is awaiting approval"
             ],
             [

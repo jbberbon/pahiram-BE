@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsEmployee
+class IsEndorser
 {
     /**
      * Handle an incoming request.
@@ -17,9 +17,8 @@ class IsEmployee
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
-        $userRole = $user->role->role;
-        $borrower = "BORROWER";
-        if (!$user || !$user->role) {
+        $employeeEmailSuffix = "@apc.edu.ph";
+        if (!$user || !\Str::endsWith($user->email, $employeeEmailSuffix)) {
             abort(response([
                 'status' => false,
                 'message' => 'Unauthorized access',
@@ -27,13 +26,6 @@ class IsEmployee
             ], 401));
         }
 
-        if ($userRole === $borrower) {
-            abort(response([
-                'status' => false,
-                'message' => 'Unauthorized access',
-                'method' => $request->method(),
-            ], 401));
-        }
         return $next($request);
     }
 }

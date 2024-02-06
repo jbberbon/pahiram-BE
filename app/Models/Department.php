@@ -26,7 +26,13 @@ class Department extends Model
     {
         $department = self::where('id', $departmentId)->first();
 
-        return $department->department . ' ' . '(' . $department->department_acronym . ')';
+        return $department ? $department->department . ' ' . '(' . $department->department_acronym . ')' : null;
+    }
+
+    public static function getAcronymById($departmentId)
+    {
+        $department = self::where('id', $departmentId)->first();
+        return $department ? $department->department_acronym : null;
     }
 
     public static function getIdBasedOnAcronym($acronym)

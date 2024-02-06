@@ -40,8 +40,8 @@ class DepartmentSeeder extends Seeder
                 'is_lending_office' => 0
             ],
             [
-                'department' => 'Finance and Accounting Office',
-                'department_acronym' => 'FAO',
+                'department' => 'Finance and Accounting Department',
+                'department_acronym' => 'FAD',
                 'supervisor_id' => '',
                 'is_lending_office' => 0
             ],

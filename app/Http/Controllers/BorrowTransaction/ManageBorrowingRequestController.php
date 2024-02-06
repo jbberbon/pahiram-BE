@@ -10,14 +10,9 @@ use App\Http\Requests\BorrowTransaction\SubmitBorrowRequest;
 use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
 use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
-use App\Models\BorrowTransactionStatus;
-use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
-use App\Utils\Constants\BorrowedItemStatusConst;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\Services\BorrowRequestService\EditBorrowRequestService;
@@ -76,10 +71,59 @@ class ManageBorrowingRequestController extends Controller
         try {
             $retrievedRequest = BorrowTransaction::where('id', $validatedData['borrowRequest'])->first();
 
+
             if ($retrievedRequest) {
+                $transactionDetails = new BorrowRequestResource($retrievedRequest);
+
+                $items = BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
+                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                    ->join(
+                        'borrowed_item_statuses',
+                        'borrowed_items.borrowed_item_status_id',
+                        '=',
+                        'borrowed_item_statuses.id'
+                    )
+                    ->groupBy(
+                        'item_groups.model_name',
+                        'item_groups.id',
+                        'borrowed_items.start_date',
+                        'borrowed_items.due_date',
+                        'borrowed_items.borrowed_item_status_id',
+
+                    )
+                    ->select(
+                        'item_groups.model_name',
+                        'item_groups.id',
+                        \DB::raw('COUNT(borrowed_items.id) as quantity'),
+                        'borrowed_items.start_date',
+                        'borrowed_items.due_date',
+                        'borrowed_item_statuses.borrowed_item_status'
+                    )
+                    ->get();
+
+                // Restructure the $items array
+                $restructuredItems = $items
+                    ->map(function ($item) {
+                        return [
+                            'item' => [
+                                'model_name' => $item->model_name,
+                                'id' => $item->id,
+                            ],
+                            'quantity' => $item->quantity,
+                            'start_date' => $item->start_date,
+                            'due_date' => $item->due_date,
+                            'borrowed_item_status' => $item->borrowed_item_status,
+                        ];
+
+                    });
+
                 return response([
                     'status' => true,
-                    'data' => new BorrowRequestResource($retrievedRequest),
+                    'data' => [
+                        'transac_data' => $transactionDetails,
+                        'items' => $restructuredItems,
+                    ],
                     'method' => 'GET',
                 ], 200);
             } else {
@@ -190,6 +234,7 @@ class ManageBorrowingRequestController extends Controller
         /**
          *  LOGIC!!
          *  01. If user does not want to edit/ add items, FINISH
+         *  01.1 If w/ Add new Items but no edit existing items
          *  02. Segregate edit_existing_items into TWO :: with is_cancelled && without is_cancelled
          *  03. Prepare Data for Querying for each
          *      03.1 Cancel Items
@@ -210,6 +255,7 @@ class ManageBorrowingRequestController extends Controller
         $editedItems = [];
         $addNewItems = [];
         $borrowRequestArgs = null;
+        $chosenNewItems = [];
 
         // Check if Request_Data field is provided 
         if (isset($validatedData['request_data'])) {
@@ -220,10 +266,28 @@ class ManageBorrowingRequestController extends Controller
 
         if (isset($validatedData['add_new_items'])) {
             $addNewItems = $validatedData['add_new_items'];
+
+            // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
+            if (count($addNewItems) > 0) {
+                // 03.2.1 Get all items with "active" status in items TB 
+                $activeItems = $this->submitBorrowRequestService->getActiveItems($addNewItems);
+
+                // 03.2.2 Check borrowed_items if which ones are available on that date
+                $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
+
+                // 03.2.3 Requested qty > available items on schedule (Fail)
+                $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
+                if ($isRequestQtyMoreThanAvailableQty) {
+                    return $isRequestQtyMoreThanAvailableQty;
+                }
+
+                // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
+                $chosenNewItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
+            }
+
         }
 
-
-        // 01. User DOES NOT want to edit any borrowed item
+        // 01. User DOES NOT want to edit or add items
         if (
             isset($validatedData['request_data']) &&
             !isset($validatedData['edit_existing_items']) &&
@@ -248,6 +312,70 @@ class ManageBorrowingRequestController extends Controller
                 ], 500);
             }
         }
+
+        // 01.01 Edit request data and Add items
+        if (
+            isset($validatedData['request_data']) &&
+            !isset($validatedData['edit_existing_items']) &&
+            isset($validatedData['add_new_items']
+        )
+        ) {
+            try {
+                // Update Transaction
+                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
+                $currentBorrowRequest->update($borrowRequestArgs);
+
+                // Add new items
+                if (count($chosenNewItems) > 0) {
+                    $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $currentBorrowRequest->id);
+                }
+
+                return response([
+                    'status' => true,
+                    'message' => 'Successfully edited borrow request',
+                    'method' => 'PATCH',
+                ], 200);
+            } catch (\Exception $e) {
+                return response([
+                    'status' => false,
+                    'message' => 'Transaction doesn`t exist based on ID',
+                    'error' => $e->getMessage(),
+                    'method' => 'POST',
+                ], 500);
+            }
+        }
+
+        // 01.02 Add items ONLY
+        if (
+            !isset($validatedData['request_data']) &&
+            !isset($validatedData['edit_existing_items']) &&
+            isset($validatedData['add_new_items']
+        )
+        ) {
+            try {
+                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
+
+                // Add new items
+                if (count($chosenNewItems) > 0) {
+                    $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $currentBorrowRequest->id);
+                }
+
+                return response([
+                    'status' => true,
+                    'message' => 'Successfully edited borrow request',
+                    'method' => 'PATCH',
+                ], 200);
+            } catch (\Exception $e) {
+                return response([
+                    'status' => false,
+                    'message' => 'Transaction doesn`t exist based on ID',
+                    'error' => $e->getMessage(),
+                    'method' => 'POST',
+                ], 500);
+            }
+        }
+
+
 
         // 02. Segregate edit_existing_items into TWO :: with is_cancelled && without is_cancelled
         $editExistingItems = $validatedData['edit_existing_items'];
@@ -276,24 +404,24 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
 
-        // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
-        $chosenNewItems = [];
-        if (count($addNewItems) > 0) {
-            // 03.2.1 Get all items with "active" status in items TB 
-            $activeItems = $this->submitBorrowRequestService->getActiveItems($addNewItems);
+        // // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
+        // $chosenNewItems = [];
+        // if (count($addNewItems) > 0) {
+        //     // 03.2.1 Get all items with "active" status in items TB 
+        //     $activeItems = $this->submitBorrowRequestService->getActiveItems($addNewItems);
 
-            // 03.2.2 Check borrowed_items if which ones are available on that date
-            $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
+        //     // 03.2.2 Check borrowed_items if which ones are available on that date
+        //     $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
 
-            // 03.2.3 Requested qty > available items on schedule (Fail)
-            $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
-            if ($isRequestQtyMoreThanAvailableQty) {
-                return $isRequestQtyMoreThanAvailableQty;
-            }
+        //     // 03.2.3 Requested qty > available items on schedule (Fail)
+        //     $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
+        //     if ($isRequestQtyMoreThanAvailableQty) {
+        //         return $isRequestQtyMoreThanAvailableQty;
+        //     }
 
-            // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
-            $chosenNewItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-        }
+        //     // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
+        //     $chosenNewItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
+        // }
 
         // 03.3 Edit Items
         $editedItemsGroupId = array_column($editedItems, 'item_group_id');

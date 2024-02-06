@@ -10,18 +10,32 @@ use App\Http\Resources\ItemGroupBasedOnOfficeResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
 use App\Models\Department;
+use App\Models\Item;
 use App\Models\ItemGroup;
+use App\Models\ItemStatus;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ItemGroupController extends Controller
 {
-    private $pendingStatusId;
-    private $borrowedStatusId;
+    // Item inventory Status
+    private $activeItemStatus;
+
+    // Borrowed Item Statuses
+    private $pendingStatus;
+    private $inPossessionStatus;
+    private $approvedStatus;
+    private $overdueReturnStatus;
     public function __construct()
     {
-        // FIXX
-        // $this->pendingStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first()->id;
-        // $this->borrowedStatusId = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first()->id;
+        // Item status
+        $this->activeItemStatus = ItemStatus::where('item_status', "ACTIVE")->first();
+
+        $this->pendingStatus = BorrowedItemStatus::where('borrowed_item_status', "PENDING_APPROVAL")->first();
+        $this->approvedStatus = BorrowedItemStatus::where('borrowed_item_status', "APPROVED")->first();
+        $this->inPossessionStatus = BorrowedItemStatus::where('borrowed_item_status', "IN_POSSESSION")->first();
+        $this->overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status', "OVERDUE_RETURN")->first();
+
     }
     /**
      * Search ItemGroup according to office
@@ -45,7 +59,7 @@ class ItemGroupController extends Controller
     /**
      *  Retrieve UNAVAILABLE dates
      */
-    
+
     public function retrieveBookedDates(BookedDatesRequest $bookedDatesRequest)
     {
         $validatedData = $bookedDatesRequest->validated();
@@ -64,25 +78,65 @@ class ItemGroupController extends Controller
         //     item_groups.id = $certain_item_group_ids
         // );
         try {
+            // 01. Get the booked dates of the item_group
             $borrowedItems = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
                 ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                 ->where('item_groups.id', $itemGroupId)
                 ->where(function ($query) {
-                    $query->where('borrowed_items.borrowed_item_status_id', $this->pendingStatusId)
-                        ->orWhere('borrowed_items.borrowed_item_status_id', $this->borrowedStatusId);
+                    $query->where('borrowed_items.borrowed_item_status_id', $this->pendingStatus->id)
+                        ->orWhere('borrowed_items.borrowed_item_status_id', $this->approvedStatus->id)
+                        ->orWhere('borrowed_items.borrowed_item_status_id', $this->inPossessionStatus->id);
                 })
+                ->groupBy('borrowed_items.start_date', 'borrowed_items.due_date')
                 ->select(
-                    // 'item_groups.id AS item_group_id',
-                    'items.id AS item_id',
-                    // 'borrowed_items.borrowed_item_status_id',
-                    'borrowed_items.start_date',
-                    'borrowed_items.due_date'
+                    'borrowed_items.start_date as start',
+                    'borrowed_items.due_date as end',
+                    \DB::raw('COUNT(*) as count')
                 )
                 ->get();
 
+            // 02. Get the count of the item with active status (ITEMS tb)
+            $activeItemCount = Item::where('item_group_id', $itemGroupId)
+                ->where('item_status_id', $this->activeItemStatus->id)
+                ->get()
+                ->count();
+
+            // 03. Get count of overdue status (BORROWED ITEMS tb)
+            $overdueCount = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
+                ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                ->where('item_groups.id', $itemGroupId)
+                ->where('borrowed_items.borrowed_item_status_id', $this->overdueReturnStatus->id)
+                ->get()
+                ->count();
+
+
+            $actualActiveItemCount = $activeItemCount - $overdueCount;
+
+            $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
+                // 04. Format the dates to the expected format by the frontend
+                $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
+                $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
+
+                // 05. Add Title Field for REACT FullCalendar display.
+                // This will display how many items are available within the current booked Dates
+                if ($actualActiveItemCount > $item['count']) {
+                    $item['title'] = "Reserved quantity: " . $item['count'];
+                } else {
+                    $item['title'] = "Item slot fully booked";
+                }
+                return $item;
+            });
+
+            // 05. Get the name of the item group
+            $itemGroup = ItemGroup::where('id', $itemGroupId)->first();
+
             return response([
                 'status' => true,
-                'data' => $borrowedItems,
+                'data' => [
+                    'item_model' => $itemGroup->model_name,
+                    'active_items' => $actualActiveItemCount, // Overdue shouldnt be booked
+                    'dates' => $borrowedItems
+                ],
                 'method' => "GET"
             ], 200);
         } catch (\Exception $e) {

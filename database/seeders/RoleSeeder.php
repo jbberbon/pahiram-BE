@@ -18,10 +18,12 @@ class RoleSeeder extends Seeder
                 'role' => 'BORROWER',
                 'description' => 'System borrower'
             ],
-            [
-                'role' => 'ENDORSER',
-                'description' => 'Borrowing Endorser'
-            ],
+            // January 30, 2024
+            // NO need, Endorsers for now are identified using their @apc.edu.ph email
+            // [
+            //     'role' => 'ENDORSER',
+            //     'description' => 'Borrowing Endorser'
+            // ],
             [
                 'role' => 'BORROWING_MANAGER',
                 'description' => 'Manages borrowing transactions'

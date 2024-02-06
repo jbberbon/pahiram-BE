@@ -81,5 +81,7 @@ class User extends Authenticatable
 
         return $firstName . ' ' . $lastName;
     }
+
+
 }
 

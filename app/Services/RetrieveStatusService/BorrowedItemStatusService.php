@@ -26,4 +26,9 @@ class BorrowedItemStatusService
     {
         return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::CANCELLED);
     }
+
+    public static function getDisapprovedStatusId()
+    {
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::DISAPPROVED);
+    }
 }

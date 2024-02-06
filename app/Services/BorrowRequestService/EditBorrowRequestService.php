@@ -33,8 +33,10 @@ class EditBorrowRequestService
     {
         // Retrieve "transaction" (item data not included) related details and patch it to tb
         $borrowRequestArgs = $validatedData;
-        $borrowRequestArgs['endorsed_by'] = User::getUserIdBasedOnApcId($validatedData['endorsed_by']);
 
+        if (isset($borrowRequestArgs['endorsed_by'])) {
+            $borrowRequestArgs['endorsed_by'] = User::getUserIdBasedOnApcId($validatedData['endorsed_by']);
+        }
 
         if (isset($borrowRequestArgs['purpose'])) {
             // Change Purpose to Purpose_id 

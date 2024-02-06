@@ -24,7 +24,7 @@ return new class extends Migration
             // FKs to be assigned on a separate migration file
             $table->uuid('user_role_id');
             $table->uuid('acc_status_id');
-            $table->uuid('department_id');
+            // $table->uuid('department_id'); // Removed this. Made Actual Office Tables
             $table->uuid('course_id')->nullable();
             $table->timestamps();
         });

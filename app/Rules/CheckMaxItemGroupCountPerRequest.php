@@ -47,10 +47,13 @@ class CheckMaxItemGroupCountPerRequest implements Rule
             ->count();
 
         // 02. Count the JSON body's edit_existing_items for item_groups that are being CANCELLED
-        $cancelledGroupCount = collect($this->requestData['edit_existing_items'])
-            ->filter(function ($item) {
-                return isset($item['is_cancelled']) && $item['is_cancelled'] === true;
-            })->count();
+        $cancelledGroupCount = 0;
+        if (isset($this->requestData['edit_existing_items'])) {
+            $cancelledGroupCount = collect($this->requestData['edit_existing_items'])
+                ->filter(function ($item) {
+                    return isset($item['is_cancelled']) && $item['is_cancelled'] === true;
+                })->count();
+        }
 
         // 04. Subtract 02. Cancelled Existing Items From 01. Pending Item Groups
         $remainingPendingGroupsCount = null;

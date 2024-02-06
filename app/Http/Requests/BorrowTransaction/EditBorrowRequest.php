@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\BorrowTransaction;
 
+use App\Rules\AtLeastOneFieldPresent;
 use App\Rules\CheckMaxItemGroupCountPerRequest;
 use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
@@ -26,7 +27,12 @@ class EditBorrowRequest extends FormRequest
             'requestId' => [
                 'required',
                 'exists:borrow_transactions,id'
+                // ADD VALIDATION FOR STATUSES THAT CANNOT BE EDITED
             ],
+            'at_least_one_field_present' =>
+                'required_without_all:request_data,edit_existing_items,add_new_items',
+                [new AtLeastOneFieldPresent],
+                
             /**
              * Request Data ----------------------------------------------------
              */
@@ -38,9 +44,13 @@ class EditBorrowRequest extends FormRequest
             ],
             'request_data.endorsed_by' => [
                 'sometimes',
+                'nullable',
                 'string',
-                'min:5',
                 'max:15',
+                Rule::requiredIf(function () {
+                    return request()->input('request_data.endorsed_by') !== null &&
+                        request()->input('request_data.endorsed_by') !== '';
+                }),
                 Rule::notIn([auth()->user()->apc_id]),
                 new ExistsInDbOrApcis,
             ],
@@ -66,7 +76,7 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9\s|]+$/',
                 'min:5',
-                'max:30'
+                'max:50'
             ],
 
             /**
@@ -127,7 +137,7 @@ class EditBorrowRequest extends FormRequest
                 'array',
                 'min:1',
                 new UniqueIds,
-                new UniqueIdsAcrossArrays($this->all()),
+                // new UniqueIdsAcrossArrays($this->all()),
 
                 // On controller because its hard to implement here
                 new CheckMaxItemGroupCountPerRequest($this->all()),

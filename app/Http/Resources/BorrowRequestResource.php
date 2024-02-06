@@ -27,6 +27,21 @@ class BorrowRequestResource extends JsonResource
                     'apc_id' => User::where('id', $this->endorsed_by)->first()->apc_id
                 ],
                 'department' => Department::getDepartmentBasedOnId($this->department_id),
+                'department_acronym' => Department::getAcronymById($this->department_id),
+                'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
+                'user_defined_purpose' => $this->user_defined_purpose,
+                'penalty' => $this->penalty,
+                'remarks_by_endorser' => $this->remarks_by_endorser,
+                'remarks_by_approver' => $this->remarks_by_approver,
+                'created_at' => $this->created_at,
+            ];
+        } else {
+
+            $resource = [
+                'id' => $this->id,
+                'department' => Department::getDepartmentBasedOnId($this->department_id),
+                'department_acronym' => Department::getAcronymById($this->department_id),
                 'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
                 'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
                 'user_defined_purpose' => $this->user_defined_purpose,
@@ -36,18 +51,6 @@ class BorrowRequestResource extends JsonResource
                 'created_at' => $this->created_at,
             ];
         }
-
-        $resource = [
-            'id' => $this->id,
-            'department' => Department::getDepartmentBasedOnId($this->department_id),
-            'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
-            'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
-            'user_defined_purpose' => $this->user_defined_purpose,
-            'penalty' => $this->penalty,
-            'remarks_by_endorser' => $this->remarks_by_endorser,
-            'remarks_by_approver' => $this->remarks_by_approver,
-            'created_at' => $this->created_at,
-        ];
 
         return $resource;
     }

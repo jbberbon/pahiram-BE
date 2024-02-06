@@ -64,12 +64,16 @@ class AuthController extends Controller
              */
             $user = User::where('apc_id', $apiUserData['apc_id'])->first();
 
+            // return $user;
+
             // Does not exist yet, add user to db
             if (!$user) {
                 $defaultData = NewUserDefaultData::defaultData($course);
                 $newUser = array_merge($apiUserData, $defaultData);
                 $user = User::create($newUser);
             }
+
+            // return $user;
 
             /**
              * 5. Generate Pahiram Token with expiration

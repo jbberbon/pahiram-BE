@@ -38,6 +38,6 @@ class BorrowPurpose extends Model
     // {
     //     $purpose = self::where('id', $purposeId)->first();
 
-    //     return $purpose->purpose_code;
+    //     return $purpose ? $purpose->purpose : null;
     // }
 }

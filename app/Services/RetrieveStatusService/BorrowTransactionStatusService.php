@@ -17,11 +17,6 @@ class BorrowTransactionStatusService
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::PENDING_BORROWING_APPROVAL);
     }
 
-    public static function getPendingApprovalTransactionId()
-    {
-        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::PENDING_APPROVAL);
-    }
-
     public static function getApprovedTransactionId()
     {
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::APPROVED);
@@ -37,5 +32,9 @@ class BorrowTransactionStatusService
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::CANCELLED);
     }
 
+    public static function getDisapprovedTransactionId()
+    {
+        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::DISAPPROVED);
+    }
 
 }
