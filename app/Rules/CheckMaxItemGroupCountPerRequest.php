@@ -2,13 +2,9 @@
 
 namespace App\Rules;
 
-use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
-use App\Utils\Constants\BorrowedItemStatusConst;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class CheckMaxItemGroupCountPerRequest implements Rule
 {

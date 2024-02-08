@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\BorrowTransaction\BorrowedItemController;
 use App\Http\Controllers\BorrowTransaction\ItemGroupController;
 use App\Http\Controllers\BorrowTransaction\ManageBorrowingRequestController;
 use App\Http\Controllers\Auth\AuthController;
@@ -27,7 +26,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/user/logout', [AuthController::class, 'logout']);
     Route::post('/user/logout-all-device', [AuthController::class, 'logoutAllDevices']);
 
-
     // Is Suspended
     Route::group(['middleware' => ['is_suspended']], function () {
         Route::get('/office/{departmentAcronym}/item-model-list', [ItemGroupController::class, 'index']);
@@ -46,14 +44,17 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::patch('/endorsement/{transactionId}/approval', [ManageEndorsementController::class, 'endorsementApproval']);
     });
 
-    Route::get('/borrow-transaction/{transactionId}', [ManageBorrowTransactionController::class, 'show']);
+    // Is Lending Employee
+    Route::group(['middleware' => ['is_lending_employee']], function () {
+        // Approve Transaction
+        Route::get('/office/borrow-transaction', [ManageBorrowTransactionController::class, 'index']);
+        Route::get('/office/borrow-transaction/{transactionId}', [ManageBorrowTransactionController::class, 'getSpecificPendingTransaction']);
+        Route::patch('/office/borrow-transaction/{transactionId}/borrow-approval', [ManageBorrowTransactionController::class, 'approveTransaction']);
 
-    // Route::group(['middleware' => ['is_employee']], function () {
-    //     // Route::group(['middleware' => ['is_lending_employee']], function () {
-    //         Route::get('/office/borrow-transaction', [ManageBorrowTransactionController::class, 'index']);
+        // Release Items
 
-    //     // });
-    // // });s
+        // Facilitate Return
+    });
 
 
 

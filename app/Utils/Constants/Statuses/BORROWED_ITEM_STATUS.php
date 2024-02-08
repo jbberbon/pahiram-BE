@@ -10,4 +10,6 @@ class BORROWED_ITEM_STATUS
 
     const CANCELLED = 'CANCELLED';
     const DISAPPROVED = 'DISAPPROVED';
+
+    const APPROVED = 'APPROVED';
 }

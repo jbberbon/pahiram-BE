@@ -1,18 +1,14 @@
 <?php
 
-namespace App\Http\Requests\ManageEndorsement;
+namespace App\Http\Requests\ManageBorrowTransaction;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\CancelTransacRule;
-use App\Rules\EndorsementRules\IsPendingEndorserApproval;
-use App\Rules\EndorsementRules\IsTransactionEndorser;
-use App\Rules\IsEmployeeEmail;
-use App\Rules\TransactionBelongsToUser;
+use App\Rules\ManageTransactionRules\IsTransactionPendingBorrowApprovalStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
-class EndorsementApprovalRequest extends FormRequest
+class GetSpecificPendingTransactionRequest extends FormRequest
 {
     private $errorCode = 422;
     public function rules(): array
@@ -21,15 +17,8 @@ class EndorsementApprovalRequest extends FormRequest
             'transactionId' => [
                 'required',
                 'exists:borrow_transactions,id',
-                new IsEmployeeEmail,
-                new IsTransactionEndorser,
-                new IsPendingEndorserApproval
-            ],
-            'approval' => [
-                'required',
-                'boolean'
+                new IsTransactionPendingBorrowApprovalStatus
             ]
-
         ];
     }
     public function all($keys = null)
@@ -48,7 +37,7 @@ class EndorsementApprovalRequest extends FormRequest
     }
     public function failedValidation(Validator $validator)
     {
-        $message = "Failed to update transaction";
+        $message = "Failed to retrieve borrow request";
         $errorCode = $this->errorCode;
         RequestValidationFailedMsg::errorResponse($validator, $message, $errorCode);
     }

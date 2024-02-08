@@ -93,8 +93,8 @@ class ManageBorrowingRequestController extends Controller
 
                     )
                     ->select(
-                        'item_groups.model_name',
                         'item_groups.id',
+                        'item_groups.model_name',
                         \DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
@@ -102,27 +102,27 @@ class ManageBorrowingRequestController extends Controller
                     )
                     ->get();
 
-                // Restructure the $items array
-                $restructuredItems = $items
-                    ->map(function ($item) {
-                        return [
-                            'item' => [
-                                'model_name' => $item->model_name,
-                                'id' => $item->id,
-                            ],
-                            'quantity' => $item->quantity,
-                            'start_date' => $item->start_date,
-                            'due_date' => $item->due_date,
-                            'borrowed_item_status' => $item->borrowed_item_status,
-                        ];
+                // // Restructure the $items array for front end but already fixed
+                // $restructuredItems = $items
+                //     ->map(function ($item) {
+                //         return [
+                //             'item' => [
+                //                 'model_name' => $item->model_name,
+                //                 'id' => $item->id,
+                //             ],
+                //             'quantity' => $item->quantity,
+                //             'start_date' => $item->start_date,
+                //             'due_date' => $item->due_date,
+                //             'borrowed_item_status' => $item->borrowed_item_status,
+                //         ];
 
-                    });
+                //     });
 
                 return response([
                     'status' => true,
                     'data' => [
                         'transac_data' => $transactionDetails,
-                        'items' => $restructuredItems,
+                        'items' => $items,
                     ],
                     'method' => 'GET',
                 ], 200);

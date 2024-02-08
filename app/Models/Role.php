@@ -20,4 +20,11 @@ class Role extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getIdByRole($role)
+    {
+        $retrievedRole = self::where('role', $role)->first();
+
+        return $retrievedRole ? $retrievedRole->id : null;
+    }
 }

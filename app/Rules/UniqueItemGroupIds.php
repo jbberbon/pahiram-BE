@@ -4,7 +4,7 @@ namespace App\Rules;
 
 use Illuminate\Contracts\Validation\Rule;
 
-class UniqueIds implements Rule
+class UniqueItemGroupIds implements Rule
 {
     public function passes($attribute, $value)
     {

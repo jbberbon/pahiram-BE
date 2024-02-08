@@ -15,6 +15,10 @@ class IsPendingEndorserApproval implements Rule
         $pendingEndorserApprovalId = BorrowTransactionStatusService::getPendingEndorserApprovalTransactionId();
         $transaction = BorrowTransaction::where('id', $value)->first();
 
+        if (!$transaction) {
+            return false;
+        }
+
         return $transaction->transac_status_id === $pendingEndorserApprovalId;
     }
 

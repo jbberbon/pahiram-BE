@@ -4,7 +4,6 @@ namespace App\Rules;
 
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use Illuminate\Contracts\Validation\Rule;
-use App\Models\BorrowTransactionStatus;
 
 class CancelTransacRule implements Rule
 {

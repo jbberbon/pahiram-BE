@@ -2,7 +2,7 @@
 
 namespace App\Http;
 
-use App\Http\Middleware\IsEmployee;
+use App\Http\Middleware\IsLendingEmployee;
 use App\Http\Middleware\IsEndorser;
 use App\Http\Middleware\IsSuspended;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -73,7 +73,7 @@ class Kernel extends HttpKernel
          * Pahiram Middlewares
          * 
          */
-        'is_employee' => IsEmployee::class,
+        'is_lending_employee' => IsLendingEmployee::class,
         'is_suspended' => IsSuspended::class,
         'is_endorser' => IsEndorser::class,
     ];

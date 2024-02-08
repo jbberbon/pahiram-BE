@@ -10,8 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('bmo', function (Blueprint $table) {
+        Schema::table('user_departments', function (Blueprint $table) {
             $table->foreign('user_id')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
+            $table->foreign('department_id')->references('id')->on('departments')
                 ->onDelete('restrict')
                 ->cascadeOnUpdate();
         });
@@ -22,7 +25,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('bmo', function (Blueprint $table) {
+        Schema::table('user_departments', function (Blueprint $table) {
             //
         });
     }

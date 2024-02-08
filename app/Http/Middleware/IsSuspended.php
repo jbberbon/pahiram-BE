@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\AccountStatus;
+use App\Utils\Constants\Statuses\ACCOUNT_STATUS;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -10,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class IsSuspended
 {
+    private $active = ACCOUNT_STATUS::ACTIVE;
     /**
      * Handle an incoming request.
      *
@@ -20,10 +22,9 @@ class IsSuspended
         $user = $request->user();
         $accStatus = $user->getAccountStatus();
 
-        $activeCode = "ACTIVE";
         $method = $request->method();
 
-        if ($accStatus != $activeCode) {
+        if ($accStatus != $this->active) {
             abort(response([
                 'status' => false,
                 'message' => 'Your account is ' . $accStatus,

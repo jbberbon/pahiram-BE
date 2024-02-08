@@ -88,8 +88,8 @@ class ManageEndorsementController extends Controller
 
                 )
                 ->select(
+                    // 'item_groups.id', Not Needed in front end
                     'item_groups.model_name',
-                    'item_groups.id',
                     \DB::raw('COUNT(borrowed_items.id) as quantity'),
                     'borrowed_items.start_date',
                     'borrowed_items.due_date',
@@ -99,25 +99,26 @@ class ManageEndorsementController extends Controller
 
 
             // Restructured due to the table in react needing the item field haha
-            $restructuredItems = $items
-                ->map(function ($item) {
-                    return [
-                        'item' => [
-                            'model_name' => $item->model_name,
-                            // 'id' => $item->id,
-                        ],
-                        'quantity' => $item->quantity,
-                        'start_date' => $item->start_date,
-                        'due_date' => $item->due_date,
-                        'borrowed_item_status' => $item->borrowed_item_status,
-                    ];
+            // already fixed
+            // $restructuredItems = $items
+            //     ->map(function ($item) {
+            //         return [
+            //             'item' => [
+            //                 'model_name' => $item->model_name,
+            //                 // 'id' => $item->id,
+            //             ],
+            //             'quantity' => $item->quantity,
+            //             'start_date' => $item->start_date,
+            //             'due_date' => $item->due_date,
+            //             'borrowed_item_status' => $item->borrowed_item_status,
+            //         ];
+            //     });
 
-                });
             return response([
                 'status' => true,
                 'data' => [
                     'transac_data' => new BorrowTransactionResource($transacData),
-                    'items' => $restructuredItems,
+                    'items' => $items,
                 ],
                 'method' => "GET"
             ], 200);

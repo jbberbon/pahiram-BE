@@ -4,7 +4,7 @@ namespace App\Http\Requests\BorrowTransaction;
 
 use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
-use App\Rules\UniqueIds;
+use App\Rules\UniqueItemGroupIds;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -59,7 +59,7 @@ class SubmitBorrowRequest extends FormRequest
                 'array',
                 'min:1',
                 'max:10',
-                new UniqueIds
+                new UniqueItemGroupIds
             ],
             'items.*' => [
                 'required',

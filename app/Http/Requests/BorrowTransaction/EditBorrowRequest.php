@@ -8,7 +8,7 @@ use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
 use App\Rules\ItemGroupBelongsToBorrowedItems;
 use App\Rules\ItemGroupDoesNotBelongToBorrowedItems;
-use App\Rules\UniqueIds;
+use App\Rules\UniqueItemGroupIds;
 use App\Rules\UniqueIdsAcrossArrays;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -87,7 +87,7 @@ class EditBorrowRequest extends FormRequest
                 'array',
                 'min:1',
                 'max:10',
-                new UniqueIds
+                new UniqueItemGroupIds
             ],
             'edit_existing_items.*' => [
                 'required',
@@ -136,7 +136,7 @@ class EditBorrowRequest extends FormRequest
                 'sometimes',
                 'array',
                 'min:1',
-                new UniqueIds,
+                new UniqueItemGroupIds,
                 // new UniqueIdsAcrossArrays($this->all()),
 
                 // On controller because its hard to implement here
