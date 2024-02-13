@@ -27,10 +27,6 @@ class BorrowedItemStatusSeeder extends Seeder
                 "description" => "Item is approved"
             ],
             [
-                "borrowed_item_status" => "IN_POSSESSION",
-                "description" => "Item currently borrowed"
-            ],
-            [
                 "borrowed_item_status" => "CANCELLED",
                 "description" => "Item is cancelled by borrower"
             ],
@@ -39,12 +35,24 @@ class BorrowedItemStatusSeeder extends Seeder
                 "description" => "Item is declined to be borrowed"
             ],
             [
+                "borrowed_item_status" => "IN_POSSESSION",
+                "description" => "Item currently borrowed"
+            ],
+            [
+                "borrowed_item_status" => "UNRELEASED",
+                "description" => "Item is not released to borrower"
+            ],
+            [
                 "borrowed_item_status" => "OVERDUE_RETURN",
                 "description" => "Item is overdue for return"
             ],
             [
                 "borrowed_item_status" => "RETURNED",
                 "description" => "Item has been returned after a borrowing transaction"
+            ],
+            [
+                "borrowed_item_status" => "UNRETURNED",
+                "description" => "Item is unreturned"
             ],
             [
                 "borrowed_item_status" => "DAMAGED_BUT_REPAIRABLE",

@@ -11,6 +11,16 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class BorrowTransactionResource extends JsonResource
 {
+    public $is_required_supervisor_approval;
+    public $isApprovalOverdue;
+
+    public function __construct($resource, $is_required_supervisor_approval = null, $isApprovalOverdue = null)
+    {
+        parent::__construct($resource);
+        $this->is_required_supervisor_approval = $is_required_supervisor_approval;
+        $this->isApprovalOverdue = $isApprovalOverdue;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -18,7 +28,7 @@ class BorrowTransactionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'borrower' => User::getNameBasedOnId($this->borrower_id),
             'department' => Department::getDepartmentBasedOnId($this->department_id),
@@ -31,5 +41,15 @@ class BorrowTransactionResource extends JsonResource
             'remarks_by_approver' => $this->remarks_by_approver,
             'created_at' => $this->created_at
         ];
+
+        if ($this->is_required_supervisor_approval !== null) {
+            $data['is_required_supervisor_approval'] = $this->is_required_supervisor_approval;
+        }
+
+        if ($this->isApprovalOverdue !== null) {
+            $data['is_approval_overdue'] = $this->isApprovalOverdue;
+        }
+
+        return $data;
     }
 }

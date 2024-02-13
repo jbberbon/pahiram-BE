@@ -76,10 +76,12 @@ class User extends Authenticatable
     public static function getNameBasedOnId($userId)
     {
         $user = self::where('id', $userId)->first();
-        $firstName = $user->first_name;
-        $lastName = $user->last_name;
 
-        return $firstName . ' ' . $lastName;
+        if ($user) {
+            $firstName = $user->first_name;
+            $lastName = $user->last_name;
+            return $firstName . ' ' . $lastName;
+        }
     }
 
 

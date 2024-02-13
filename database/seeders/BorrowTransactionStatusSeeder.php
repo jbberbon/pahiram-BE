@@ -35,12 +35,20 @@ class BorrowTransactionStatusSeeder extends Seeder
                 "description" => "Transaction is disapproved",
             ],
             [
+                "transac_status" => "UNRELEASED",
+                "description" => "All items are unreleased to the borrower",
+            ],
+            [
                 "transac_status" => "CANCELLED",
                 "description" => "Transaction is cancelled",
             ],
             [
                 "transac_status" => "OVERDUE_TRANSACTION_COMPLETION",
                 "description" => "Transaction is complete and all item/s are returned",
+            ],
+            [
+                "transac_status" => "UNRETURNED",
+                "description" => "All items are unreturned",
             ],
             [
                 "transac_status" => "TRANSACTION_COMPLETE",

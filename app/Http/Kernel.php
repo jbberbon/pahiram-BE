@@ -5,6 +5,8 @@ namespace App\Http;
 use App\Http\Middleware\IsLendingEmployee;
 use App\Http\Middleware\IsEndorser;
 use App\Http\Middleware\IsSuspended;
+use App\Http\Middleware\ManageTransactionMiddleware\IsTransactionExistent;
+use App\Http\Middleware\ManageTransactionMiddleware\IsTransactionWithinUserOfficeJurisdiction;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -17,7 +19,7 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
-            // \App\Http\Middleware\TrustHosts::class,
+        // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -42,7 +44,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-                // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -76,5 +78,8 @@ class Kernel extends HttpKernel
         'is_lending_employee' => IsLendingEmployee::class,
         'is_suspended' => IsSuspended::class,
         'is_endorser' => IsEndorser::class,
+
+        'is_transaction_existent' => IsTransactionExistent::class,
+        'is_transaction_within_office_jurisdiction' => IsTransactionWithinUserOfficeJurisdiction::class,
     ];
 }

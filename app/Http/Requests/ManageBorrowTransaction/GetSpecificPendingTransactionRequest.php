@@ -7,6 +7,7 @@ use App\Exceptions\RequestValidationFailedMsg;
 use App\Rules\ManageTransactionRules\IsTransactionPendingBorrowApprovalStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GetSpecificPendingTransactionRequest extends FormRequest
 {
@@ -17,7 +18,13 @@ class GetSpecificPendingTransactionRequest extends FormRequest
             'transactionId' => [
                 'required',
                 'exists:borrow_transactions,id',
-                new IsTransactionPendingBorrowApprovalStatus
+                // new IsTransactionPendingBorrowApprovalStatus
+            ],
+            'view_individual_items' => [
+                'sometimes',
+                // 'bool',
+                Rule::in([true]),
+
             ]
         ];
     }

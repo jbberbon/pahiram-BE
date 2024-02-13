@@ -46,16 +46,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Is Lending Employee
     Route::group(['middleware' => ['is_lending_employee']], function () {
-        // Approve Transaction
+        // Get HTTP Requests with filtering
         Route::get('/office/borrow-transaction', [ManageBorrowTransactionController::class, 'index']);
-        Route::get('/office/borrow-transaction/{transactionId}', [ManageBorrowTransactionController::class, 'getSpecificPendingTransaction']);
-        Route::patch('/office/borrow-transaction/{transactionId}/borrow-approval', [ManageBorrowTransactionController::class, 'approveTransaction']);
 
-        // Release Items
+        Route::group([
+            'middleware' => [
+                'is_transaction_existent',
+                'is_transaction_within_office_jurisdiction'
+            ]
+        ], function () {
+            // Approve Transaction
+            Route::get('/office/borrow-transaction/{transactionId}', [ManageBorrowTransactionController::class, 'getSpecificPendingTransaction']);
+            Route::patch('/office/borrow-transaction/{transactionId}/borrow-approval', [ManageBorrowTransactionController::class, 'approveTransaction']);
 
-        // Facilitate Return
+            // Release Items
+            Route::patch('/office/borrow-transaction/{transactionId}/release-item', [ManageBorrowTransactionController::class, 'releaseApprovedItems']);
+
+            // Facilitate Return
+            Route::patch('/office/borrow-transaction/{transactionId}/facilitate-item-return', [ManageBorrowTransactionController::class, 'facilitateReturn']);
+        });
     });
-
 
 
     Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);

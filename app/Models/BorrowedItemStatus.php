@@ -32,4 +32,11 @@ class BorrowedItemStatus extends Model
         $status = self::where('borrowed_item_status_code', $code)->first();
         return $status ? $status->id : null;
     }
+
+    public static function getStatusById($statusId)
+    {
+        $status = self::where('id', $statusId)->first();
+
+        return $status ? $status->borrowed_item_status : null;
+    }
 }

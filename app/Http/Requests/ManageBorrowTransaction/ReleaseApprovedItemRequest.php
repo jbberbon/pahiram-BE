@@ -4,17 +4,17 @@ namespace App\Http\Requests\ManageBorrowTransaction;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\ManageTransactionRules\IsEmployeeAuthorizedToApproveAllItems;
-use App\Rules\ManageTransactionRules\IsEmployeeAuthorizedToApproveBorrowedItem;
-use App\Rules\ManageTransactionRules\IsItemGroupPartOfTransaction;
-use App\Rules\ManageTransactionRules\IsItemPendingApproval;
-use App\Rules\ManageTransactionRules\IsThereItemLeftToApprove;
-use App\Rules\ManageTransactionRules\IsTransactionPendingBorrowApprovalStatus;
+use App\Rules\AcceptOnlyAllowedObjFields;
+use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
+use App\Rules\ManageTransactionRules\IsItemApproved;
+use App\Rules\ManageTransactionRules\IsThereItemLeftToRelease;
+use App\Rules\ManageTransactionRules\IsTransactionApprovedStatus;
+use App\Rules\UniqueBorrowedItemIds;
 use App\Rules\UniqueItemGroupIds;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ApproveTransactionRequest extends FormRequest
+class ReleaseApprovedItemRequest extends FormRequest
 {
     private $errorCode = 422;
     public function rules(): array
@@ -23,49 +23,49 @@ class ApproveTransactionRequest extends FormRequest
             'transactionId' => [
                 'required',
                 'exists:borrow_transactions,id',
-                new IsTransactionPendingBorrowApprovalStatus,
+                new IsTransactionApprovedStatus,
             ],
-            'approve_all_items' => [
+            'release_all_items' => [
                 'required_without:items', // Required if 'items' is not present
                 'required_without_all:items', // Required if none of the 'items' are present
                 'boolean',
-                new IsEmployeeAuthorizedToApproveAllItems($this->all()),
-                new IsThereItemLeftToApprove($this->all())
+                new IsThereItemLeftToRelease($this->all()),
 
-                // IsThereItemWithLapsedStartDate (disallow if there is even 1)  // Disallow approval if current time > start date
+                // IsThereItemWithLapsedReturnDate (disallow if there is even 1) // Disallow release if current time > return date
             ],
             'items' => [
-                'required_without:approve_all_items',
-                'required_without_all:approve_all_items',
-                'prohibited_if:approve_all_items,true',
+                'required_without:release_all_items',
+                'required_without_all:release_all_items',
+                'prohibited_if:release_all_items,true',
                 function ($attribute, $value, $fail) {
                     $request = $this->all();
-                    if (isset($request['approve_all_items'])) {
+
+                    if (isset($request['release_all_items'])) {
                         $fail('Invalid request');
                     }
                 },
                 'array',
                 'min:1',
                 'max:10',
-                new UniqueItemGroupIds,
+                new UniqueBorrowedItemIds,
+                new IsThereItemLeftToRelease($this->all()),
             ],
             'items.*' => [
                 'required',
                 'array',
                 'size:2'
             ],
-            'items.*.item_group_id' => [
+            'items.*.borrowed_item_id' => [
                 'required',
                 'string',
                 'regex:/^[a-zA-Z0-9-]+$/',
-                'exists:item_groups,id',
-                new IsEmployeeAuthorizedToApproveBorrowedItem($this->all()),
-                new IsItemGroupPartOfTransaction($this->all()),
-                new IsItemPendingApproval($this->all())
+                'exists:borrowed_items,id',
+                new IsBorrowedItemPartOfTransaction($this->all()),
+                new IsItemApproved($this->all()),
 
-                // IsItemApprovalStartDateLapsed // Disallow approval if current time > start date
+                // IsItemReturnDateLapsed // Disallow release if current time > return date
             ],
-            'items.*.is_approved' => [
+            'items.*.is_released' => [
                 'required',
                 'boolean'
             ]
@@ -87,7 +87,7 @@ class ApproveTransactionRequest extends FormRequest
     }
     public function failedValidation(Validator $validator)
     {
-        $message = "Failed to update transaction";
+        $message = "Failed to release items";
         $errorCode = $this->errorCode;
         RequestValidationFailedMsg::errorResponse($validator, $message, $errorCode);
     }
