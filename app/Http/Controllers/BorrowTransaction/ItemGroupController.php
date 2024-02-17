@@ -123,6 +123,7 @@ class ItemGroupController extends Controller
                     $item['title'] = "Reserved quantity: " . $item['count'];
                 } else {
                     $item['title'] = "Item slot fully booked";
+                    $item['color'] = "#f44336";
                 }
                 return $item;
             });

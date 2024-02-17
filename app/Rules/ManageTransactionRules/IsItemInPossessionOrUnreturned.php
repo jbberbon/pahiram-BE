@@ -27,6 +27,13 @@ class IsItemInPossessionOrUnreturned implements Rule
 
         $borrowedItem = BorrowedItem::find($value);
 
+        // \Log::error(
+        //     "Error message",
+        //     ['value' => $value, 'borrowed_item_id' => $borrowedItem->id]
+        // );
+
+
+
         if (!$borrowedItem) {
             return false;
         }
@@ -38,7 +45,7 @@ class IsItemInPossessionOrUnreturned implements Rule
 
     public function message()
     {
-        return "Request object has invalid field";
+        return "Item should be currently possessed by borrower";
     }
 
 }

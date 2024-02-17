@@ -3,26 +3,25 @@
 namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BorrowTransaction\GetBorrowTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\ApproveTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\FacilitateReturnRequest;
 use App\Http\Requests\ManageBorrowTransaction\GetSpecificPendingTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
-use App\Http\Resources\BorrowedItemResource;
 use App\Http\Resources\BorrowTransactionResource;
 use App\Http\Resources\EndorsementCollection;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
-use App\Models\Department;
+use App\Models\Item;
+use App\Models\ItemStatus;
 use App\Models\PenalizedTransaction;
 use App\Models\PenalizedTransactionStatuses;
 use App\Models\UserDepartment;
 use App\Services\CalculatePenalty;
-use App\Utils\Constants\OfficeCodes;
 use App\Utils\Constants\Statuses\BORROWED_ITEM_STATUS;
+use App\Utils\Constants\Statuses\ITEM_STATUS;
 use App\Utils\Constants\Statuses\PENALIZED_TRANSAC_STATUS;
 use App\Utils\Constants\Statuses\TRANSAC_STATUS;
 use Illuminate\Http\Request;
@@ -54,6 +53,13 @@ class ManageBorrowTransactionController extends Controller
     protected $calculatePenalty;
     private $pendingPenaltySettlementStatusId;
 
+    // Item Statuses
+    private $lostInventoryStatusId;
+    private $unreturnedInventoryStatusId;
+    private $forRepairInventoryStatusId;
+    private $beyondRepairInventoryStatusId;
+
+
     public function __construct(CalculatePenalty $calculatePenalty)
     {
         $this->calculatePenalty = $calculatePenalty;
@@ -79,6 +85,14 @@ class ManageBorrowTransactionController extends Controller
         $this->unreturnedTransacStatusId = BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::UNRETURNED);
 
         $this->pendingPenaltySettlementStatusId = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_SETTLEMENT);
+
+        // Item inventory status
+        $this->lostInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::LOST);
+        $this->unreturnedInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::UNRETURNED);
+        $this->forRepairInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::FOR_REPAIR);
+        $this->beyondRepairInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::BEYOND_REPAIR);
+
+
     }
     /**
      * Display transaction list of LENDING OFFICE
@@ -121,8 +135,6 @@ class ManageBorrowTransactionController extends Controller
             $transacStatusId = BorrowTransactionStatus::getIdByStatus($request['status']);
             $transactions->where('transac_status_id', $transacStatusId);
 
-
-
             if ($request['status'] === TRANSAC_STATUS::PENDING_BORROWING_APPROVAL) {
                 $transactions
                     ->join(
@@ -143,7 +155,6 @@ class ManageBorrowTransactionController extends Controller
                     );
             }
         }
-
         // Execute the query
         $transactions = $transactions->get();
 
@@ -232,20 +243,6 @@ class ManageBorrowTransactionController extends Controller
             }
         }
 
-        $formattedTransacData = new BorrowTransactionResource($transacData);
-
-        $items = BorrowedItem::where('borrowing_transac_id', $transacId)
-            ->get();
-
-        return response([
-            'status' => true,
-            'data' => [
-                'transac_data' => $formattedTransacData,
-                'items' => new BorrowedItemCollection($items),
-            ],
-            'method' => "GET"
-        ], 200);
-
         if (isset($request['view_individual_items'])) {
             try {
                 $formattedTransacData = new BorrowTransactionResource($transacData);
@@ -261,7 +258,6 @@ class ManageBorrowTransactionController extends Controller
                     ],
                     'method' => "GET"
                 ], 200);
-
             } catch (\Exception $e) {
                 return response([
                     'status' => false,
@@ -575,7 +571,7 @@ class ManageBorrowTransactionController extends Controller
                 DB::beginTransaction();
                 foreach ($validatedData['items'] as $item) {
                     $borrowedItemStatusId = BorrowedItemStatus::getIdByStatus($item['item_status']);
-                    // Update item status
+                    // Update borrowed item status
                     $borrowedItem = BorrowedItem::findOrfail($item['borrowed_item_id']);
                     if (isset($item['item_remarks']) && isset($item['item_penalty'])) {
                         $borrowedItem->update([
@@ -613,6 +609,30 @@ class ManageBorrowTransactionController extends Controller
                             ]);
                         }
                     }
+
+
+                    // Update status of the item in inventory
+                    // Lost
+                    if ($borrowedItem->borrowed_item_status_id === $this->lostItemStatusId) {
+                        Item::find($borrowedItem->item_id)
+                            ->update(['item_status_id' => $this->lostInventoryStatusId]);
+                    }
+                    // Unreturned
+                    if ($borrowedItem->borrowed_item_status_id === $this->unreturnedItemStatusId) {
+                        Item::find($borrowedItem->item_id)
+                            ->update(['item_status_id' => $this->unreturnedInventoryStatusId]);
+                    }
+                    // Damaged
+                    if ($borrowedItem->borrowed_item_status_id === $this->damageButRepairableItemStatusId) {
+                        Item::find($borrowedItem->item_id)
+                            ->update(['item_status_id' => $this->forRepairInventoryStatusId]);
+                    }
+                    // Unrepairable
+                    if ($borrowedItem->borrowed_item_status_id === $this->unrepairableItemStatusId) {
+                        Item::find($borrowedItem->item_id)
+                            ->update(['item_status_id' => $this->beyondRepairInventoryStatusId]);
+                    }
+
                 }
 
                 // Update Transaction Status
@@ -628,24 +648,28 @@ class ManageBorrowTransactionController extends Controller
                 $unrepairableItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->unrepairableItemStatusId)
                     ->count();
+                $unreturnedItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                    ->where('borrowed_item_status_id', $this->unreturnedItemStatusId)
+                    ->count();
                 $lostItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->lostItemStatusId)
                     ->count();
 
-                $totalCount = $inpossessionItemCount + $damageButRepairableItemCount +
-                    $unrepairableItemCount + $lostItemCount + $returnedItemCount;
+                // $totalCount = $inpossessionItemCount + $damageButRepairableItemCount +
+                //     $unrepairableItemCount + $lostItemCount + $returnedItemCount;
 
                 $totalPenalty = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('penalty', '>', 0)
                     ->sum('penalty');
 
+                $consolidatedReturnedItemCount = $returnedItemCount + $damageButRepairableItemCount + $unrepairableItemCount;
+                $consolidatedUnreturnedItemCount = $unreturnedItemCount + $lostItemCount;
+
                 // Transaction is UNRETURNED
-                //  ->  inPossession == 0
-                //  ->  returned == 0
-                //  ->  damageButRepairable == 0
-                //  ->  unrepairable == 0
-                //  ->  lost == 0
-                $isTransactionUnreturned = $totalCount === 0;
+                $isTransactionUnreturned =
+                    $inpossessionItemCount === 0 &&
+                    $consolidatedReturnedItemCount === 0 &&
+                    $consolidatedUnreturnedItemCount > 0;
 
                 if ($isTransactionUnreturned) {
                     if ($totalPenalty > 0) {
@@ -675,7 +699,7 @@ class ManageBorrowTransactionController extends Controller
                 //  ->  damageButRepairable > 0
                 //  ->  unrepairable > 0
                 //  ->  lost > 0
-                $isTransactionComplete = $totalCount > 0;
+                $isTransactionComplete = $consolidatedReturnedItemCount > 0 && $inpossessionItemCount == 0;
 
                 if ($isTransactionComplete) {
                     if ($totalPenalty > 0) {
@@ -702,7 +726,7 @@ class ManageBorrowTransactionController extends Controller
                 DB::commit();
                 return response([
                     'status' => true,
-                    'message' => 'Successfully released item/s',
+                    'message' => 'Successfully returned items',
                     'method' => "PATCH"
                 ]);
             } catch (\Exception $e) {

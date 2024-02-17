@@ -6,6 +6,7 @@ use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
 use App\Rules\AcceptOnlyAllowedObjFields;
 use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
+use App\Rules\ManageTransactionRules\IsEarlyToReleaseItem;
 use App\Rules\ManageTransactionRules\IsItemApproved;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToRelease;
 use App\Rules\ManageTransactionRules\IsTransactionApprovedStatus;
@@ -62,8 +63,7 @@ class ReleaseApprovedItemRequest extends FormRequest
                 'exists:borrowed_items,id',
                 new IsBorrowedItemPartOfTransaction($this->all()),
                 new IsItemApproved($this->all()),
-
-                // IsItemReturnDateLapsed // Disallow release if current time > return date
+                new IsEarlyToReleaseItem // Disallow release if current time > return date
             ],
             'items.*.is_released' => [
                 'required',

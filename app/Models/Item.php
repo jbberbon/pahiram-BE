@@ -37,4 +37,20 @@ class Item extends Model
         return $this->belongsTo(ItemGroup::class);
     }
 
+    public static function getApcIdByItemId($itemId)
+    {
+        $item = self::where('id', $itemId)->first();
+        return $item ? $item->apc_item_id : null;
+    }
+    public static function getModelNameById($itemId)
+    {
+        $item = self::where('id', $itemId)->first();
+        if (!$item) {
+            return null;
+        }
+        $itemGroup = ItemGroup::find($item->item_group_id);
+        return $itemGroup ? $itemGroup->model_name : null;
+    }
+
+
 }

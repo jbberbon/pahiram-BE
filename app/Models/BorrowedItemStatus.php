@@ -36,7 +36,6 @@ class BorrowedItemStatus extends Model
     public static function getStatusById($statusId)
     {
         $status = self::where('id', $statusId)->first();
-
         return $status ? $status->borrowed_item_status : null;
     }
 }

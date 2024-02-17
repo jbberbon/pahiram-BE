@@ -80,7 +80,7 @@ class FacilitateReturnRequest extends FormRequest
             'items.*' => [
                 'required',
                 'array',
-                'min:3',
+                'min:2',
                 'max:5',
                 new AcceptOnlyAllowedObjFields([
                     'borrowed_item_id',
@@ -99,10 +99,6 @@ class FacilitateReturnRequest extends FormRequest
                 // Ofc you can only return currently possessed item or unreturned item
                 new IsItemInPossessionOrUnreturned($this->all()),
             ],
-            'items.*.is_returned' => [
-                'required',
-                'boolean'
-            ],
             'items.*.item_status' => [
                 'required',
                 'string',
@@ -110,7 +106,7 @@ class FacilitateReturnRequest extends FormRequest
                     ...$this->returnedItemStatusArray,
                     ...$this->unreturnedItemStatusArray
                 ]),
-                new ValidateReturnItemStatus($this->all())
+                // new ValidateReturnItemStatus($this->all())
             ],
             'items.*.item_penalty' => [
                 'sometimes',
