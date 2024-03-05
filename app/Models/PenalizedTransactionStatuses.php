@@ -15,10 +15,17 @@ class PenalizedTransactionStatuses extends Model
         'description',
     ];
 
-    public static function getIdByStatus($status)
+    public static function getIdByStatus($statusName)
     {
-        $status = self::where('status', $status)->first();
+        $status = self::where('status', $statusName)->first();
 
         return $status ? $status->id : null;
+    }
+
+    public static function getStatusById($statusId)
+    {
+        $status = self::where('id', $statusId)->first();
+
+        return $status ? $status->status : null;
     }
 }

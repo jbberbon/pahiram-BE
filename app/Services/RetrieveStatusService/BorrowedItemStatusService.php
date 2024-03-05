@@ -31,4 +31,9 @@ class BorrowedItemStatusService
     {
         return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::DISAPPROVED);
     }
+
+    public static function getApprovedStatusId()
+    {
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::APPROVED);
+    }
 }

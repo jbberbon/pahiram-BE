@@ -13,17 +13,29 @@ class PenalizedTransactionStatusesSeeder extends Seeder
     public function run(): void
     {
         $statuses = [
+            // [
+            //     'status' => 'PENDING_SETTLEMENT',
+            //     'description' => 'The penalty is up for settlement'
+            // ],
+            // [
+            //     'status' => 'UNSETTLED',
+            //     'description' => 'Either Delinquent no longer wants to settle penalty or is unresponsive in payment followups'
+            // ],
             [
-                'status' => 'PENDING_SETTLEMENT',
-                'description' => 'The penalty is up for settlement'
+                'status' => 'UNPAID',
+                'description' => 'Delinquent no longer able to pay penalty'
+            ],
+            [
+                'status' => 'PAID',
+                'description' => 'The penalty is paid through the cashier'
             ],
             [
                 'status' => 'SETTLED',
-                'description' => 'The penalty is settled'
+                'description' => 'The penalty is settled by the Finance Supervisor through promissory note etc.'
             ],
             [
-                'status' => 'UNSETTLED',
-                'description' => 'Either Delinquent no longer wants to settle penalty or is unresponsive in payment followups'
+                'status' => 'PENDING_PAYMENT',
+                'description' => 'The penalty is up for payment'
             ],
         ];
         foreach ($statuses as $status) {

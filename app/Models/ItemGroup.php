@@ -42,4 +42,16 @@ class ItemGroup extends Model
         }
         return $this->items()->where('item_status_id', $activeStatus->id)->count();
     }
+
+    public static function getOfficeById($itemGroupId)
+    {
+        $itemGroup = self::find($itemGroupId);
+
+        if (!$itemGroup) {
+            return null;
+        }
+
+        return Department::getAcronymById($itemGroup->department_id);
+
+    }
 }

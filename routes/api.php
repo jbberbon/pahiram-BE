@@ -5,6 +5,8 @@ use App\Http\Controllers\BorrowTransaction\ManageBorrowingRequestController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BorrowTransaction\ManageBorrowTransactionController;
 use App\Http\Controllers\BorrowTransaction\ManageEndorsementController;
+use App\Http\Controllers\Inventory\PLOManageInventory;
+use App\Http\Controllers\Penalty\ManagePenaltyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,6 +38,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
     Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
     Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
+    Route::get('/user/penalized-transaction', [ManagePenaltyController::class, 'index']);
+    Route::group(['middleware' => ['is_penalized_transaction_existent']], function () {
+        Route::get('/user/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
+    });
+
 
     // Is Endorser
     Route::group(['middleware' => ['is_endorser']], function () {
@@ -67,6 +74,24 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
     });
 
+    // Is PLO Employee
+    Route::group(['middleware' => ['is_inventory_employee']], function () {
+        Route::get('/inventory', [PLOManageInventory::class, 'index']);
+        Route::get('/inventory/{itemId}', [PLOManageInventory::class, 'show']);
+    });
+
+    // Is Finance Employee
+    Route::group(['middleware' => ['is_finance_employee']], function () {
+        Route::get('/penalized-transaction', [ManagePenaltyController::class, 'index']);
+
+        Route::group(['middleware' => ['is_penalized_transaction_existent']], function () {
+            Route::get('/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
+            Route::patch('/penalized-transaction/{penalizedTransactionId}/mark-as-paid', [ManagePenaltyController::class, 'payPenalty']);
+        });
+
+
+
+    });
 
     Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
 });

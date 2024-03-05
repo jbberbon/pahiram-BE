@@ -16,11 +16,11 @@ class BorrowTransactionStatusSeeder extends Seeder
         $transac_statuses = [
             [
                 "transac_status" => "PENDING_ENDORSER_APPROVAL",
-                "description" => "Transaction is awaiting for approval",
+                "description" => "Transaction is awaiting for endorser approval",
             ],
             [
                 "transac_status" => "PENDING_BORROWING_APPROVAL",
-                "description" => "Transaction is awaiting for approval",
+                "description" => "Transaction is awaiting for borrowing approval",
             ],
             [
                 "transac_status" => "APPROVED",

@@ -10,13 +10,13 @@ class CalculatePenalty
     public static function penaltyAmount($borrowedItemId)
     {
         if (!$borrowedItemId) {
-            return 0;
+            return null;
         }
 
         $borrowedItem = BorrowedItem::find($borrowedItemId);
 
         if (!$borrowedItem) {
-            return 0;
+            return null;
         }
 
         $dueDate = Carbon::parse($borrowedItem->due_date);
@@ -27,7 +27,7 @@ class CalculatePenalty
         // Calculate penalty based on time elapsed
         if ($timeElapsedHours < 0) {
             // No penalty if returned before due date
-            return 0;
+            return null;
         } elseif ($timeElapsedHours <= 24) {
             // Penalty for less than or equal to 24 hours late
             return 100;

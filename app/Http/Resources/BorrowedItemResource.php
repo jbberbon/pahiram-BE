@@ -26,6 +26,8 @@ class BorrowedItemResource extends JsonResource
             'status' => BorrowedItemStatus::getStatusById($this->borrowed_item_status_id),
             'start_date' => $this->start_date,
             'due_date' => $this->due_date,
+            'date_returned' => $this->date_returned,
+            'penalty' => $this->penalty
         ];
     }
 }

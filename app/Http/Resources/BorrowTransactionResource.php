@@ -5,6 +5,8 @@ namespace App\Http\Resources;
 use App\Models\BorrowPurpose;
 use App\Models\BorrowTransactionStatus;
 use App\Models\Department;
+use App\Models\PenalizedTransaction;
+use App\Models\PenalizedTransactionStatuses;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,6 +30,7 @@ class BorrowTransactionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         $data = [
             'id' => $this->id,
             'borrower' => User::getNameBasedOnId($this->borrower_id),
@@ -48,6 +51,17 @@ class BorrowTransactionResource extends JsonResource
 
         if ($this->isApprovalOverdue !== null) {
             $data['is_approval_overdue'] = $this->isApprovalOverdue;
+        }
+
+        $penalized = PenalizedTransaction::where('borrowing_transac_id', $this->id)->first();
+        if ($penalized) {
+            $data['penalized_transac_id'] = $penalized->id;
+            $data['receipt_number'] = $penalized->receipt_number;
+            $data['penalty_status'] = PenalizedTransactionStatuses::getStatusById($penalized->status_id);
+            $data['remarks_by_cashier'] = $penalized->remarks_by_cashier;
+            $data['remarks_by_finance_supervisor'] = $penalized->remarks_by_supervisor;
+            $data['paid_at'] = $penalized->paid_at;
+            $data['settled_at'] = $penalized->settled_at;
         }
 
         return $data;

@@ -82,6 +82,19 @@ class User extends Authenticatable
             $lastName = $user->last_name;
             return $firstName . ' ' . $lastName;
         }
+
+        return null;
+    }
+
+    public static function getApcIdBasedOnId($userId)
+    {
+        $user = self::where('id', $userId)->first();
+
+        if ($user) {
+            return $user->apc_id;
+        }
+
+        return null;
     }
 
 

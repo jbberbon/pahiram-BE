@@ -16,6 +16,7 @@ use App\Services\ItemAvailability;
 use Illuminate\Http\Response;
 
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
+use Illuminate\Support\Facades\Auth;
 
 class SubmitBorrowRequestService
 {
@@ -179,7 +180,8 @@ class SubmitBorrowRequestService
         $departmentId = Department::getIdBasedOnAcronym($transactionData['department']);
         $userDefinedPurpose = $transactionData['user_defined_purpose'];
 
-
+        $user = Auth::user();
+        $employeeEmail = "@apc.edu.ph";
 
         $newBorrowRequestArgs = null;
         // Convert APC_ID to Pahiram ID
@@ -189,7 +191,9 @@ class SubmitBorrowRequestService
             $newBorrowRequestArgs = [
                 'endorsed_by' => $transactionData['endorsed_by'],
                 'borrower_id' => $userId,
-                'transac_status_id' => $this->pendingEndorserApprovalTransactionId,
+                'transac_status_id' =>
+                    strpos($user->email, $employeeEmail) ?
+                    $this->approvedTransactionId : $this->pendingEndorserApprovalTransactionId,
                 'purpose_id' => $purposeId,
                 'department_id' => $departmentId,
                 'user_defined_purpose' => $userDefinedPurpose
@@ -197,7 +201,9 @@ class SubmitBorrowRequestService
         } else {
             $newBorrowRequestArgs = [
                 'borrower_id' => $userId,
-                'transac_status_id' => $this->pendingBorrowingApprovalTransactionId,
+                'transac_status_id' =>
+                    strpos($user->email, $employeeEmail) ?
+                    $this->approvedTransactionId : $this->pendingBorrowingApprovalTransactionId,
                 'purpose_id' => $purposeId,
                 'department_id' => $departmentId,
                 'user_defined_purpose' => $userDefinedPurpose
@@ -216,6 +222,11 @@ class SubmitBorrowRequestService
     public function insertNewBorrowedItems($chosenItems, $newBorrowRequestId)
     {
         $newBorrowedItems = [];
+        $pendingStatusId = BorrowedItemStatusService::getPendingStatusId();
+        $approvedStatusId = BorrowedItemStatusService::getApprovedStatusId();
+
+        $user = Auth::user();
+        $employeeEmail = "@apc.edu.ph";
         foreach ($chosenItems as $borrowedItem) {
             // Remove qty field
             unset($borrowedItem['quantity']);
@@ -226,7 +237,8 @@ class SubmitBorrowRequestService
                     'item_id' => $itemId,
                     'start_date' => $borrowedItem['start_date'],
                     'due_date' => $borrowedItem['return_date'],
-                    'borrowed_item_status_id' => BorrowedItemStatusService::getPendingStatusId()
+                    'borrowed_item_status_id' =>
+                        strpos($user->email, $employeeEmail) ? $approvedStatusId : $pendingStatusId
                 ];
                 $newBorrowedItems[$itemId] = BorrowedItem::create($newBorrowedItemsArgs);
             }

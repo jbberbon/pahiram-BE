@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\SystemAdmin;
 use App\Models\User;
+use App\Models\UserDepartment;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -96,10 +97,14 @@ class AuthController extends Controller
             // make dept_id as code, role also,
             $role = Role::where('id', $user->user_role_id)->firstOrFail()->role;
 
-            $department = null;
-            if ($user->department_id !== null) {
-                $department = Department::where('id', $user->department_id)->firstOrFail()->department_acronym;
+            $userDepartment = UserDepartment::where('user_id', $user->id)->first();
+            if ($userDepartment) {
+                $userDepartment = Department::where('id', $userDepartment->department_id)->first();
             }
+
+            // if ($user->department_id !== null) {
+            //     $department = Department::where('id', $user->department_id)->firstOrFail()->department_acronym;
+            // }
 
             $accStatus = null;
             if ($user->acc_status_id !== null) {
@@ -128,7 +133,7 @@ class AuthController extends Controller
                     'user' => [
                         ...$user->toArray(),
                         'course' => $course,
-                        'department_code' => $department,
+                        'department_code' => $userDepartment ? $userDepartment->department_acronym : null,
                         'role' => $role,
                         'acc_status' => $accStatus,
                         'is_admin' => $isAdmin,

@@ -18,7 +18,7 @@ class ItemStatusSeeder extends Seeder
                 "item_status" => "ACTIVE",
                 "description" => "Item is in circulation",
             ],
-            
+
             [
                 "item_status" => "INACTIVE",
                 "description" => "Item is undergoing repair / maintenance but will be active later",
@@ -42,6 +42,10 @@ class ItemStatusSeeder extends Seeder
             [
                 "item_status" => "LOST",
                 "description" => "Item is lost",
+            ],
+            [
+                "item_status" => "UNRETURNED",
+                "description" => "Item is unreturned by borrower or designated personnel",
             ],
         ];
 

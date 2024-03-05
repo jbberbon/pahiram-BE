@@ -51,7 +51,7 @@ class ManageBorrowTransactionController extends Controller
     private $unreturnedTransacStatusId;
 
     protected $calculatePenalty;
-    private $pendingPenaltySettlementStatusId;
+    private $pendingPenaltyPaymentStatusId;
 
     // Item Statuses
     private $lostInventoryStatusId;
@@ -84,7 +84,7 @@ class ManageBorrowTransactionController extends Controller
         $this->completeTransacStatusId = BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::TRANSACTION_COMPLETE);
         $this->unreturnedTransacStatusId = BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::UNRETURNED);
 
-        $this->pendingPenaltySettlementStatusId = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_SETTLEMENT);
+        $this->pendingPenaltyPaymentStatusId = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_PAYMENT);
 
         // Item inventory status
         $this->lostInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::LOST);
@@ -566,6 +566,7 @@ class ManageBorrowTransactionController extends Controller
 
         }
 
+        $returnedStatuses = ['RETURNED', 'DAMAGED_BUT_REPAIRABLE', 'UNREPAIRABLE'];
         if (!isset($validatedData['return_all_items']) && isset($validatedData['items'])) {
             try {
                 DB::beginTransaction();
@@ -573,11 +574,13 @@ class ManageBorrowTransactionController extends Controller
                     $borrowedItemStatusId = BorrowedItemStatus::getIdByStatus($item['item_status']);
                     // Update borrowed item status
                     $borrowedItem = BorrowedItem::findOrfail($item['borrowed_item_id']);
+                    $dateReturned = in_array($item['item_status'], $returnedStatuses) ? now()->format('Y-m-d H:i:s') : null;
                     if (isset($item['item_remarks']) && isset($item['item_penalty'])) {
                         $borrowedItem->update([
                             'borrowed_item_status_id' => $borrowedItemStatusId,
                             'remarks' => $item['item_remarks'],
                             'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
+                            'date_returned' => $dateReturned
                         ]);
                     }
 
@@ -585,6 +588,7 @@ class ManageBorrowTransactionController extends Controller
                         $borrowedItem->update([
                             'borrowed_item_status_id' => $borrowedItemStatusId,
                             'remarks' => $item['item_remarks'],
+                            'date_returned' => $dateReturned
                         ]);
                     }
 
@@ -592,6 +596,7 @@ class ManageBorrowTransactionController extends Controller
                         $borrowedItem->update([
                             'borrowed_item_status_id' => $borrowedItemStatusId,
                             'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
+                            'date_returned' => $dateReturned
                         ]);
                     }
 
@@ -599,13 +604,14 @@ class ManageBorrowTransactionController extends Controller
                         $latePenaltyAmount = $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']);
                         if ($latePenaltyAmount < 0) {
                             $borrowedItem->update([
-                                'borrowed_item_status_id' => $borrowedItemStatusId
+                                'borrowed_item_status_id' => $borrowedItemStatusId,
+                                'date_returned' => $dateReturned
                             ]);
                         } else {
                             $borrowedItem->update([
                                 'borrowed_item_status_id' => $borrowedItemStatusId,
                                 'penalty' => $latePenaltyAmount,
-
+                                'date_returned' => $dateReturned
                             ]);
                         }
                     }
@@ -625,12 +631,16 @@ class ManageBorrowTransactionController extends Controller
                     // Damaged
                     if ($borrowedItem->borrowed_item_status_id === $this->damageButRepairableItemStatusId) {
                         Item::find($borrowedItem->item_id)
-                            ->update(['item_status_id' => $this->forRepairInventoryStatusId]);
+                            ->update([
+                                'item_status_id' => $this->forRepairInventoryStatusId,
+                            ]);
                     }
                     // Unrepairable
                     if ($borrowedItem->borrowed_item_status_id === $this->unrepairableItemStatusId) {
                         Item::find($borrowedItem->item_id)
-                            ->update(['item_status_id' => $this->beyondRepairInventoryStatusId]);
+                            ->update([
+                                'item_status_id' => $this->beyondRepairInventoryStatusId,
+                            ]);
                     }
 
                 }
@@ -683,7 +693,7 @@ class ManageBorrowTransactionController extends Controller
                         if (!$penalizedTransacExists) {
                             PenalizedTransaction::create([
                                 'borrowing_transac_id' => $transacId,
-                                'status_id' => $this->pendingPenaltySettlementStatusId,
+                                'status_id' => $this->pendingPenaltyPaymentStatusId,
                             ]);
                         }
                     } else {
@@ -713,7 +723,7 @@ class ManageBorrowTransactionController extends Controller
                         if (!$penalizedTransacExists) {
                             PenalizedTransaction::create([
                                 'borrowing_transac_id' => $transacId,
-                                'status_id' => $this->pendingPenaltySettlementStatusId,
+                                'status_id' => $this->pendingPenaltyPaymentStatusId,
                             ]);
                         }
                     } else {

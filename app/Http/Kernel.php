@@ -2,9 +2,12 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\ManageInventoryMiddleware\IsInventoryEmployee;
 use App\Http\Middleware\IsLendingEmployee;
 use App\Http\Middleware\IsEndorser;
 use App\Http\Middleware\IsSuspended;
+use App\Http\Middleware\ManagePenaltyMiddleware\IsFinanceEmployee;
+use App\Http\Middleware\ManagePenaltyMiddleware\IsPenalizedTransactionExistent;
 use App\Http\Middleware\ManageTransactionMiddleware\IsTransactionExistent;
 use App\Http\Middleware\ManageTransactionMiddleware\IsTransactionWithinUserOfficeJurisdiction;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -78,8 +81,13 @@ class Kernel extends HttpKernel
         'is_lending_employee' => IsLendingEmployee::class,
         'is_suspended' => IsSuspended::class,
         'is_endorser' => IsEndorser::class,
+        'is_inventory_employee' => IsInventoryEmployee::class,
 
         'is_transaction_existent' => IsTransactionExistent::class,
         'is_transaction_within_office_jurisdiction' => IsTransactionWithinUserOfficeJurisdiction::class,
+
+        'is_finance_employee' => IsFinanceEmployee::class,
+        'is_penalized_transaction_existent' => IsPenalizedTransactionExistent::class
+
     ];
 }
