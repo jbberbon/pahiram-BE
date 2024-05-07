@@ -13,8 +13,8 @@
     </head>
     <body class="bg-gray-100 min-h-screen flex items-center justify-center antialiased">
     <div class="text-center">
-        <h2 class="text-2xl font-semibold mb-4">Pahiram Backend API Service</h2>
-        <h4 class="text-lg">Contact The Polarber Group for more information.</h4> 
+        <h1 class="text-4xl font-semibold mb-4">Pahiram Backend API Service</h1>
+        <h4 class="text-lg">Contact The Polarber Group for more information</h4>
     </div>
 </body>
 </html>
