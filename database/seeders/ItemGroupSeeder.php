@@ -19,24 +19,24 @@ class ItemGroupSeeder extends Seeder
                 "is_required_supervisor_approval" => true,
 
                 //FKs:: Change ID values
-                "group_category_id" => "a0331f53-5af3-4ad7-a31e-8c1a424f5b89",
-                "department_id" => "9c8a30a9-596b-4edf-b6a4-4d1810551838",
+                "group_category_id" => "ba881ae9-9165-414a-8d78-95d95337f021",
+                "department_id" => "3b3902ba-1a70-4928-a7d0-4ce1e897929f",
             ],
             [
                 "model_name" => "MacBook Air M1",
                 "is_required_supervisor_approval" => true,
 
                 //FKs:: Change ID values
-                "group_category_id" => "2637d107-18b7-445f-917b-373e4c904cfe",
-                "department_id" => "9c8a30a9-596b-4edf-b6a4-4d1810551838",
+                "group_category_id" => "beb92f9f-e629-48d2-954f-0e23eff99a94",
+                "department_id" => "3b3902ba-1a70-4928-a7d0-4ce1e897929f",
             ],
             [
                 "model_name" => "Spalding FIBA 2007",
                 "is_required_supervisor_approval" => false,
 
                 //FKs:: Change ID values
-                "group_category_id" => "3777f273-167c-4b61-aabb-8f43b7349fc2",
-                "department_id" => "4cdebdc5-7c74-4cca-80b7-c27b2c2c91d0",
+                "group_category_id" => "ba881ae9-9165-414a-8d78-95d95337f021",
+                "department_id" => "3b3902ba-1a70-4928-a7d0-4ce1e897929f",
             ],
         ];
         foreach ($groups as $group) {

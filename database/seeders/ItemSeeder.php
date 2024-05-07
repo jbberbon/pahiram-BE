@@ -16,33 +16,33 @@ class ItemSeeder extends Seeder
         $items = [
             [
                 'apc_item_id' => '000001',
-                'item_group_id' => '7147eed4-6065-4013-8def-7b11dd729bd6',
-                'item_status_id' => '22e3817c-1882-4a0c-ae21-60c16802085d',
+                'item_group_id' => '1c10af39-d8e2-46a7-9fd5-28352694d031',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
             [
                 'apc_item_id' => '000002',
-                'item_group_id' => '7147eed4-6065-4013-8def-7b11dd729bd6',
-                'item_status_id' => '22e3817c-1882-4a0c-ae21-60c16802085d',
+                'item_group_id' => '1c10af39-d8e2-46a7-9fd5-28352694d031',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
             [
                 'apc_item_id' => '000003',
-                'item_group_id' => '9e009126-99a6-46be-8236-7718554748ac',
-                'item_status_id' => '22e3817c-1882-4a0c-ae21-60c16802085d',
+                'item_group_id' => '34ada0a7-82a7-43a7-bbea-9feae8db4c08',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
             [
                 'apc_item_id' => '000004',
-                'item_group_id' => '9e009126-99a6-46be-8236-7718554748ac',
-                'item_status_id' => '6309da34-c745-4d72-9fb0-ccc6fc5b6eae',
+                'item_group_id' => '34ada0a7-82a7-43a7-bbea-9feae8db4c08',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
             [
                 'apc_item_id' => '000005',
-                'item_group_id' => '835532a8-a6a6-4991-9c22-911954ba374f',
-                'item_status_id' => '22e3817c-1882-4a0c-ae21-60c16802085d',
+                'item_group_id' => '6b629202-1fab-4b3e-9fed-a001244bd659',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
             [
                 'apc_item_id' => '000006',
-                'item_group_id' => '835532a8-a6a6-4991-9c22-911954ba374f',
-                'item_status_id' => '22e3817c-1882-4a0c-ae21-60c16802085d',
+                'item_group_id' => '6b629202-1fab-4b3e-9fed-a001244bd659',
+                'item_status_id' => '58fb917b-191c-46c5-a56f-6e3ed8164808',
             ],
         ];
         foreach ($items as $item) {

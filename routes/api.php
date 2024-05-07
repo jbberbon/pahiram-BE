@@ -94,4 +94,18 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
+
+    // Is Admin
+    Route::group(['middleware' => ['is_admin']], function () {
+        // Route::get('/roles/admin', [RolesController::class, 'getAdmin']); 
+        // Route::post('/roles/admin/assign', [RolesController::class, 'addAdmin']); 
+        // Route::delete('/roles/admin/remove', [RolesController::class, 'deleteAdmin']);
+    });
+
+    // Is Supervisor
+    Route::group(['middleware' => ['is_supervisor']], function () {
+        // Route::get('/roles/supervisor', [RolesController::class, 'getSupervisor']);
+        // Route::post('/roles/supervisor/assign', [RolesController::class, 'addSupervisor']);
+        // Route::delete('/roles/supervisor/remove', [RolesController::class, 'deleteSupervisor']);
+    });
 });

@@ -2,6 +2,8 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\ManageAccountRolesMiddleware\IsAdmin;
+use App\Http\Middleware\ManageAccountRolesMiddleware\IsSupervisor;
 use App\Http\Middleware\ManageInventoryMiddleware\IsInventoryEmployee;
 use App\Http\Middleware\IsLendingEmployee;
 use App\Http\Middleware\IsEndorser;
@@ -78,6 +80,8 @@ class Kernel extends HttpKernel
          * Pahiram Middlewares
          * 
          */
+        'is_admin' => IsAdmin::class,
+        'is_supervisor' => IsSupervisor::class,
         'is_lending_employee' => IsLendingEmployee::class,
         'is_suspended' => IsSuspended::class,
         'is_endorser' => IsEndorser::class,
