@@ -89,8 +89,7 @@ class ManageBorrowingRequestController extends Controller
                         'item_groups.id',
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
-                        'borrowed_items.borrowed_item_status_id',
-
+                        'borrowed_items.borrowed_item_status_id'
                     )
                     ->select(
                         'item_groups.id',
