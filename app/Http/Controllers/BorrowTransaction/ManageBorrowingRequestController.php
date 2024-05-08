@@ -89,7 +89,8 @@ class ManageBorrowingRequestController extends Controller
                         'item_groups.id',
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
-                        'borrowed_items.borrowed_item_status_id'
+                        'borrowed_items.borrowed_item_status_id',
+                        'borrowed_item_statuses.borrowed_item_status'
                     )
                     ->select(
                         'item_groups.id',
@@ -135,7 +136,7 @@ class ManageBorrowingRequestController extends Controller
         } catch (\Exception $e) {
             return response([
                 'status' => false,
-                'message' => 'An error occurred while submittitng the borrow request.',
+                'message' => 'An error occurred while fetching the borrow request.',
                 'error' => $e->getMessage(),
                 'method' => 'POST',
             ], 500);
@@ -290,7 +291,8 @@ class ManageBorrowingRequestController extends Controller
         if (
             isset($validatedData['request_data']) &&
             !isset($validatedData['edit_existing_items']) &&
-            !isset($validatedData['add_new_items']
+            !isset(
+            $validatedData['add_new_items']
         )
         ) {
             try {
@@ -316,7 +318,8 @@ class ManageBorrowingRequestController extends Controller
         if (
             isset($validatedData['request_data']) &&
             !isset($validatedData['edit_existing_items']) &&
-            isset($validatedData['add_new_items']
+            isset(
+            $validatedData['add_new_items']
         )
         ) {
             try {
@@ -348,7 +351,8 @@ class ManageBorrowingRequestController extends Controller
         if (
             !isset($validatedData['request_data']) &&
             !isset($validatedData['edit_existing_items']) &&
-            isset($validatedData['add_new_items']
+            isset(
+            $validatedData['add_new_items']
         )
         ) {
             try {
