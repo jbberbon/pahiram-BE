@@ -38,14 +38,14 @@ class AuthController extends Controller
             /**
              * 2. Access APCIS login API
              */
-            $response = Http::timeout(10)->post('http://167.172.74.157/api/login', $validatedData);
+            $dummyApcisUrl = env('APCIS_URL');
+            $response = Http::timeout(10)->post($dummyApcisUrl . 'login', $validatedData);
             $apiReturnData = json_decode($response->body(), true);
 
             // APCIS login API returns false
             if ($apiReturnData['status'] == false) {
                 return response($apiReturnData, 401);
             }
-
 
             $apiUserData = $apiReturnData['data']['user'];
             $apiCourseData = $apiReturnData['data']['course'];
@@ -65,7 +65,6 @@ class AuthController extends Controller
              */
             $user = User::where('apc_id', $apiUserData['apc_id'])->first();
 
-            // return $user;
 
             // Does not exist yet, add user to db
             if (!$user) {

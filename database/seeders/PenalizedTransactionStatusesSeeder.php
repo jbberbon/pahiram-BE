@@ -13,14 +13,6 @@ class PenalizedTransactionStatusesSeeder extends Seeder
     public function run(): void
     {
         $statuses = [
-            // [
-            //     'status' => 'PENDING_SETTLEMENT',
-            //     'description' => 'The penalty is up for settlement'
-            // ],
-            // [
-            //     'status' => 'UNSETTLED',
-            //     'description' => 'Either Delinquent no longer wants to settle penalty or is unresponsive in payment followups'
-            // ],
             [
                 'status' => 'UNPAID',
                 'description' => 'Delinquent no longer able to pay penalty'
