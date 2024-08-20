@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('category_name')->unique();
             $table->boolean('is_consumable')->default(0);
+            
             $table->timestamps();
         });
     }

@@ -14,8 +14,7 @@ class NewUserDefaultData
     {
         $borrower = USER_ROLE::BORROWER;
         $active = ACCOUNT_STATUS::ACTIVE;
-
-
+        
         $role = Role::where('role', $borrower)->first();
         $accStatus = AccountStatus::where('acc_status', $active)->first();
 

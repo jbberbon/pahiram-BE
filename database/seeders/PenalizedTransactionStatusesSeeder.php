@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\PenalizedTransactionStatuses;
+use App\Utils\Constants\Statuses\PENALIZED_TRANSAC_STATUS;
 use Illuminate\Database\Seeder;
 
 class PenalizedTransactionStatusesSeeder extends Seeder
@@ -12,24 +13,7 @@ class PenalizedTransactionStatusesSeeder extends Seeder
      */
     public function run(): void
     {
-        $statuses = [
-            [
-                'status' => 'UNPAID',
-                'description' => 'Delinquent no longer able to pay penalty'
-            ],
-            [
-                'status' => 'PAID',
-                'description' => 'The penalty is paid through the cashier'
-            ],
-            [
-                'status' => 'SETTLED',
-                'description' => 'The penalty is settled by the Finance Supervisor through promissory note etc.'
-            ],
-            [
-                'status' => 'PENDING_PAYMENT',
-                'description' => 'The penalty is up for payment'
-            ],
-        ];
+        $statuses = PENALIZED_TRANSAC_STATUS::PENALIZED_TRANSAC_STATUS_ARRAY;
         foreach ($statuses as $status) {
             PenalizedTransactionStatuses::create($status);
         }

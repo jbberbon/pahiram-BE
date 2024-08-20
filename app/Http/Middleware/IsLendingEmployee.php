@@ -2,12 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\BMO;
 use App\Models\Department;
-use App\Models\ESLO;
-use App\Models\ITRO;
 use App\Models\UserDepartment;
-use App\Utils\Constants\OFFICE_CODES;
+use App\Utils\Constants\OFFICE_LIST;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,13 +16,21 @@ class IsLendingEmployee
     private $esloId;
     private $itroId;
 
+    private $bmoAcronym;
+    private $itroAcronym;
+    private $esloAcronym;
+
     private $lendingOfficesIds;
 
     public function __construct()
     {
-        $this->bmoId = Department::getIdBasedOnAcronym(OFFICE_CODES::BMO);
-        $this->esloId = Department::getIdBasedOnAcronym(OFFICE_CODES::ESLO);
-        $this->itroId = Department::getIdBasedOnAcronym(OFFICE_CODES::ITRO);
+        $this->bmoAcronym = OFFICE_LIST::OFFICE_ARRAY["BMO"]["acronym"];
+        $this->itroAcronym = OFFICE_LIST::OFFICE_ARRAY["ITRO"]["acronym"];
+        $this->esloAcronym = OFFICE_LIST::OFFICE_ARRAY["ESLO"]["acronym"];
+
+        $this->bmoId = Department::getIdBasedOnAcronym($this->bmoAcronym);
+        $this->esloId = Department::getIdBasedOnAcronym($this->esloAcronym);
+        $this->itroId = Department::getIdBasedOnAcronym($this->itroAcronym);
 
         $this->lendingOfficesIds = [$this->bmoId, $this->esloId, $this->itroId];
     }

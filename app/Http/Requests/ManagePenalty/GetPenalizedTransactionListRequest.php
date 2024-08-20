@@ -23,7 +23,7 @@ class GetPenalizedTransactionListRequest extends FormRequest
             'status' => [
                 'sometimes',
                 'string',
-                Rule::in(PENALIZED_TRANSAC_STATUS::ALL)
+                Rule::in(PENALIZED_TRANSAC_STATUS::STATUS_KEYS)
             ]
 
         ];

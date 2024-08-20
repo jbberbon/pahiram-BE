@@ -19,7 +19,7 @@ class BorrowedItemStatusService
 
     public static function getOverdueStatusId()
     {
-        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::OVERDUE);
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::OVERDUE_RETURN);
     }
 
     public static function getCancelledStatusId()

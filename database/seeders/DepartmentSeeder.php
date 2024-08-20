@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Department;
+use App\Utils\Constants\OFFICE_LIST;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,51 +14,7 @@ class DepartmentSeeder extends Seeder
      */
     public function run(): void
     {
-        $departments = [  
-            [
-                'department' => 'Buidling Maintenance Office',
-                'department_acronym' => 'BMO',
-                'supervisor_id' => '',
-                'is_lending_office' => 1
-            ],
-            [
-                'department' => 'Engineering and Science Laboratory Office',
-                'department_acronym' => 'ESLO',
-                'supervisor_id' => '',
-                'is_lending_office' => 1
-            ],
-            [
-                'department' => 'Information Technology and Resource Office',
-                'department_acronym' => 'ITRO',
-                'supervisor_id' => '',
-                'is_lending_office' => 1
-            ],
-            // --------- NON LENDING
-            [
-                'department' => 'Purchasing and Logistics Office',
-                'department_acronym' => 'PLO',
-                'supervisor_id' => '',
-                'is_lending_office' => 0
-            ],
-            [
-                'department' => 'Finance and Accounting Department',
-                'department_acronym' => 'FAD',
-                'supervisor_id' => '',
-                'is_lending_office' => 0
-            ],
-            // [ No longer needed according to business rule
-            //     'department' => 'Human Resources Office',
-            //     'department_acronym' => 'HR',
-            //     'supervisor_id' => '',
-            //     'is_lending_office' => 0
-            // ],
-            [
-                'department' => 'No Designation',
-                'department_acronym' => 'N/A',
-                'supervisor_id' => '',
-                'is_lending_office' => 0
-            ],
-        ];
+        $departments = OFFICE_LIST::OFFICE_ARRAY;
         foreach ($departments as $department) {
             Department::create($department);
         }

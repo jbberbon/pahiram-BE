@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AccountStatus;
+use App\Utils\Constants\Statuses\ACCOUNT_STATUS;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,20 +14,8 @@ class AccountStatusSeeder extends Seeder
      */
     public function run(): void
     {
-        $statuses = [
-            [
-                'acc_status' => 'ACTIVE',
-                'description' => 'The account is active and in good standing'
-            ],
-            [
-                'acc_status' => 'DEACTIVATED',
-                'description' => 'The person is either have not enrolled yet or no longer affiliated with the school'
-            ],
-            [
-                'acc_status' => 'SUSPENDED',
-                'description' => 'The account needs to address outstanding penalties / issues'
-            ],
-        ];
+        $statuses = ACCOUNT_STATUS::STATUS_ARRAY;
+        
         foreach ($statuses as $status) {
             AccountStatus::create($status);
         }

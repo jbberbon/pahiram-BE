@@ -26,7 +26,7 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
         // $this->pendingBorrowApprovalStatusId = BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::PENDING_BORROWING_APPROVAL);
         $this->pendingItemApprovalStatusId = BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::PENDING_APPROVAL);
         $this->supervisorId = Role::getIdByRole(USER_ROLE::SUPERVISOR);
-        $this->coSupervisorId = Role::getIdByRole(USER_ROLE::CO_SUPERVISOR);
+        $this->coSupervisorId = Role::getIdByRole(USER_ROLE::COSUPERVISOR);
         $this->borrowManagerId = Role::getIdByRole(USER_ROLE::BORROWING_MANAGER);
         $this->inventoryManagerId = Role::getIdByRole(USER_ROLE::INVENTORY_MANAGER);
     }

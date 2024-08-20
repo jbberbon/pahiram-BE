@@ -13,26 +13,26 @@ class LocationSeeder extends Seeder
      */
     public function run(): void
     {
-        $locations = [
-            [
-                "room" => "MPH1",
-                "floor" => "1"
-            ],
-            [
-                "room" => "MPH2",
-                "floor" => "3"
-            ],
-            [
-                "room" => "LIBRARY",
-                "floor" => "7"
-            ],
-            [
-                "room" => "CAFETERIA",
-                "floor" => "1"
-            ],
-        ];
-        foreach ($locations as $location) {
-            Location::create($location);
-        }
+        // $locations = [
+        //     [
+        //         "room" => "MPH1",
+        //         "floor" => "1"
+        //     ],
+        //     [
+        //         "room" => "MPH2",
+        //         "floor" => "3"
+        //     ],
+        //     [
+        //         "room" => "LIBRARY",
+        //         "floor" => "7"
+        //     ],
+        //     [
+        //         "room" => "CAFETERIA",
+        //         "floor" => "1"
+        //     ],
+        // ];
+        // foreach ($locations as $location) {
+        //     Location::create($location);
+        // }
     }
 }

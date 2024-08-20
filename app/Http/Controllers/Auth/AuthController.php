@@ -54,7 +54,7 @@ class AuthController extends Controller
             /**
              * 3. Check COURSE if already exist in pahiram-BE Database
              */
-            $course = Course::where('course_acronym', $apiCourseData['course_acronym'])->first();
+            $course = Course::where('course_acronym', $apiCourseData['course_acronym'])->exists();
             // Does not exist yet, add to db, else do nothing
             if (!$course) {
                 $course = Course::create($apiCourseData);
@@ -65,15 +65,12 @@ class AuthController extends Controller
              */
             $user = User::where('apc_id', $apiUserData['apc_id'])->first();
 
-
             // Does not exist yet, add user to db
             if (!$user) {
                 $defaultData = NewUserDefaultData::defaultData($course);
                 $newUser = array_merge($apiUserData, $defaultData);
                 $user = User::create($newUser);
             }
-
-            // return $user;
 
             /**
              * 5. Generate Pahiram Token with expiration

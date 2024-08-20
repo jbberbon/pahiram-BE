@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
+use App\Utils\Constants\USER_ROLE;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,38 +14,7 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = [
-            [
-                'role' => 'BORROWER',
-                'description' => 'System borrower'
-            ],
-            // January 30, 2024
-            // NO need, Endorsers for now are identified using their @apc.edu.ph email
-            // [
-            //     'role' => 'ENDORSER',
-            //     'description' => 'Borrowing Endorser'
-            // ],
-            [
-                'role' => 'BORROWING_MANAGER',
-                'description' => 'Manages borrowing transactions'
-            ],
-            [
-                'role' => 'INVENTORY_MANAGER',
-                'description' => 'Manages inventory'
-            ],
-            [
-                'role' => 'PENALTY_MANAGER',
-                'description' => 'Manages borrowing panalties'
-            ],
-            [
-                'role' => 'CO_SUPERVISOR',
-                'description' => 'Alter ego of Supervisor but cannot designate office roles'
-            ],
-            [
-                'role' => 'SUPERVISOR',
-                'description' => 'Head of the designated office'
-            ],
-        ];
+        $roles = USER_ROLE::USER_ROLE_ARRAY;
         foreach ($roles as $role) {
             Role::create($role);
         }

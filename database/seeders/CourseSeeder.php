@@ -14,14 +14,6 @@ class CourseSeeder extends Seeder
      */
     public function run(): void
     {
-        $courses = [
-            [
-                'course' => 'No Course',
-                'course_acronym' => 'N/A'
-            ],
-        ];
-        foreach ($courses as $course) {
-            Course::create($course);
-        }
+        //
     }
 }

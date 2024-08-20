@@ -3,19 +3,9 @@
 namespace App\Services\BorrowRequestService;
 
 use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Models\BorrowPurpose;
-use App\Models\BorrowTransaction;
-use App\Models\BorrowTransactionStatus;
-use App\Models\Item;
-use App\Models\ItemGroup;
-use App\Models\ItemStatus;
 use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
-use App\Utils\Constants\BorrowedItemStatusConst;
-use App\Utils\Constants\ItemStatusConst;
-use App\Services\ItemAvailability;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class EditBorrowRequestService
