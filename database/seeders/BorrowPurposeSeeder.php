@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BorrowPurpose;
-use App\Utils\Constants\Statuses\BORROW_PURPOSE;
+use App\Utils\Constants\BORROW_PURPOSE;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

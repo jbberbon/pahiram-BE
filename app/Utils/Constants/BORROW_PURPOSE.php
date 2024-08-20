@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils\Constants\Statuses;
+namespace App\Utils\Constants;
 
 class BORROW_PURPOSE
 {
