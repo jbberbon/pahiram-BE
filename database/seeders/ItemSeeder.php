@@ -6,7 +6,7 @@ use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
 use App\Utils\Constants\GROUP_CATEGORY_SAMPLE;
-use App\Utils\Constants\ITEM_GROUP_SAMPLE;
+use App\Utils\Constants\SampleData\ITEM_GROUP_SAMPLE;
 use App\Utils\Constants\Statuses\ITEM_STATUS;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -154,7 +154,7 @@ class ItemSeeder extends Seeder
                 'item_status_id' => $this->getActiveStatus(),
             ],
             [
-                'apc_item_id' => '000003',
+                'apc_item_id' => '300000',
                 'item_group_id' => $this->getItemGroupPK($itemGroup->getItemGroupSample("JBL Quantum Duo Speaker")),
                 'item_status_id' => $this->getActiveStatus(),
             ],

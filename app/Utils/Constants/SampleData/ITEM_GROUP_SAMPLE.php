@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils\Constants;
+namespace App\Utils\Constants\SampleData;
 
 class ITEM_GROUP_SAMPLE
 {

@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('item_group_category', function (Blueprint $table) {
+        Schema::table('item_group_categories', function (Blueprint $table) {
             $table->boolean('is_barcode_sticker_placeable')->default(false); // Add this line
         });
     }
@@ -20,7 +20,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('item_group_category', function (Blueprint $table) {
+        Schema::table('item_group_categories', function (Blueprint $table) {
             $table->dropColumn('is_sticker_placeable'); // Add this line
         });
     }

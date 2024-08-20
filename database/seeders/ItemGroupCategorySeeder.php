@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ItemGroupCategory;
-use App\Utils\Constants\GROUP_CATEGORY_SAMPLE;
+use App\Utils\Constants\SampleData\GROUP_CATEGORY_SAMPLE;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

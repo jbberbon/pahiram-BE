@@ -18,52 +18,52 @@ class BORROWED_ITEM_STATUS
     const LOST = 'LOST';
 
     const BORROWED_ITEM_STATUS_ARRAY = [
-        PENDING_APPROVAL => [
-            "status" => self::PENDING_APPROVAL,
+        "PENDING_APPROVAL" => [
+            "borrowed_item_status" => self::PENDING_APPROVAL,
             "description" => "Item is awaiting approval"
         ],
-        APPROVED => [
-            "status" => self::APPROVED,
+        "APPROVED" => [
+            "borrowed_item_status" => self::APPROVED,
             "description" => "Item is approved"
         ],
-        CANCELLED => [
-            "status" => self::CANCELLED,
+        "CANCELLED" => [
+            "borrowed_item_status" => self::CANCELLED,
             "description" => "Item is cancelled by borrower"
         ],
-        DISAPPROVED => [
-            "status" => self::DISAPPROVED,
+        "DISAPPROVED" => [
+            "borrowed_item_status" => self::DISAPPROVED,
             "description" => "Item is declined to be borrowed"
         ],
-        IN_POSSESSION => [
-            "status" => self::IN_POSSESSION,
+        "IN_POSSESSION" => [
+            "borrowed_item_status" => self::IN_POSSESSION,
             "description" => "Item currently borrowed"
         ],
-        UNRELEASED => [
-            "status" => self::UNRELEASED,
+        "UNRELEASED" => [
+            "borrowed_item_status" => self::UNRELEASED,
             "description" => "Item is not released to borrower"
         ],
-        OVERDUE_RETURN => [
-            "status" => self::OVERDUE_RETURN,
+        "OVERDUE_RETURN" => [
+            "borrowed_item_status" => self::OVERDUE_RETURN,
             "description" => "Item is overdue for return"
         ],
-        RETURNED => [
-            "status" => self::RETURNED,
+        "RETURNED" => [
+            "borrowed_item_status" => self::RETURNED,
             "description" => "Item has been returned after a borrowing transaction"
         ],
-        UNRETURNED => [
-            "status" => self::UNRETURNED,
+        "UNRETURNED" => [
+            "borrowed_item_status" => self::UNRETURNED,
             "description" => "Item is unreturned"
         ],
-        DAMAGED_BUT_REPAIRABLE => [
-            "status" => self::DAMAGED_BUT_REPAIRABLE,
+        "DAMAGED_BUT_REPAIRABLE" => [
+            "borrowed_item_status" => self::DAMAGED_BUT_REPAIRABLE,
             "description" => "Returned item requires repair / maintenance"
         ],
-        UNREPAIRABLE => [
-            "status" => self::UNREPAIRABLE,
+        "UNREPAIRABLE" => [
+            "borrowed_item_status" => self::UNREPAIRABLE,
             "description" => "Returned item beyond fixing"
         ],
-        LOST => [
-            "status" => self::LOST,
+        "LOST" => [
+            "borrowed_item_status" => self::LOST,
             "description" => "Item is lost by the borrower"
         ]
     ];
