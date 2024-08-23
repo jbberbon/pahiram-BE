@@ -7,6 +7,7 @@ use App\Http\Controllers\BorrowTransaction\ManageBorrowTransactionController;
 use App\Http\Controllers\BorrowTransaction\ManageEndorsementController;
 use App\Http\Controllers\Inventory\PLOManageInventory;
 use App\Http\Controllers\Penalty\ManagePenaltyController;
+use App\Http\Controllers\ItemInventory\ItemInventoryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -108,4 +109,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // Route::post('/roles/supervisor/assign', [RolesController::class, 'addSupervisor']);
         // Route::delete('/roles/supervisor/remove', [RolesController::class, 'deleteSupervisor']);
     });
+
+    
+    // Pagination for Item Inventory
+    Route::get('/item-inventory', [ItemInventoryController::class, 'index']);
 });

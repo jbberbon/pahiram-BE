@@ -159,6 +159,8 @@ class AboutCommand extends Command
      */
     protected function gatherApplicationInformation()
     {
+        self::$data = [];
+
         $formatEnabledStatus = fn ($value) => $value ? '<fg=yellow;options=bold>ENABLED</>' : 'OFF';
         $formatCachedStatus = fn ($value) => $value ? '<fg=green;options=bold>CACHED</>' : '<fg=yellow;options=bold>NOT CACHED</>';
 
@@ -273,8 +275,8 @@ class AboutCommand extends Command
      * Materialize a function that formats a given value for CLI or JSON output.
      *
      * @param  mixed  $value
-     * @param  (\Closure():(mixed))|null  $console
-     * @param  (\Closure():(mixed))|null  $json
+     * @param  (\Closure(mixed):(mixed))|null  $console
+     * @param  (\Closure(mixed):(mixed))|null  $json
      * @return \Closure(bool):mixed
      */
     public static function format($value, Closure $console = null, Closure $json = null)
@@ -299,5 +301,17 @@ class AboutCommand extends Command
     protected function toSearchKeyword(string $value)
     {
         return (string) Str::of($value)->lower()->snake();
+    }
+
+    /**
+     * Flush the registered about data.
+     *
+     * @return void
+     */
+    public static function flushState()
+    {
+        static::$data = [];
+
+        static::$customDataResolvers = [];
     }
 }

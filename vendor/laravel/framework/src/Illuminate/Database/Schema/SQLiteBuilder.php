@@ -2,6 +2,7 @@
 
 namespace Illuminate\Database\Schema;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\File;
 
 class SQLiteBuilder extends Builder
@@ -33,11 +34,18 @@ class SQLiteBuilder extends Builder
     /**
      * Get the tables for the database.
      *
+     * @param  bool  $withSize
      * @return array
      */
-    public function getTables()
+    public function getTables($withSize = true)
     {
-        $withSize = $this->connection->scalar($this->grammar->compileDbstatExists());
+        if ($withSize) {
+            try {
+                $withSize = $this->connection->scalar($this->grammar->compileDbstatExists());
+            } catch (QueryException $e) {
+                $withSize = false;
+            }
+        }
 
         return $this->connection->getPostProcessor()->processTables(
             $this->connection->selectFromWriteConnection($this->grammar->compileTables($withSize))
