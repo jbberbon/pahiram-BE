@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Models\AccountStatus;
 use App\Models\ApcisToken;
-use App\Models\Course;
-use App\Models\Department;
 use App\Models\Role;
 use App\Models\SystemAdmin;
 use App\Models\User;
 use App\Models\UserDepartment;
+use App\Services\AuthService;
+use App\Utils\ApiResponseHandling;
 use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -23,136 +23,83 @@ class AuthController extends Controller
 
     private $course;
 
-    public function __construct(SystemAdmin $systemAdmin, Course $course)
+    public function __construct(SystemAdmin $systemAdmin)
     {
         $this->systemAdmin = $systemAdmin;
-        $this->course = $course;
     }
+
     /**
      * Login Method
      */
     public function login(LoginRequest $request)
     {
         $validatedData = $request->validated();
+
         try {
             /**
-             * 2. Access APCIS login API
+             * 1. Access APCIS login API
              */
             $dummyApcisUrl = env('APCIS_URL');
-            $response = Http::timeout(10)->post($dummyApcisUrl . 'login', $validatedData);
-            $apiReturnData = json_decode($response->body(), true);
+            $response = Http::timeout(10)->post($dummyApcisUrl . '/login', $validatedData);
+            $parsedResponse = json_decode($response->body(), true);
 
-            // APCIS login API returns false
-            if ($apiReturnData['status'] == false) {
-                return response($apiReturnData, 401);
-            }
+            // Handle error responses from APCIS
+            ApiResponseHandling::handleApcisResponse($parsedResponse, $response->status());
 
-            $apiUserData = $apiReturnData['data']['user'];
-            $apiCourseData = $apiReturnData['data']['course'];
-            $apiTokenData = $apiReturnData['data']['apcis_token'];
-
-            /**
-             * 3. Check COURSE if already exist in pahiram-BE Database
-             */
-            $course = Course::where('course_acronym', $apiCourseData['course_acronym'])->exists();
-            // Does not exist yet, add to db, else do nothing
-            if (!$course) {
-                $course = Course::create($apiCourseData);
-            }
+            // Continue because APCIS Request is success
+            $parsedUserData = $parsedResponse['data']['user'];
+            $parsedToken = $parsedResponse['data']['apcis_token'];
 
             /**
              * 4. Check USER if already exist in pahiram-BE Database
              */
-            $user = User::where('apc_id', $apiUserData['apc_id'])->first();
+            $user = User::where('apc_id', $parsedUserData['apc_id'])->first();
 
-            // Does not exist yet, add user to db
+            // Does NOT exist yet, add user to db
             if (!$user) {
-                $defaultData = NewUserDefaultData::defaultData($course);
-                $newUser = array_merge($apiUserData, $defaultData);
-                $user = User::create($newUser);
+                $defaultData = NewUserDefaultData::newUserDefaultData();
+                $mergedUserData = array_merge($parsedUserData, $defaultData);
+                $user = User::create($mergedUserData);
             }
 
             /**
-             * 5. Generate Pahiram Token with expiration
+             * 5. Store APCIS token to Pahiram DB
              */
-            $expiresAt = \DateTime::createFromFormat('Y-m-d H:i:s', $apiTokenData['expires_at']);
-            $pahiramToken = $user->createToken('Pahiram-Token', ['*'], $expiresAt)->plainTextToken;
+            $authService = new AuthService();
+            $authService->storeApcisTokenToDB($user, $parsedToken);
 
             /**
-             * 6. Store APCIS token to Pahiram DB
+             * 6. Generate and store Pahiram Token 
+             *     with SAME expiration as APCIS
              */
-            $newToken = [
-                'user_id' => $user->id,
-                'token' => $apiTokenData['access_token'],
-                'expires_at' => $apiTokenData['expires_at']
-            ];
+            $pahiramToken = $authService->generateAndStorePahiramToken($user, $parsedToken['expires_at']);
 
-            $apcisToken = ApcisToken::create($newToken);
+            $returnData = $authService->retrieveUserLoginData(
+                $user,
+                $pahiramToken,
+                $parsedToken['access_token'],
+                $parsedToken['expires_at']
+            );
 
-            // Success return values 
-            // make dept_id as code, role also,
-            $role = Role::where('id', $user->user_role_id)->firstOrFail()->role;
-
-            $userDepartment = UserDepartment::where('user_id', $user->id)->first();
-            if ($userDepartment) {
-                $userDepartment = Department::where('id', $userDepartment->department_id)->first();
-            }
-
-            // if ($user->department_id !== null) {
-            //     $department = Department::where('id', $user->department_id)->firstOrFail()->department_acronym;
-            // }
-
-            $accStatus = null;
-            if ($user->acc_status_id !== null) {
-                $accStatus = AccountStatus::where('id', $user->acc_status_id)->firstOrFail()->acc_status;
-            }
-
-            $isAdmin = false;
-            $isAdmin = $this->systemAdmin->isAdmin($user->id);
-
-            $course = null;
-            $course = $this->course->getCourseAcronymById($user->course_id);
-
-
-            // return $user;
-            unset($user['department_id']);
-            unset($user['user_role_id']);
-            unset($user['acc_status_id']);
-            unset($user['course_id']);
-            unset($user['id']);
-
-            // return $user;
-
-            return response([
-                'status' => true,
-                'data' => [
-                    'user' => [
-                        ...$user->toArray(),
-                        'course' => $course,
-                        'department_code' => $userDepartment ? $userDepartment->department_acronym : null,
-                        'role' => $role,
-                        'acc_status' => $accStatus,
-                        'is_admin' => $isAdmin,
-                    ],
-                    'pahiram_token' => $pahiramToken,
-                    'apcis_token' => $apcisToken['token'],
-                ],
+            return response()->json([
+                "status" => true,
+                "data" => $returnData,
                 'method' => 'POST'
             ], 200);
 
+
         } catch (RequestException $exception) {
             // Handle HTTP request exception
-            \Log::error('API Request Failed:', ['exception' => $exception->getMessage()]);
-
-            return response([
+            // \Log::error('API Request Failed:', ['exception' => $exception->getMessage()]);
+            return response()->json([
                 'status' => false,
                 'error' => 'APCIS API login request failed',
                 'method' => 'POST'
             ], 500);
         } catch (\Exception $exception) {
             // Handle other exceptions
-            \Log::error('Unexpected Exception:', ['exception' => $exception->getMessage()]);
-            return response([
+            // \Log::error('Unexpected Exception:', ['exception' => $exception->getMessage()]);
+            return response()->json([
                 'status' => false,
                 'error' => 'Unexpected error',
                 'method' => 'POST'
@@ -169,7 +116,7 @@ class AuthController extends Controller
         $currentToken = $request->user()->currentAccessToken();
         $currentToken->delete();
 
-        return response([
+        return response()->json([
             'status' => true,
             'message' => 'Logged out',
             'method' => 'DELETE'
@@ -185,7 +132,7 @@ class AuthController extends Controller
         $allTokens->delete();
         ApcisToken::where('user_id', $request->user()->id)->delete();
 
-        return response([
+        return response()->json([
             'status' => true,
             'message' => 'Logged out from all devices',
             'method' => 'DELETE'
