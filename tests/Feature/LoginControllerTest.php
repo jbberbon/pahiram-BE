@@ -79,6 +79,30 @@ class LoginControllerTest extends TestCase
         ]);
     }
 
+    public function test_login_not_apc_email(): void
+    {
+        $this->withoutExceptionHandling();
+        // Preparation
+        $credentials = [
+            'email' => 'wrongEmail@gmail.com',
+            'password' => '12345678',
+            'remember_me' => false
+        ];
+
+        // Action
+        $response = $this->postJson('api/login', $credentials);
+
+
+        // Assertion
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'status',
+            'message',
+            'errors' => ['email'],
+            'method'
+        ]);
+    }
+
     public function test_login_wrong_password_but_apc_domain(): void
     {
         $this->withoutExceptionHandling();
@@ -127,6 +151,7 @@ class LoginControllerTest extends TestCase
             'method' => 'POST',
         ]);
     }
+
     public function test_unexpected_response_format_apcis_server(): void
     {
         // Simulate an unexpected response format from the external API
@@ -155,7 +180,6 @@ class LoginControllerTest extends TestCase
             'method' => 'POST',
         ]);
     }
-
 
     public function test_user_data_does_not_match_schema(): void
     {
@@ -197,6 +221,5 @@ class LoginControllerTest extends TestCase
             'method' => 'POST',
         ]);
     }
-
 
 }
