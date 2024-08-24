@@ -4,7 +4,7 @@ namespace App\Utils;
 
 class ApiResponseHandling
 {
-    public static function handleApcisResponse(array $parsedResponse, int $responseCode): null|array
+    public static function handleApcisResponse(array|null $parsedResponse, int $responseCode): null|array
     {
         $response = [
             'status' => false,
