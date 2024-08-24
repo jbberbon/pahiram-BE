@@ -34,7 +34,6 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $validatedData = $request->validated();
-
         try {
             /**
              * 1. Access APCIS login API
@@ -44,7 +43,10 @@ class AuthController extends Controller
             $parsedResponse = json_decode($response->body(), true);
 
             // Handle error responses from APCIS
-            ApiResponseHandling::handleApcisResponse($parsedResponse, $response->status());
+            $apiResponse = ApiResponseHandling::handleApcisResponse($parsedResponse, $response->status());
+            if ($apiResponse !== null) {
+                return response()->json($apiResponse, $response->status());
+            }
 
             // Continue because APCIS Request is success
             $parsedUserData = $parsedResponse['data']['user'];
@@ -66,27 +68,38 @@ class AuthController extends Controller
              * 5. Store APCIS token to Pahiram DB
              */
             $authService = new AuthService();
-            $authService->storeApcisTokenToDB($user, $parsedToken);
+            $isApcisStored = $authService->storeApcisTokenToDB($user->id, $parsedToken);
+            if ($isApcisStored) {
+                return response()->json($isApcisStored, 500);
+            }
 
             /**
              * 6. Generate and store Pahiram Token 
              *     with SAME expiration as APCIS
              */
             $pahiramToken = $authService->generateAndStorePahiramToken($user, $parsedToken['expires_at']);
+            if (is_array($pahiramToken)) {
+                return response()->json($pahiramToken, 500);
+            }
 
+            /**
+             * 7. Prepare Return Data
+             */
             $returnData = $authService->retrieveUserLoginData(
                 $user,
                 $pahiramToken,
                 $parsedToken['access_token'],
                 $parsedToken['expires_at']
             );
+            if (isset($returnData['error'])) {
+                return response()->json($returnData, 500);
+            }
 
             return response()->json([
                 "status" => true,
                 "data" => $returnData,
                 'method' => 'POST'
             ], 200);
-
 
         } catch (RequestException $exception) {
             // Handle HTTP request exception
@@ -105,7 +118,6 @@ class AuthController extends Controller
                 'method' => 'POST'
             ], 500);
         }
-
     }
 
     /**
@@ -113,14 +125,22 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $currentToken = $request->user()->currentAccessToken();
-        $currentToken->delete();
+        try {
+            $currentToken = $request->user()->currentAccessToken();
+            $currentToken->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Logged out',
-            'method' => 'DELETE'
-        ], 200);
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged out',
+                'method' => 'DELETE'
+            ], 200);
+        } catch (\Exception) {
+            return response()->json([
+                'status' => false,
+                'error' => 'Unexpected logout error',
+                'method' => 'DELETE'
+            ], 500);
+        }
     }
 
     /**
@@ -128,14 +148,22 @@ class AuthController extends Controller
      */
     public function logoutAllDevices(Request $request)
     {
-        $allTokens = $request->user()->tokens();
-        $allTokens->delete();
-        ApcisToken::where('user_id', $request->user()->id)->delete();
+        try {
+            $allTokens = $request->user()->tokens();
+            $allTokens->delete();
+            ApcisToken::where('user_id', $request->user()->id)->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Logged out from all devices',
-            'method' => 'DELETE'
-        ], 200);
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged out from all devices',
+                'method' => 'DELETE'
+            ], 200);
+        } catch (\Exception) {
+            return response()->json([
+                'status' => false,
+                'error' => 'Unexpected logout error',
+                'method' => 'DELETE'
+            ], 500);
+        }
     }
 }

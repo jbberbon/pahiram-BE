@@ -9,20 +9,20 @@ use App\Models\UserDepartment;
 
 class AuthService
 {
-    public function storeApcisTokenToDB($user, array $apcisTokenData): ?\Illuminate\Http\JsonResponse
+    public function storeApcisTokenToDB(string $userID, array $apcisTokenData): null|array
     {
         try {
             ApcisToken::create([
-                'user_id' => $user->id,
+                'user_id' => $userID,
                 'token' => $apcisTokenData['access_token'],
                 'expires_at' => $apcisTokenData['expires_at']
             ]);
         } catch (\Exception) {
-            return response()->json([
+            return [
                 'status' => false,
                 'error' => "Something went wrong with storing APCIS Token",
                 'method' => "POST"
-            ], 500);
+            ];
         }
         return null;
     }
@@ -30,18 +30,17 @@ class AuthService
     public function generateAndStorePahiramToken(
         object $user,
         string $apcisTokenExpiration
-    ): string|\Illuminate\Http\JsonResponse {
+    ): string|array {
         try {
             $expiresAt = \DateTime::createFromFormat('Y-m-d H:i:s', $apcisTokenExpiration);
             $pahiramToken = $user->createToken('Pahiram-Token', ['*'], $expiresAt)->plainTextToken;
-
             return $pahiramToken;
         } catch (\Exception) {
-            return response()->json([
+            return [
                 'status' => false,
                 'error' => "Something went wrong with generating Pahiram Token",
                 'method' => "POST"
-            ], 500);
+            ];
         }
     }
 
@@ -50,7 +49,7 @@ class AuthService
         string $pahiramToken,
         string $apcisToken,
         string $expiresAt
-    ): array|\Illuminate\Http\JsonResponse {
+    ): array {
         try {
             $user = [
                 'apc_id' => $user->apc_id,
@@ -69,11 +68,11 @@ class AuthService
                 'expires_at' => $expiresAt
             ];
         } catch (\Exception) {
-            return response()->json([
+            return [
                 'status' => false,
-                'error' => "Something went wrong with generating Pahiram Token",
+                'error' => "Something went wrong with retrieving user data",
                 'method' => "POST"
-            ], 500);
+            ];
         }
     }
 }
