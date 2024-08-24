@@ -22,4 +22,16 @@ class UserDepartment extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getDepartmentAcronymByUserId(string $userId): string|null
+    {
+        $userDepartment = self::where('user_id', $userId)->first();
+        if (!$userDepartment) {
+            return null;
+        }
+
+        $departmentAcronym = Department::getAcronymById($userDepartment->department_id);
+
+        return $departmentAcronym;
+    }
 }

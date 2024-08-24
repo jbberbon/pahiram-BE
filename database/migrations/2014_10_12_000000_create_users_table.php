@@ -17,15 +17,10 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->unique();
-
-            // Make this a separate ADMIN TABLE
-            // $table->boolean('is_admin')->default(0);
             
             // FKs to be assigned on a separate migration file
             $table->uuid('user_role_id');
             $table->uuid('acc_status_id');
-            // $table->uuid('department_id'); // Removed this. Made Actual Office Tables
-            $table->uuid('course_id')->nullable();
             $table->timestamps();
         });
     }
