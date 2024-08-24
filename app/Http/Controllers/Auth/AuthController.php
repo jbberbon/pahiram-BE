@@ -114,7 +114,7 @@ class AuthController extends Controller
             // \Log::error('Unexpected Exception:', ['exception' => $exception->getMessage()]);
             return response()->json([
                 'status' => false,
-                'error' => 'Unexpected error',
+                'error' => 'Something went wrong',
                 'method' => 'POST'
             ], 500);
         }

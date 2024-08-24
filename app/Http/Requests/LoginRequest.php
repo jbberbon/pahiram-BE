@@ -15,8 +15,12 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'ends_with:apc.edu.ph'],
-            'password' => 'required|string|min:8',
+            'email' => [
+                'required',
+                'string',
+                'regex:/^[a-zA-Z0-9._%+-]+@(?:student\.)?apc\.edu\.ph$/'
+            ],
+            'password' => 'required|string',
             'remember_me' => 'boolean',
         ];
     }

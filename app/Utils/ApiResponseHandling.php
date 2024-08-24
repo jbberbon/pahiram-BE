@@ -8,7 +8,7 @@ class ApiResponseHandling
     {
         $response = [
             'status' => false,
-            'error' => 'Unexpected API response',
+            'error' => 'Unexpected auth server response',
             'method' => 'POST'
         ];
 
@@ -32,6 +32,37 @@ class ApiResponseHandling
             return $response;
         }
 
+        // Handle 200 response and validate its structure
+        if ($responseCode === 200) {
+            if (self::isValidResponseStructure($parsedResponse) && self::hasRequiredFields($parsedResponse)) {
+                return null; // Valid response
+            } else {
+                return $response; // Invalid structure
+            }
+        }
+
         return null;
+    }
+
+    private static function isValidResponseStructure(array $response): bool
+    {
+        // Ensure 'data' is set and is an array before checking its contents
+        return isset($response['data'])
+            && is_array($response['data'])
+            && isset($response['data']['user'], $response['data']['apcis_token'])
+            && isset($response['data']['user']['apc_id'], $response['data']['user']['first_name'], $response['data']['user']['last_name'], $response['data']['user']['email'])
+            && isset($response['data']['apcis_token']['access_token'], $response['data']['apcis_token']['expires_at']);
+    }
+
+    public static function hasRequiredFields(array $response): bool
+    {
+        $user = $response['data']['user'];
+        $token = $response['data']['apcis_token'];
+        return !empty($user['apc_id']) &&
+            !empty($user['first_name']) &&
+            !empty($user['last_name']) &&
+            !empty($user['email']) &&
+            !empty($token['access_token']) &&
+            !empty($token['expires_at']);
     }
 }
