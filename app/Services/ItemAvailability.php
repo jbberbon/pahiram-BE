@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use Carbon\Carbon;
 
@@ -11,6 +10,8 @@ class ItemAvailability
 {
     private $pendingStatusBorrowedItemId;
     private $inPossessionStatusBorrowedItemId;
+    private $approvedStatusBorrowedItemId;
+
     private $overdueStatusBorrowedItemId;
 
 
@@ -18,6 +19,8 @@ class ItemAvailability
     {
         $this->pendingStatusBorrowedItemId = BorrowedItemStatusService::getPendingStatusId();
         $this->inPossessionStatusBorrowedItemId = BorrowedItemStatusService::getInPossessionStatusId();
+        $this->approvedStatusBorrowedItemId = BorrowedItemStatusService::getApprovedStatusId();
+
         $this->overdueStatusBorrowedItemId = BorrowedItemStatusService::getOverdueStatusId();
     }
 
@@ -29,25 +32,31 @@ class ItemAvailability
         $requestStartDate = Carbon::createFromFormat($dateFormat, $startDate);
         $requestReturnDate = Carbon::createFromFormat($dateFormat, $returnDate);
 
-        // $pendingApprovalStatus = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first();
-        // $borrowedStatus = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first();
-        // $overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status_code', 5050)->first();
-
-        $relevantStatuses = [
+        // List all the IDs of the borrowedItemStatuses that is currently occupied
+        $occupiedItemsStatusIds = [
             $this->pendingStatusBorrowedItemId,
             $this->inPossessionStatusBorrowedItemId,
+            $this->approvedStatusBorrowedItemId,
+
+            // I think this should have a separate logic
             $this->overdueStatusBorrowedItemId,
         ];
-        $borrowedItems = BorrowedItem::where('item_id', $itemId)
-            ->whereIn('borrowed_item_status_id', $relevantStatuses)
-            ->get();
-        // $borrowedItems = BorrowedItem::where('item_id', $itemId)->get();
 
+        // Check first if BorrowedItems Table has an item (with the ItemId) 
+        // that is currently borrowed
+        // !!Remember!! >> An individual ItemId can be stored many times in BorrowedItem table
+        $borrowedItems = BorrowedItem::where('item_id', $itemId)
+            ->whereIn('borrowed_item_status_id', $occupiedItemsStatusIds)
+            ->get();
+
+        // If no existing borrowedItems for the specified itemID, 
+        // then it's available
         if ($borrowedItems->isEmpty()) {
-            // No existing borrowed items for the specified item ID, so it's available
             return true;
         }
 
+        // if it returned borrowedItems with the relevant statuses, 
+        // Lets check for date overlaps
         foreach ($borrowedItems as $borrowedItem) {
             if ($borrowedItem->start_date && $borrowedItem->due_date) { // Handle null date values in BorrowedItem TB
                 $itemStartDate = Carbon::createFromFormat($dateFormat, $borrowedItem->start_date);

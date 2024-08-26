@@ -150,7 +150,7 @@ class ManageBorrowingRequestController extends Controller
     {
         /**
          * LOGIC!!
-         * 01. Check if the user does not want to edit/add items. If true, FINISH.
+         * 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
          * 02. Get all items with "active" status in the items table.
          * 03. Check the borrowed_items table to determine which items are available on the specified date.
          * 04. If the requested quantity is greater than the available quantity, fail.

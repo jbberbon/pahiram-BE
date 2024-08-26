@@ -6,12 +6,17 @@ class BORROWED_ITEM_STATUS
 {
     const PENDING_APPROVAL = 'PENDING_APPROVAL';
     const APPROVED = 'APPROVED';
+    const IN_POSSESSION = 'IN_POSSESSION';
+    
     const CANCELLED = 'CANCELLED';
     const DISAPPROVED = 'DISAPPROVED';
-    const IN_POSSESSION = 'IN_POSSESSION';
     const UNRELEASED = 'UNRELEASED';
     const OVERDUE_RETURN = 'OVERDUE_RETURN';
     const RETURNED = 'RETURNED';
+
+    // This should be removed because, 
+    // it should be in_possession even if the return date expires
+    // unless, the employee changed it to unreturned (penalty will be included)
     const UNRETURNED = 'UNRETURNED';
     const DAMAGED_BUT_REPAIRABLE = 'DAMAGED_BUT_REPAIRABLE';
     const UNREPAIRABLE = 'UNREPAIRABLE';

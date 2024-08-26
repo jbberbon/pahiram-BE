@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('item_groups', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('model_name');
+            $table->string('model_name')->unique();
             $table->boolean('is_required_supervisor_approval')->default(0);
 
             // FKs

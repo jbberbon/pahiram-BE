@@ -13,7 +13,8 @@ use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\ItemStatusService;
 use App\Services\ItemAvailability;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
 class SubmitBorrowRequestService
 {
     private $itemAvailability;
-    const maxActiveTransactions = 3;
+    const MAX_ACTIVE_TRANSACTIONS = 3;
 
     // Item Statuses
     private $activeItemStatusId;
@@ -49,7 +50,7 @@ class SubmitBorrowRequestService
     /**
      *  01. Check if user has > 3 active transactions
      */
-    public function checkMaxTransactions($userId)
+    public function checkMaxTransactions($userId): null|JsonResponse
     {
         $transactionStatusIds = [
             $this->approvedTransactionId,
@@ -61,7 +62,7 @@ class SubmitBorrowRequestService
             ->whereIn('transac_status_id', $transactionStatusIds)
             ->count();
 
-        if ($activeTransactions >= self::maxActiveTransactions) {
+        if ($activeTransactions >= self::MAX_ACTIVE_TRANSACTIONS) {
             return response()->json([
                 'status' => false,
                 'message' => 'Complete your other 3 or more transactions first.',
@@ -69,7 +70,7 @@ class SubmitBorrowRequestService
             ], Response::HTTP_UNAUTHORIZED);
         }
         // No issue
-        return false;
+        return null;
     }
 
     /**
@@ -97,10 +98,11 @@ class SubmitBorrowRequestService
     /**
      *  03. Check borrowed_items if which ones are available on that date
      */
-    public function getAvailableItems(array $activeItems)
+    public function getAvailableItems(array $activeItems): array
     {
+
         $availableItems = $activeItems;
-        foreach ($activeItems as $activeItemKey => $items) {
+        foreach ($activeItems as $itemGroupId => $items) {
             foreach ($items['item_id'] as $itemIdKey => $itemId) {
                 $startDate = $items['start_date'];
                 $returnDate = $items['return_date'];
@@ -110,7 +112,7 @@ class SubmitBorrowRequestService
 
                 if (!$isAvailable) {
                     // Delete the id that has an overlapping sched
-                    unset($availableItems[$activeItemKey]['item_id'][$itemIdKey]);
+                    unset($availableItems[$itemGroupId]['item_id'][$itemIdKey]);
                 }
             }
         }

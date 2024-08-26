@@ -24,7 +24,7 @@ class BorrowTransactionStatusService
 
     public static function getOverdueTransactionId()
     {
-        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::OVERDUE);
+        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::OVERDUE_TRANSACTION_COMPLETION);
     }
 
     public static function getCancelledTransactionId()
