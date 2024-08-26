@@ -35,7 +35,11 @@ class Param extends NodeAbstract {
      * @param list<AttributeGroup> $attrGroups PHP attribute groups
      */
     public function __construct(
+<<<<<<< HEAD
         Expr $var, ?Expr $default = null, ?Node $type = null,
+=======
+        $var, ?Expr $default = null, $type = null,
+>>>>>>> origin/main
         bool $byRef = false, bool $variadic = false,
         array $attributes = [],
         int $flags = 0,

@@ -61,8 +61,13 @@ class Emulative extends Lexer {
         }
     }
 
+<<<<<<< HEAD
     public function tokenize(string $code, ?ErrorHandler $errorHandler = null): array {
         $emulators = array_filter($this->emulators, function ($emulator) use ($code) {
+=======
+    public function startLexing(string $code, ?ErrorHandler $errorHandler = null) {
+        $emulators = array_filter($this->emulators, function($emulator) use($code) {
+>>>>>>> origin/main
             return $emulator->isEmulationNeeded($code);
         });
 

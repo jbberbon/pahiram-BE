@@ -21,4 +21,10 @@ class AccountStatus extends Model
         'updated_at'
     ];
 
+    public static function getStatusById($id)
+    {
+        $status = self::where('id', $id)->first();
+        return $status ? $status->acc_status : null;
+    }
+
 }

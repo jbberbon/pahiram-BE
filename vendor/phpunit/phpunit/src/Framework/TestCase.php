@@ -631,8 +631,11 @@ abstract class TestCase extends Assert implements Reorderable, SelfDescribing, T
      * @internal This method is not covered by the backward compatibility promise for PHPUnit
      *
      * @deprecated
+<<<<<<< HEAD
      *
      * @codeCoverageIgnore
+=======
+>>>>>>> origin/main
      */
     final public function registerMockObjectsFromTestArgumentsRecursively(): void
     {

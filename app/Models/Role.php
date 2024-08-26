@@ -27,4 +27,10 @@ class Role extends Model
 
         return $retrievedRole ? $retrievedRole->id : null;
     }
+    public static function getRoleById($id)
+    {
+        $retrievedRole = self::where('id', $id)->first();
+
+        return $retrievedRole ? $retrievedRole->role : null;
+    }
 }

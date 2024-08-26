@@ -21,7 +21,11 @@ class Lexer {
      *                                        ErrorHandler\Throwing.
      * @return Token[] Tokens
      */
+<<<<<<< HEAD
     public function tokenize(string $code, ?ErrorHandler $errorHandler = null): array {
+=======
+    public function startLexing(string $code, ?ErrorHandler $errorHandler = null) {
+>>>>>>> origin/main
         if (null === $errorHandler) {
             $errorHandler = new ErrorHandler\Throwing();
         }

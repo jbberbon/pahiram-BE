@@ -12,8 +12,11 @@ namespace PHPUnit\Runner;
 use Error;
 
 /**
+<<<<<<< HEAD
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
+=======
+>>>>>>> origin/main
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class ErrorException extends Error implements Exception

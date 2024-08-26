@@ -13,8 +13,11 @@ use PHPUnit\Event\Test\PhpWarningTriggered;
 use PHPUnit\Event\Test\PhpWarningTriggeredSubscriber;
 
 /**
+<<<<<<< HEAD
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
+=======
+>>>>>>> origin/main
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class TestTriggeredPhpWarningSubscriber extends Subscriber implements PhpWarningTriggeredSubscriber

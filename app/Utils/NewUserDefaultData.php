@@ -14,17 +14,26 @@ class NewUserDefaultData
     {
         $borrower = USER_ROLE::BORROWER;
         $active = ACCOUNT_STATUS::ACTIVE;
-        
+
         $role = Role::where('role', $borrower)->first();
         $accStatus = AccountStatus::where('acc_status', $active)->first();
 
-        if (!$course) {
-            $course = Course::where('course_acronym', 'N/A')->firstOrFail();
-        }
+        return [
+            'user_role_id' => $role ? $role->id : null,
+            'acc_status_id' => $accStatus ? $accStatus->id : null,
+        ];
+    }
+
+    public static function newUserDefaultData(): array
+    {
+        $borrower = USER_ROLE::BORROWER;
+        $active = ACCOUNT_STATUS::ACTIVE;
+
+        $role = Role::where('role', $borrower)->first();
+        $accStatus = AccountStatus::where('acc_status', $active)->first();
 
         return [
             'user_role_id' => $role ? $role->id : null,
-            'course_id' => $course->id,
             'acc_status_id' => $accStatus ? $accStatus->id : null,
         ];
     }

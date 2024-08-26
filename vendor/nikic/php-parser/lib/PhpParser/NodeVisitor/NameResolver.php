@@ -35,7 +35,11 @@ class NameResolver extends NodeVisitorAbstract {
      * @param array{preserveOriginalNames?: bool, replaceNodes?: bool} $options Options
      */
     public function __construct(?ErrorHandler $errorHandler = null, array $options = []) {
+<<<<<<< HEAD
         $this->nameContext = new NameContext($errorHandler ?? new ErrorHandler\Throwing());
+=======
+        $this->nameContext = new NameContext($errorHandler ?? new ErrorHandler\Throwing);
+>>>>>>> origin/main
         $this->preserveOriginalNames = $options['preserveOriginalNames'] ?? false;
         $this->replaceNodes = $options['replaceNodes'] ?? true;
     }
@@ -161,8 +165,12 @@ class NameResolver extends NodeVisitorAbstract {
         return null;
     }
 
+<<<<<<< HEAD
     /** @param Stmt\Use_::TYPE_* $type */
     private function addAlias(Node\UseItem $use, int $type, ?Name $prefix = null): void {
+=======
+    private function addAlias(Stmt\UseUse $use, int $type, ?Name $prefix = null) {
+>>>>>>> origin/main
         // Add prefix for group uses
         $name = $prefix ? Name::concat($prefix, $use->name) : $use->name;
         // Type is determined either by individual element or whole use declaration

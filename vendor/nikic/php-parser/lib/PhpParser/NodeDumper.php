@@ -57,7 +57,11 @@ class NodeDumper {
      *
      * @return string Dumped value
      */
+<<<<<<< HEAD
     public function dump($node, ?string $code = null): string {
+=======
+    public function dump($node, ?string $code = null) : string {
+>>>>>>> origin/main
         $this->code = $code;
         $this->res = '';
         $this->nl = "\n";

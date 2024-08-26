@@ -11,11 +11,17 @@ class ParserFactory {
      * accept code for the newest supported version, but will try to accommodate code that becomes
      * invalid in newer versions or changes in interpretation.
      */
+<<<<<<< HEAD
     public function createForVersion(PhpVersion $version): Parser {
         if ($version->isHostVersion()) {
             $lexer = new Lexer();
         } else {
             $lexer = new Lexer\Emulative($version);
+=======
+    public function create(int $kind, ?Lexer $lexer = null, array $parserOptions = []) : Parser {
+        if (null === $lexer) {
+            $lexer = new Lexer\Emulative();
+>>>>>>> origin/main
         }
         if ($version->id >= 80000) {
             return new Php8($lexer, $version);

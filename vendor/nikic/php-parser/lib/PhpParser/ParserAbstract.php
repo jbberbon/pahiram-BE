@@ -175,9 +175,14 @@ abstract class ParserAbstract implements Parser {
      * @return Node\Stmt[]|null Array of statements (or null non-throwing error handler is used and
      *                          the parser was unable to recover from an error).
      */
+<<<<<<< HEAD
     public function parse(string $code, ?ErrorHandler $errorHandler = null): ?array {
         $this->errorHandler = $errorHandler ?: new ErrorHandler\Throwing();
         $this->createdArrays = new \SplObjectStorage();
+=======
+    public function parse(string $code, ?ErrorHandler $errorHandler = null) {
+        $this->errorHandler = $errorHandler ?: new ErrorHandler\Throwing;
+>>>>>>> origin/main
 
         $this->tokens = $this->lexer->tokenize($code, $this->errorHandler);
         $result = $this->doParse();

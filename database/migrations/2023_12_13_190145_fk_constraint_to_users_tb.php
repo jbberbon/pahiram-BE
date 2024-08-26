@@ -17,9 +17,6 @@ return new class extends Migration {
             $table->foreign('acc_status_id')->references('id')->on('account_statuses')
                 ->onDelete('restrict')
                 ->cascadeOnUpdate();
-            $table->foreign('course_id')->references('id')->on('courses')
-                ->onDelete('set null')
-                ->cascadeOnUpdate();
         });
     }
 

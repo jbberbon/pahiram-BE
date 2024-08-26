@@ -13,8 +13,11 @@ use PHPUnit\Event\Test\PhpDeprecationTriggered;
 use PHPUnit\Event\Test\PhpDeprecationTriggeredSubscriber;
 
 /**
+<<<<<<< HEAD
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
+=======
+>>>>>>> origin/main
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class TestTriggeredPhpDeprecationSubscriber extends Subscriber implements PhpDeprecationTriggeredSubscriber

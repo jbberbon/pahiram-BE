@@ -68,6 +68,7 @@
         },
         {
             "name": "nikic/php-parser",
+<<<<<<< HEAD
             "version": "v5.1.0",
             "source": {
                 "type": "git",
@@ -78,6 +79,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/683130c2ff8c2739f4822ff7ac5c873ec529abd1",
                 "reference": "683130c2ff8c2739f4822ff7ac5c873ec529abd1",
+=======
+            "version": "v5.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nikic/PHP-Parser.git",
+                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/139676794dc1e9231bf7bcd123cfc0c99182cb13",
+                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13",
+>>>>>>> origin/main
                 "shasum": ""
             },
             "require": {
@@ -88,7 +101,11 @@
             },
             "require-dev": {
                 "ircmaxell/php-yacc": "^0.0.7",
+<<<<<<< HEAD
                 "phpunit/phpunit": "^9.0"
+=======
+                "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
+>>>>>>> origin/main
             },
             "bin": [
                 "bin/php-parse"
@@ -120,9 +137,15 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
+<<<<<<< HEAD
                 "source": "https://github.com/nikic/PHP-Parser/tree/v5.1.0"
             },
             "time": "2024-07-01T20:03:41+00:00"
+=======
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.0.2"
+            },
+            "time": "2024-03-05T20:51:40+00:00"
+>>>>>>> origin/main
         },
         {
             "name": "phar-io/manifest",
@@ -244,6 +267,7 @@
         },
         {
             "name": "phpunit/php-code-coverage",
+<<<<<<< HEAD
             "version": "10.1.15",
             "source": {
                 "type": "git",
@@ -254,6 +278,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/5da8b1728acd1e6ffdf2ff32ffbdfd04307f26ae",
                 "reference": "5da8b1728acd1e6ffdf2ff32ffbdfd04307f26ae",
+=======
+            "version": "10.1.14",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
+                "reference": "e3f51450ebffe8e0efdf7346ae966a656f7d5e5b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/e3f51450ebffe8e0efdf7346ae966a656f7d5e5b",
+                "reference": "e3f51450ebffe8e0efdf7346ae966a656f7d5e5b",
+>>>>>>> origin/main
                 "shasum": ""
             },
             "require": {
@@ -310,7 +346,11 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
                 "security": "https://github.com/sebastianbergmann/php-code-coverage/security/policy",
+<<<<<<< HEAD
                 "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/10.1.15"
+=======
+                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/10.1.14"
+>>>>>>> origin/main
             },
             "funding": [
                 {
@@ -318,7 +358,11 @@
                     "type": "github"
                 }
             ],
+<<<<<<< HEAD
             "time": "2024-06-29T08:25:15+00:00"
+=======
+            "time": "2024-03-12T15:33:41+00:00"
+>>>>>>> origin/main
         },
         {
             "name": "phpunit/php-file-iterator",

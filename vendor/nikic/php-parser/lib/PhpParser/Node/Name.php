@@ -173,6 +173,7 @@ class Name extends NodeAbstract {
      * @return static|null Sliced name
      */
     public function slice(int $offset, ?int $length = null) {
+<<<<<<< HEAD
         if ($offset === 1 && $length === null) {
             // Short-circuit the common case.
             if (false !== $pos = \strpos($this->name, '\\')) {
@@ -183,6 +184,9 @@ class Name extends NodeAbstract {
 
         $parts = \explode('\\', $this->name);
         $numParts = \count($parts);
+=======
+        $numParts = count($this->parts);
+>>>>>>> origin/main
 
         $realOffset = $offset < 0 ? $offset + $numParts : $offset;
         if ($realOffset < 0 || $realOffset > $numParts) {

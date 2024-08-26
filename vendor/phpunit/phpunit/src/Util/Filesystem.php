@@ -9,7 +9,10 @@
  */
 namespace PHPUnit\Util;
 
+<<<<<<< HEAD
 use const DIRECTORY_SEPARATOR;
+=======
+>>>>>>> origin/main
 use function basename;
 use function dirname;
 use function is_dir;

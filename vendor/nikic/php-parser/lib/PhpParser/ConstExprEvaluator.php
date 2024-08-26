@@ -39,7 +39,11 @@ class ConstExprEvaluator {
      * @param callable|null $fallbackEvaluator To call if subexpression cannot be evaluated
      */
     public function __construct(?callable $fallbackEvaluator = null) {
+<<<<<<< HEAD
         $this->fallbackEvaluator = $fallbackEvaluator ?? function (Expr $expr) {
+=======
+        $this->fallbackEvaluator = $fallbackEvaluator ?? function(Expr $expr) {
+>>>>>>> origin/main
             throw new ConstExprEvaluationException(
                 "Expression of type {$expr->getType()} cannot be evaluated"
             );
