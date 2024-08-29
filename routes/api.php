@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::post('/login', [AuthController::class, 'login']);
+// Pagination for Item Inventory
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -110,7 +111,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // Route::delete('/roles/supervisor/remove', [RolesController::class, 'deleteSupervisor']);
     });
 
-    
-    // Pagination for Item Inventory
     Route::get('/item-inventory', [ItemInventoryController::class, 'index']);
 });
