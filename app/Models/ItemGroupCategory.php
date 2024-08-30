@@ -19,4 +19,10 @@ class ItemGroupCategory extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getCategoryNameById($categoryId)
+    {
+        $category = self::where('id', $categoryId)->first();
+        return $category ? $category->category_name : null;
+    }
 }
