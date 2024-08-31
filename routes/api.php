@@ -33,6 +33,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::group(['middleware' => ['is_suspended']], function () {
         Route::get('/office/{departmentAcronym}/item-model-list', [ItemGroupController::class, 'index']);
         Route::post('/user/borrow-request/submit', [ManageBorrowingRequestController::class, 'submitBorrowRequest']);
+        Route::post('/user/borrow-request/submit-V2', [ManageBorrowingRequestController::class, 'submitBorrowRequestV2']);
         Route::patch('/user/borrow-request/{requestId}/edit', [ManageBorrowingRequestController::class, 'editBorrowRequest']);
     });
 

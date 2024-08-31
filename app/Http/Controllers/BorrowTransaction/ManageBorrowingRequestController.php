@@ -7,6 +7,7 @@ use App\Http\Requests\BorrowTransaction\CancelBorrowRequest;
 use App\Http\Requests\BorrowTransaction\EditBorrowRequest;
 use App\Http\Requests\BorrowTransaction\GetBorrowRequest;
 use App\Http\Requests\BorrowTransaction\SubmitBorrowRequest;
+use App\Http\Requests\BorrowTransaction\SubmitBorrowRequestForMultipleOfficesRequest;
 use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
 use App\Models\BorrowedItem;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Services\BorrowRequestService\EditBorrowRequestService;
 use App\Services\BorrowRequestService\SubmitBorrowRequestService;
+use Ramsey\Uuid\Type\Integer;
 
 class ManageBorrowingRequestController extends Controller
 {
@@ -148,47 +150,52 @@ class ManageBorrowingRequestController extends Controller
      */
     public function submitBorrowRequest(SubmitBorrowRequest $borrowRequest)
     {
-        /**
-         * LOGIC!!
-         * 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
-         * 02. Get all items with "active" status in the items table.
-         * 03. Check the borrowed_items table to determine which items are available on the specified date.
-         * 04. If the requested quantity is greater than the available quantity, fail.
-         * 05. If the requested quantity is less than the available quantity, shuffle and choose items.
-         * 06. Insert a new borrowing transaction.
-         * 07. Insert new borrowed items.
-         * 08. If successful, return a success response; otherwise, return an error response.
-         */
-        $validatedData = $borrowRequest->validated();
-        // return $validatedData;
-        $userId = Auth::id();
-
-        // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
-        $maxTransactionCheck = $this->submitBorrowRequestService->checkMaxTransactions($userId);
-        if ($maxTransactionCheck) {
-            return $maxTransactionCheck;
-        }
-
-        // 02. Get all items with "active" status in items TB  
-        $requestedItems = $validatedData['items'];
-        $activeItems = $this->submitBorrowRequestService->getActiveItems($requestedItems);
-
-        // 03. Check borrowed_items if which ones are available on that date
-        $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
-
-        // 04. Requested qty > available items on schedule (Fail)
-        $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService
-            ->checkRequestQtyAndAvailableQty($availableItems);
-        if ($isRequestQtyMoreThanAvailableQty) {
-            return $isRequestQtyMoreThanAvailableQty;
-        }
-
-        // 05. Requested qty < available items on schedule (SHUFFLE then Choose)
-        $chosenItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-
         try {
+            /**
+             * LOGIC!!
+             * 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
+             * 02. Get all items with "active" status in the items table.
+             * 03. Check the borrowed_items table to determine which items are available on the specified date.
+             * 04. If the requested quantity is greater than the available quantity, fail.
+             * 05. If the requested quantity is less than the available quantity, shuffle and choose items.
+             * 06. Insert a new borrowing transaction.
+             * 07. Insert new borrowed items.
+             * 08. If successful, return a success response; otherwise, return an error response.
+             */
+            $validatedData = $borrowRequest->validated();
+            $userId = Auth::id();
+
+            // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
+            $maxTransactionCheck = $this->submitBorrowRequestService->checkMaxTransactions($userId);
+            if ($maxTransactionCheck) {
+                return $maxTransactionCheck;
+            }
+
+            // 02. Get all items with "active" status in items TB  
+            $requestedItems = $validatedData['items'];
+            $activeItems = $this->submitBorrowRequestService->getActiveItems($requestedItems);
+
+            // 02.1. EDGE CASE: Check for empty active item_id array in activeItems variable
+            $emptyActiveItemsIdArray = $this->submitBorrowRequestService->checkActiveItemsForEmptyItemIdField($activeItems);
+            if ($emptyActiveItemsIdArray !== null) {
+                return $emptyActiveItemsIdArray;
+            }
+
+            // 03. Check borrowed_items if which ones are available on that date
+            $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
+
+            // 04. Requested qty > available items on schedule (Fail)
+            $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService
+                ->checkRequestQtyAndAvailableQty($availableItems);
+            if ($isRequestQtyMoreThanAvailableQty) {
+                return $isRequestQtyMoreThanAvailableQty;
+            }
+
+            // 05. Requested qty < available items on schedule (SHUFFLE then Choose)
+            $chosenItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
+
             // 06. Insert new borrowing transaction
-            $newBorrowRequest = $this->submitBorrowRequestService->insertNewBorrowingTransaction($validatedData, $userId);
+            $newBorrowRequest = $this->submitBorrowRequestService->insertNewBorrowingTransaction($validatedData);
 
             // 07. Insert new borrowed items
             $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenItems, $newBorrowRequest->id);
@@ -200,16 +207,6 @@ class ManageBorrowingRequestController extends Controller
                     'method' => 'POST',
                 ], 500);
             }
-
-            // FOR Debugging ONLY
-            // return response([
-            //     'status' => true,
-            //     'message' => 'Successfully submitted borrow request',
-            //     'borrow_request' => $newBorrowRequest,
-            //     'borrowed_items' => $newBorrowedItems,
-            //     'method' => 'POST',
-            // ], 200);
-
             return response([
                 'status' => true,
                 'message' => 'Successfully submitted borrow request',
@@ -224,6 +221,95 @@ class ManageBorrowingRequestController extends Controller
                 'method' => 'POST',
             ], 500);
         }
+    }
+    /**
+     *  Submit Request V2
+     */
+    public function submitBorrowRequestV2(SubmitBorrowRequestForMultipleOfficesRequest $borrowRequest)
+    {
+        try {
+            $validatedData = $borrowRequest->validated();
+            $userId = Auth::id();
+
+            // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
+            $maxTransactionCheck = $this
+                ->submitBorrowRequestService
+                ->checkMaxTransactions($userId);
+
+            if ($maxTransactionCheck) {
+                return $maxTransactionCheck;
+            }
+
+            // 02. Get all items with "active" status in items TB  
+            $requestedItems = $validatedData['items'];
+            $activeItems = $this
+                ->submitBorrowRequestService
+                ->getActiveItems($requestedItems);
+
+            // 02.1. EDGE CASE: Check for empty active item_id array in activeItems variable
+            $emptyActiveItemsIdArray = $this
+                ->submitBorrowRequestService
+                ->checkActiveItemsForEmptyItemIdField($activeItems);
+
+            if ($emptyActiveItemsIdArray !== null) {
+                return $emptyActiveItemsIdArray;
+            }
+
+            // 03. Check borrowed_items if which ones are available on that date
+            $availableItems = $this
+                ->submitBorrowRequestService
+                ->getAvailableItems($activeItems);
+
+            // 04. Requested qty > available items on schedule (Fail)
+            $isRequestQtyMoreThanAvailableQty = $this
+                ->submitBorrowRequestService
+                ->checkRequestQtyAndAvailableQty($availableItems);
+
+            if ($isRequestQtyMoreThanAvailableQty) {
+                return $isRequestQtyMoreThanAvailableQty;
+            }
+
+            // 05. Requested qty < available items on schedule (SHUFFLE then Choose)
+            $chosenItems = $this
+                ->submitBorrowRequestService
+                ->shuffleAvailableItems($availableItems);
+
+            // 06. Group chosen items by office
+            $groupedFinalItemList = $this
+                ->submitBorrowRequestService
+                ->groupFinalItemListByOffice($chosenItems);
+
+            // 07. Insert transaction and Borrowed Items
+            $newTransactionsCount = $this
+                ->submitBorrowRequestService
+                ->insertTransactionAndBorrowedItemsForMultipleOffices(
+                    $validatedData,
+                    $groupedFinalItemList
+                );
+
+
+            // 08. Check if success
+            if ($newTransactionsCount instanceof Integer) {
+                return response([
+                    'status' => true,
+                    'message' => 'Successfully submitted ' . $newTransactionsCount . ' borrow request',
+                    'method' => 'POST',
+                ], 200);
+            }
+
+            if ($newTransactionsCount instanceof Response) {
+                return $newTransactionsCount;
+            }
+        } catch (\Exception $e) {
+            return response([
+                'status' => false,
+                'message' => 'An error occurred while submittitng your request',
+                'error' => $e->getMessage(),
+                'method' => 'POST',
+            ], 500);
+        }
+
+
     }
 
     /**

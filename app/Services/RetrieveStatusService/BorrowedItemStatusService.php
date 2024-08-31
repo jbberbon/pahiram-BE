@@ -17,11 +17,6 @@ class BorrowedItemStatusService
         return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::IN_POSSESSION);
     }
 
-    public static function getOverdueStatusId()
-    {
-        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::OVERDUE_RETURN);
-    }
-
     public static function getCancelledStatusId()
     {
         return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::CANCELLED);

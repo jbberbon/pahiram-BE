@@ -11,9 +11,8 @@ class BorrowPurpose extends Model
     use HasFactory, Uuids;
 
     protected $fillable = [
-        'purpose_code',
-        'general_purpose',
-        'description'
+        'purpose',
+        'description',
     ];
 
     protected $hidden = [
@@ -34,10 +33,4 @@ class BorrowPurpose extends Model
 
         return $purpose ? $purpose->purpose : null;
     }
-    // public static function getPurposeCodeById($purposeId)
-    // {
-    //     $purpose = self::where('id', $purposeId)->first();
-
-    //     return $purpose ? $purpose->purpose : null;
-    // }
 }
