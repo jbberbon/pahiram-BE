@@ -15,7 +15,7 @@ class ItemInventoryCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            'items' => ItemResource::collection($this->collection),
+            'items' => ItemInventoryResource::collection($this->collection), // Corrected the class name here
             'current_page' => $this->currentPage(),
             'last_page' => $this->lastPage(),
             'next_page_url' => $this->nextPageUrl(),
@@ -27,3 +27,5 @@ class ItemInventoryCollection extends ResourceCollection
         ];
     }
 }
+
+

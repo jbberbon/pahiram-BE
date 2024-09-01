@@ -16,9 +16,9 @@ class USER_ROLE
             'role' => self::BORROWER,
             'description' => 'System borrower'
         ],
-        "BORROWING_MANAGER" => [
+        "LENDING_EMPLOYEE" => [
             'role' => self::BORROWING_MANAGER,
-            'description' => 'Manages borrowing transactions'
+            'description' => 'An employee within a lending office'
         ],
         "INVENTORY_MANAGER" => [
             'role' => self::INVENTORY_MANAGER,
