@@ -208,7 +208,7 @@ class SubmitBorrowRequestService
     /**
      *  06. Insert new borrowing transaction
      */
-    public function insertNewBorrowingTransaction($validatedData)
+    public function insertNewBorrowingTransaction(array $validatedData)
     {
         try {
             $transactionData = $validatedData;
@@ -321,7 +321,7 @@ class SubmitBorrowRequestService
             ];
         }
         return $groupedItemList;
-        
+
     }
 
     // Insert multiple transactions and items
@@ -353,12 +353,15 @@ class SubmitBorrowRequestService
                     ], 500);
                 }
             }
-            return count($groupedFinalItemList);
+            \Log::debug("NEW Borrowed Items ", ['new_borrowed_items' => $newBorrowedItems]);
+            \Log::debug("NEW Borrow Request ", ['new_borrow_req' => $newBorrowRequest]);
+            return (int) count($groupedFinalItemList);
 
-        } catch (\Exception) {
+        } catch (\Exception $e) {
             return response([
                 'status' => false,
                 'message' => 'Something went wrong while adding your request',
+                'error' => $e,
                 'method' => 'POST',
             ], 500);
         }

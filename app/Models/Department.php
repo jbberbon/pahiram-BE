@@ -35,7 +35,7 @@ class Department extends Model
         return $department ? $department->department_acronym : null;
     }
 
-    public static function getIdBasedOnAcronym($acronym)
+    public static function getIdBasedOnAcronym(string $acronym)
     {
         $department = self::where('department_acronym', $acronym)->first();
 

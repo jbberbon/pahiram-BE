@@ -14,6 +14,7 @@ use App\Models\BorrowedItem;
 use App\Models\BorrowTransaction;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
+use DB;
 use Illuminate\Support\Facades\Auth;
 
 use App\Services\BorrowRequestService\EditBorrowRequestService;
@@ -97,7 +98,7 @@ class ManageBorrowingRequestController extends Controller
                     ->select(
                         'item_groups.id',
                         'item_groups.model_name',
-                        \DB::raw('COUNT(borrowed_items.id) as quantity'),
+                        DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
                         'borrowed_item_statuses.borrowed_item_status'
@@ -151,6 +152,7 @@ class ManageBorrowingRequestController extends Controller
     public function submitBorrowRequest(SubmitBorrowRequest $borrowRequest)
     {
         try {
+            DB::beginTransaction();
             /**
              * LOGIC!!
              * 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
@@ -200,6 +202,7 @@ class ManageBorrowingRequestController extends Controller
             // 07. Insert new borrowed items
             $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenItems, $newBorrowRequest->id);
 
+
             if (!$newBorrowRequest || !$newBorrowedItems) {
                 return response([
                     'status' => false,
@@ -207,6 +210,7 @@ class ManageBorrowingRequestController extends Controller
                     'method' => 'POST',
                 ], 500);
             }
+            DB::commit();
             return response([
                 'status' => true,
                 'message' => 'Successfully submitted borrow request',
@@ -214,6 +218,7 @@ class ManageBorrowingRequestController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return response([
                 'status' => false,
                 'message' => 'An error occurred while submittitng your request.',
@@ -227,7 +232,9 @@ class ManageBorrowingRequestController extends Controller
      */
     public function submitBorrowRequestV2(SubmitBorrowRequestForMultipleOfficesRequest $borrowRequest)
     {
+        \Log::debug("DEPUTA", ['borrow_request' => $borrowRequest]);
         try {
+            DB::beginTransaction();
             $validatedData = $borrowRequest->validated();
             $userId = Auth::id();
 
@@ -242,6 +249,7 @@ class ManageBorrowingRequestController extends Controller
 
             // 02. Get all items with "active" status in items TB  
             $requestedItems = $validatedData['items'];
+
             $activeItems = $this
                 ->submitBorrowRequestService
                 ->getActiveItems($requestedItems);
@@ -265,7 +273,7 @@ class ManageBorrowingRequestController extends Controller
                 ->submitBorrowRequestService
                 ->checkRequestQtyAndAvailableQty($availableItems);
 
-            if ($isRequestQtyMoreThanAvailableQty) {
+            if ($isRequestQtyMoreThanAvailableQty !== false) {
                 return $isRequestQtyMoreThanAvailableQty;
             }
 
@@ -287,21 +295,26 @@ class ManageBorrowingRequestController extends Controller
                     $groupedFinalItemList
                 );
 
-
+            \Log::debug('Controller', ['controller' => $newTransactionsCount]);
             // 08. Check if success
-            if ($newTransactionsCount instanceof Integer) {
-                return response([
+            if (is_int($newTransactionsCount)) {
+                DB::commit();
+                return response()->json([
                     'status' => true,
                     'message' => 'Successfully submitted ' . $newTransactionsCount . ' borrow request',
                     'method' => 'POST',
                 ], 200);
             }
 
+            DB::rollBack();
             if ($newTransactionsCount instanceof Response) {
+                dd($newTransactionsCount);
                 return $newTransactionsCount;
             }
         } catch (\Exception $e) {
-            return response([
+            DB::rollBack();
+            dd($e);
+            return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while submittitng your request',
                 'error' => $e->getMessage(),
