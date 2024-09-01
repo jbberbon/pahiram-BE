@@ -12,7 +12,6 @@ class AccountStatus extends Model
 
     protected $fillable = [
         'acc_status',
-        'acc_status_code',
         'description',
     ];
 
@@ -26,5 +25,12 @@ class AccountStatus extends Model
         $status = self::where('id', $id)->first();
         return $status ? $status->acc_status : null;
     }
+
+    public static function getIdByStatus($status)
+    {
+        $status = self::where('acc_status', $status)->first();
+        return $status ? $status->id : null;
+    }
+
 
 }

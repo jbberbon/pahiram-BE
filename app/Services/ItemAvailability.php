@@ -3,69 +3,102 @@
 namespace App\Services;
 
 use App\Models\BorrowedItem;
-use App\Models\BorrowedItemStatus;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
+use App\Utils\DateUtil;
 use Carbon\Carbon;
+use DateFormatUtil;
 
 class ItemAvailability
 {
     private $pendingStatusBorrowedItemId;
     private $inPossessionStatusBorrowedItemId;
-    private $overdueStatusBorrowedItemId;
+    private $approvedStatusBorrowedItemId;
+
+    private $occupiedItemsStatusIds;
+    private $dateFormat;
 
 
     public function __construct()
     {
         $this->pendingStatusBorrowedItemId = BorrowedItemStatusService::getPendingStatusId();
         $this->inPossessionStatusBorrowedItemId = BorrowedItemStatusService::getInPossessionStatusId();
-        $this->overdueStatusBorrowedItemId = BorrowedItemStatusService::getOverdueStatusId();
+        $this->approvedStatusBorrowedItemId = BorrowedItemStatusService::getApprovedStatusId();
+
+        // List all the IDs of the borrowedItemStatuses that is currently occupied
+        $this->occupiedItemsStatusIds = [
+            $this->pendingStatusBorrowedItemId,
+            $this->inPossessionStatusBorrowedItemId,
+            $this->approvedStatusBorrowedItemId,
+        ];
+
+        $this->dateFormat = DateUtil::STANDARD_DATE_FORMAT;
     }
 
 
 
-    public function isAvailable($itemId, $startDate, $returnDate)
+    public function isAvailable(string $itemId, string $startDate, string $returnDate): bool
     {
-        $dateFormat = "Y-m-d H:i:s";
-        $requestStartDate = Carbon::createFromFormat($dateFormat, $startDate);
-        $requestReturnDate = Carbon::createFromFormat($dateFormat, $returnDate);
+        try {
+            $requestStartDate = Carbon::createFromFormat($this->dateFormat, $startDate);
+            $requestReturnDate = Carbon::createFromFormat($this->dateFormat, $returnDate);
 
-        // $pendingApprovalStatus = BorrowedItemStatus::where('borrowed_item_status_code', 1010)->first();
-        // $borrowedStatus = BorrowedItemStatus::where('borrowed_item_status_code', 2020)->first();
-        // $overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status_code', 5050)->first();
+            // Check first if BorrowedItems Table has an item (with the ItemId) 
+            // that is currently borrowed
+            // !!Remember!! >> An individual ItemId can be stored many times in BorrowedItem table
+            $borrowedItems = BorrowedItem::where('item_id', $itemId)
+                ->whereIn('borrowed_item_status_id', $this->occupiedItemsStatusIds)
+                ->get();
 
-        $relevantStatuses = [
-            $this->pendingStatusBorrowedItemId,
-            $this->inPossessionStatusBorrowedItemId,
-            $this->overdueStatusBorrowedItemId,
-        ];
-        $borrowedItems = BorrowedItem::where('item_id', $itemId)
-            ->whereIn('borrowed_item_status_id', $relevantStatuses)
-            ->get();
-        // $borrowedItems = BorrowedItem::where('item_id', $itemId)->get();
+            // AVAILABLE if no existing borrowedItems for the specified itemID, 
+            if ($borrowedItems->isEmpty()) {
+                return true;
+            }
 
-        if ($borrowedItems->isEmpty()) {
-            // No existing borrowed items for the specified item ID, so it's available
-            return true;
-        }
+            // Lets check for date overlaps
+            foreach ($borrowedItems as $borrowedItem) {
+                // Check for overdue return item
+                $isOverdueReturn = self::isBorrowedItemOverdue($borrowedItem->toArray());
+                if ($isOverdueReturn) {
+                    return false;
+                }
 
-        foreach ($borrowedItems as $borrowedItem) {
-            if ($borrowedItem->start_date && $borrowedItem->due_date) { // Handle null date values in BorrowedItem TB
-                $itemStartDate = Carbon::createFromFormat($dateFormat, $borrowedItem->start_date);
-                $itemDueDate = Carbon::createFromFormat($dateFormat, $borrowedItem->due_date);
+                // Proceed to normal checking of overlapping dates
+                if ($borrowedItem->start_date && $borrowedItem->due_date) {
+                    $hasOverlap = DateUtil::hasOverlapBetweenDateRanges(
+                        $borrowedItem->start_date,
+                        $borrowedItem->due_date,
+                        $requestStartDate,
+                        $requestReturnDate
+                    );
 
-                // Check for overlap
-                if ($itemStartDate < $requestReturnDate && $requestStartDate < $itemDueDate) {
-                    // Overlap detected, item is not available
+                    if ($hasOverlap) {
+                        // Overlap detected, item is not available
+                        return false;
+                    }
+                } else {
+                    // Either start_date or due_date is missing, item is not available
                     return false;
                 }
             }
-            // Check if the item is already overdue
-            // if ($borrowedItem->borrowed_item_status_id == $overdueReturnStatus->id) {
-            //     return false;
-            // }
+
+            // No overlap detected, item is available
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    public function isBorrowedItemOverdue(array $borrowedItem): bool
+    {
+        // Check the item is still in possession first
+        if (
+            $borrowedItem['borrowed_item_status_id'] === $this->inPossessionStatusBorrowedItemId
+        ) {
+            // check if due date has lapsed
+            return DateUtil::isDateLapsed($borrowedItem['due_date']);
         }
 
-        // No overlap detected, item is available
-        return true;
+        // if item is not is possession, then just return false
+        return false;
     }
 }

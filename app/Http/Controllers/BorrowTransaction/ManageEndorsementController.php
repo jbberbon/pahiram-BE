@@ -43,13 +43,13 @@ class ManageEndorsementController extends Controller
             $endorsementList = BorrowTransaction::where('endorsed_by', $userId)->get();
 
             $endorsementResource = new EndorsementCollection($endorsementList);
-            return response([
+            return response()->json([
                 'status' => true,
                 'data' => $endorsementResource,
                 'method' => "GET"
             ], 200);
         } catch (\Exception $e) {
-            return response([
+            return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while fetching borrowing requests',
                 'error' => $e->getMessage(),
@@ -114,7 +114,7 @@ class ManageEndorsementController extends Controller
             //         ];
             //     });
 
-            return response([
+            return response()->json([
                 'status' => true,
                 'data' => [
                     'transac_data' => new BorrowTransactionResource($transacData),
@@ -123,7 +123,7 @@ class ManageEndorsementController extends Controller
                 'method' => "GET"
             ], 200);
         } catch (\Exception $e) {
-            return response([
+            return response()->json([
                 'status' => false,
                 'message' => "An error occured, try again later",
                 'error' => $e,
@@ -151,7 +151,7 @@ class ManageEndorsementController extends Controller
 
                 DB::commit();
                 // Item status remains the same --> Pending Approval
-                return response([
+                return response()->json([
                     'status' => true,
                     'message' => "Successfully approved transaction",
                     'method' => "PATCH"
@@ -166,7 +166,7 @@ class ManageEndorsementController extends Controller
                 ->update(['borrowed_item_status_id' => $this->disapprovedBorrowedItemStatus]);
 
             DB::commit();
-            return response([
+            return response()->json([
                 'status' => true,
                 'message' => "Successfully declined transaction",
                 'method' => "PATCH"
@@ -174,7 +174,7 @@ class ManageEndorsementController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response([
+            return response()->json([
                 'status' => false,
                 'error' => $e,
                 'method' => "PATCH"

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('item_groups', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            // Shouldnt be unique because there would be items that will be repeating accross different offices
             $table->string('model_name');
             $table->boolean('is_required_supervisor_approval')->default(0);
 

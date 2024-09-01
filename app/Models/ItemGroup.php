@@ -54,4 +54,13 @@ class ItemGroup extends Model
         return Department::getAcronymById($itemGroup->department_id);
 
     }
+
+    public static function getIdByModelNameAndOfficeId(string $modelName, string $officeId): string|null
+    {
+        $itemGroup = self::where('model_name', $modelName)
+            ->where('department_id', $officeId)
+            ->first();
+
+        return $itemGroup ? $itemGroup->id : null;
+    }
 }

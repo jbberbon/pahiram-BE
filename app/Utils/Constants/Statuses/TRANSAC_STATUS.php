@@ -11,7 +11,6 @@ class TRANSAC_STATUS
     const DISAPPROVED = 'DISAPPROVED';
     const UNRELEASED = 'UNRELEASED';
     const CANCELLED = 'CANCELLED';
-    const OVERDUE_TRANSACTION_COMPLETION = 'OVERDUE_TRANSACTION_COMPLETION';
     const UNRETURNED = 'UNRETURNED';
     const TRANSACTION_COMPLETE = 'TRANSACTION_COMPLETE';
 
@@ -30,7 +29,7 @@ class TRANSAC_STATUS
         ],
         "ON_GOING" => [
             "transac_status" => self::ON_GOING,
-            "description" => "All items are currently in the possesion of the borrower",
+            "description" => "Minimum of 1 item is currently in the possesion of the borrower",
         ],
         "DISAPPROVED" => [
             "transac_status" => self::DISAPPROVED,
@@ -44,13 +43,9 @@ class TRANSAC_STATUS
             "transac_status" => self::CANCELLED,
             "description" => "Transaction is cancelled",
         ],
-        "OVERDUE_TRANSACTION_COMPLETION" => [
-            "transac_status" => self::OVERDUE_TRANSACTION_COMPLETION,
-            "description" => "Transaction is complete and all item/s are returned",
-        ],
         "UNRETURNED" => [
             "transac_status" => self::UNRETURNED,
-            "description" => "All items are unreturned",
+            "description" => "1 or more items are unreturned",
         ],
         "TRANSACTION_COMPLETE" => [
             "transac_status" => self::TRANSACTION_COMPLETE,
