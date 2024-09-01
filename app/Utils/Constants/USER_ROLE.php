@@ -8,7 +8,7 @@ class USER_ROLE
     const SUPERVISOR = 'SUPERVISOR';
     const COSUPERVISOR = 'COSUPERVISOR';
     const PENALTY_MANAGER = 'PENALTY_MANAGER';
-    const BORROWING_MANAGER = 'BORROWING_MANAGER';
+    const LENDING_EMPLOYEE = 'LENDING_EMPLOYEE';
     const INVENTORY_MANAGER = 'INVENTORY_MANAGER';
 
     const USER_ROLE_ARRAY = [
@@ -17,7 +17,7 @@ class USER_ROLE
             'description' => 'System borrower'
         ],
         "LENDING_EMPLOYEE" => [
-            'role' => self::BORROWING_MANAGER,
+            'role' => self::LENDING_EMPLOYEE,
             'description' => 'An employee within a lending office'
         ],
         "INVENTORY_MANAGER" => [
