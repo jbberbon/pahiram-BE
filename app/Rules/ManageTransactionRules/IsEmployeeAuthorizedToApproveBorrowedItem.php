@@ -16,7 +16,7 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
     private $supervisorId;
     private $coSupervisorId;
 
-    private $borrowManagerId;
+    private $lendingEmployeeId;
     private $inventoryManagerId;
     protected $request;
 
@@ -27,7 +27,7 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
         $this->pendingItemApprovalStatusId = BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::PENDING_APPROVAL);
         $this->supervisorId = Role::getIdByRole(USER_ROLE::SUPERVISOR);
         $this->coSupervisorId = Role::getIdByRole(USER_ROLE::COSUPERVISOR);
-        $this->borrowManagerId = Role::getIdByRole(USER_ROLE::BORROWING_MANAGER);
+        $this->lendingEmployeeId = Role::getIdByRole(USER_ROLE::LENDING_EMPLOYEE);
         $this->inventoryManagerId = Role::getIdByRole(USER_ROLE::INVENTORY_MANAGER);
     }
     public function passes($attribute, $value)
@@ -43,10 +43,9 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
         }
 
         // User is lending or inventory manager
-        $isBorrowManager = $user->user_role_id === $this->borrowManagerId;
-        $isInventoryManager = $user->user_role_id === $this->inventoryManagerId;
+        $isLendingEmployee = $user->user_role_id === $this->lendingEmployeeId;
 
-        if ($isBorrowManager || $isInventoryManager) {
+        if ($isLendingEmployee) {
 
             $borrowedItem = BorrowedItem::where('borrowing_transac_id', $this->request['transactionId'])
                 ->where('borrowed_item_status_id', $this->pendingItemApprovalStatusId)

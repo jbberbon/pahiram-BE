@@ -6,11 +6,10 @@ class BORROWED_ITEM_STATUS
 {
     const PENDING_APPROVAL = 'PENDING_APPROVAL';
     const APPROVED = 'APPROVED';
+    const IN_POSSESSION = 'IN_POSSESSION';
     const CANCELLED = 'CANCELLED';
     const DISAPPROVED = 'DISAPPROVED';
-    const IN_POSSESSION = 'IN_POSSESSION';
     const UNRELEASED = 'UNRELEASED';
-    const OVERDUE_RETURN = 'OVERDUE_RETURN';
     const RETURNED = 'RETURNED';
     const UNRETURNED = 'UNRETURNED';
     const DAMAGED_BUT_REPAIRABLE = 'DAMAGED_BUT_REPAIRABLE';
@@ -41,10 +40,6 @@ class BORROWED_ITEM_STATUS
         "UNRELEASED" => [
             "borrowed_item_status" => self::UNRELEASED,
             "description" => "Item is not released to borrower"
-        ],
-        "OVERDUE_RETURN" => [
-            "borrowed_item_status" => self::OVERDUE_RETURN,
-            "description" => "Item is overdue for return"
         ],
         "RETURNED" => [
             "borrowed_item_status" => self::RETURNED,
