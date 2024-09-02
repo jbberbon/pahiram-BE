@@ -8,6 +8,7 @@ use App\Http\Controllers\BorrowTransaction\ManageEndorsementController;
 use App\Http\Controllers\Inventory\PLOManageInventory;
 use App\Http\Controllers\Penalty\ManagePenaltyController;
 use App\Http\Controllers\ItemInventory\ItemInventoryController;
+use App\Http\Controllers\Category\ItemCategoryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,7 +24,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::post('/login', [AuthController::class, 'login']);
-// Pagination for Item Inventory
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -114,4 +114,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/item-inventory', [ItemInventoryController::class, 'index']);
     Route::get('/items', [ItemInventoryController::class, 'search']);
+    Route::get('/categories', [ItemCategoryController::class, 'index']);
+    Route::get('/search-categories', [ItemCategoryController::class, 'search']);
 });
