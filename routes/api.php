@@ -113,7 +113,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     Route::get('/item-inventory', [ItemInventoryController::class, 'index']);
-    Route::get('/items', [ItemInventoryController::class, 'search']);
     Route::get('/categories', [ItemCategoryController::class, 'index']);
     Route::get('/search-categories', [ItemCategoryController::class, 'search']);
 });

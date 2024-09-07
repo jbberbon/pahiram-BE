@@ -12,43 +12,17 @@ use Illuminate\Http\JsonResponse;
 
 class ItemInventoryController extends Controller
 {
-    public function index(): JsonResponse
-    {
-        try {
-            // Fetch paginated item groups (adjust per_page as needed)
-            $itemGroups = ItemGroup::paginate(21);
-
-            // Wrap items in ItemInventoryCollection to format data and include pagination
-            $itemGroupCollection = new ItemInventoryCollection($itemGroups);
-
-            // Return successful JSON response
-            return response()->json([
-                'status' => true,
-                'data' => $itemGroupCollection,
-                'method' => 'GET',
-            ], 200);
-
-        } catch (\Exception $e) {
-            // Handle exceptions and return error response
-            return response()->json([
-                'status' => false,
-                'message' => 'An error occurred while fetching item groups.',
-                'error' => $e->getMessage(),
-                'method' => 'GET',
-            ], 500);
-        }
-    }
-
-    public function search(Request $request)
-    {
+    public function index(Request $request): JsonResponse
+{
+    try {
         // Retrieve the search query and filters from the request
         $search = $request->input('model_name');
         $categoryName = $request->input('category_name');
         $departmentAcronym = $request->input('department_acronym');
-    
+
         // Start a query on the ItemGroup model
         $query = ItemGroup::query();
-    
+
         // Apply search filter by model_name
         if ($search) {
             $query->where('model_name', 'like', '%' . $search . '%');
@@ -61,7 +35,7 @@ class ItemInventoryController extends Controller
                   ->where('item_group_categories.category_name', 'like', '%' . $categoryName . '%')
                   ->select('item_groups.*'); // Make sure to select columns from the ItemGroup model
         }
-    
+
         // Apply department filter by acronym
         if ($departmentAcronym) {
             // Join with the department table
@@ -69,17 +43,31 @@ class ItemInventoryController extends Controller
                   ->where('departments.department_acronym', $departmentAcronym)
                   ->select('item_groups.*'); // Make sure to select columns from the ItemGroup model
         }
-    
-        // Get the filtered results with pagination
-        $items = $query->paginate(21);
-    
-        // Return the results using the ItemInventoryCollection
+
+        // Fetch paginated item groups (adjust per_page as needed)
+        $itemGroups = $query->paginate(21);
+
+        // Wrap items in ItemInventoryCollection to format data and include pagination
+        $itemGroupCollection = new ItemInventoryCollection($itemGroups);
+
+        // Return successful JSON response
         return response()->json([
             'status' => true,
-            'data' => new ItemInventoryCollection($items),
-            'method' => 'GET'
-        ]);
+            'data' => $itemGroupCollection,
+            'method' => 'GET',
+        ], 200);
+
+    } catch (\Exception $e) {
+        // Handle exceptions and return error response
+        return response()->json([
+            'status' => false,
+            'message' => 'An error occurred while fetching item groups.',
+            'error' => $e->getMessage(),
+            'method' => 'GET',
+        ], 500);
     }
+}
+
     
 
     public function show(GetItemRequest $request)
