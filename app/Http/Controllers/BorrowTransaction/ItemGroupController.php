@@ -25,7 +25,7 @@ class ItemGroupController extends Controller
     private $pendingStatus;
     private $inPossessionStatus;
     private $approvedStatus;
-    private $overdueReturnStatus;
+    // private $overdueReturnStatus;
     public function __construct()
     {
         // Item status
@@ -34,7 +34,7 @@ class ItemGroupController extends Controller
         $this->pendingStatus = BorrowedItemStatus::where('borrowed_item_status', "PENDING_APPROVAL")->first();
         $this->approvedStatus = BorrowedItemStatus::where('borrowed_item_status', "APPROVED")->first();
         $this->inPossessionStatus = BorrowedItemStatus::where('borrowed_item_status', "IN_POSSESSION")->first();
-        $this->overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status', "OVERDUE_RETURN")->first();
+        // $this->overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status', "OVERDUE_RETURN")->first();
 
     }
     /**
@@ -65,7 +65,6 @@ class ItemGroupController extends Controller
         $validatedData = $bookedDatesRequest->validated();
         $itemGroupId = $validatedData['itemGroupId'];
 
-
         // RAW Join method
         // User
         // SELECT item_groups.id AS item_group_id, 
@@ -95,17 +94,24 @@ class ItemGroupController extends Controller
                 )
                 ->get();
 
+            // return $borrowedItems;
+
             // 02. Get the count of the item with active status (ITEMS tb)
             $activeItemCount = Item::where('item_group_id', $itemGroupId)
                 ->where('item_status_id', $this->activeItemStatus->id)
                 ->get()
                 ->count();
 
+            // return $activeItemCount;
+
             // 03. Get count of overdue status (BORROWED ITEMS tb)
             $overdueCount = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
                 ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                 ->where('item_groups.id', $itemGroupId)
-                ->where('borrowed_items.borrowed_item_status_id', $this->overdueReturnStatus->id)
+                // Where status is in-possession
+                ->where('borrowed_items.borrowed_item_status_id', $this->inPossessionStatus->id)
+                //where now() > due date
+                ->where('due_date', '<', now())
                 ->get()
                 ->count();
 

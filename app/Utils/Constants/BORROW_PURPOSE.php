@@ -5,9 +5,8 @@ namespace App\Utils\Constants;
 class BORROW_PURPOSE
 {
     const ACADEMIC_REQUIREMENT = 'ACADEMIC_REQUIREMENT';
-    const ORG_CLUB_ACTIVITY = 'ORG_CLUB_ACTIVITY';
+    const ORG_ACTIVITY = 'ORG_ACTIVITY';
     const UPSKILLING = 'UPSKILLING';
-
     const HOBBY = 'HOBBY';
     const SPECIAL_EVENT = 'SPECIAL_EVENT';
     const OTHERS = 'OTHERS';
