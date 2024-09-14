@@ -13,6 +13,7 @@ use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
+use App\Services\ItemAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,7 @@ class ItemGroupController extends Controller
     private $pendingStatus;
     private $inPossessionStatus;
     private $approvedStatus;
-    // private $overdueReturnStatus;
+    private $itemAvailability;
     public function __construct()
     {
         // Item status
@@ -34,7 +35,7 @@ class ItemGroupController extends Controller
         $this->pendingStatus = BorrowedItemStatus::where('borrowed_item_status', "PENDING_APPROVAL")->first();
         $this->approvedStatus = BorrowedItemStatus::where('borrowed_item_status', "APPROVED")->first();
         $this->inPossessionStatus = BorrowedItemStatus::where('borrowed_item_status', "IN_POSSESSION")->first();
-        // $this->overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status', "OVERDUE_RETURN")->first();
+        $this->itemAvailability = new ItemAvailability();
 
     }
     /**
@@ -94,15 +95,11 @@ class ItemGroupController extends Controller
                 )
                 ->get();
 
-            // return $borrowedItems;
-
             // 02. Get the count of the item with active status (ITEMS tb)
             $activeItemCount = Item::where('item_group_id', $itemGroupId)
                 ->where('item_status_id', $this->activeItemStatus->id)
                 ->get()
                 ->count();
-
-            // return $activeItemCount;
 
             // 03. Get count of overdue status (BORROWED ITEMS tb)
             $overdueCount = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
@@ -118,21 +115,25 @@ class ItemGroupController extends Controller
 
             $actualActiveItemCount = $activeItemCount - $overdueCount;
 
-            $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
-                // 04. Format the dates to the expected format by the frontend
-                $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
-                $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
+            // return $borrowedItems;
 
-                // 05. Add Title Field for REACT FullCalendar display.
-                // This will display how many items are available within the current booked Dates
-                if ($actualActiveItemCount > $item['count']) {
-                    $item['title'] = "Reserved quantity: " . $item['count'];
-                } else {
-                    $item['title'] = "Item slot fully booked";
-                    $item['color'] = "#f44336";
-                }
-                return $item;
-            });
+            // $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
+            //     // 04. Format the dates to the expected format by the frontend
+            //     $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
+            //     $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
+
+            //     // 05. Add Title Field for REACT FullCalendar display.
+            //     // This will display how many items are available within the current booked Dates
+            //     if ($actualActiveItemCount > $item['count']) {
+            //         $item['title'] = "Reserved quantity: " . $item['count'];
+            //     } else {
+            //         $item['title'] = "Item slot fully booked";
+            //         $item['color'] = "#f44336";
+            //     }
+            //     return $item;
+            // });
+
+            $combinedDatesBorrowedItems = $this->itemAvailability->processBorrowedDates(borrowedItems: $borrowedItems->toArray(), maxAvailableItems: $actualActiveItemCount);
 
             // 05. Get the name of the item group
             $itemGroup = ItemGroup::where('id', $itemGroupId)->first();
@@ -140,8 +141,10 @@ class ItemGroupController extends Controller
             return response([
                 'status' => true,
                 'data' => [
-                    'item_model' => $itemGroup->model_name,
-                    'active_items' => $actualActiveItemCount, // Overdue shouldnt be booked
+                    'item_group_data' => [
+                        'item_model' => $itemGroup->model_name,
+                        'active_items' => $actualActiveItemCount,
+                    ],
                     'dates' => $borrowedItems
                 ],
                 'method' => "GET"

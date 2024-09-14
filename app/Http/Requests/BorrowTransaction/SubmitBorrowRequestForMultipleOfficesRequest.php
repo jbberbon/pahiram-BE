@@ -100,7 +100,7 @@ class SubmitBorrowRequestForMultipleOfficesRequest extends FormRequest
                 'required',
                 'integer',
                 'min: 1',
-                'max:3'
+                'max:4'
             ]
         ];
     }
