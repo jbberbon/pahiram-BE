@@ -19,9 +19,9 @@ class ItemInventoryResource extends JsonResource
         return [
             'id' => $this->id,
             'model_name' => $this->model_name,
-            'is_required_supervisor_approval' => $this->is_required_supervisor_approval,
-            'group_category_id' => ItemGroupCategory::getCategoryNameById($this->group_category_id),
+            'group_category' => ItemGroupCategory::getCategoryNameById($this->group_category_id),
             'department' => Department::getAcronymById($this->department_id),
+            // 'item_group_image_endpoint' => $this->item_group_image_endpoint,
         ];
     }
 }
