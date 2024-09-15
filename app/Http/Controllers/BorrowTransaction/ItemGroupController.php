@@ -5,11 +5,12 @@ namespace App\Http\Controllers\BorrowTransaction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BorrowTransaction\BookedDatesRequest;
 use App\Http\Requests\BorrowTransaction\GetItemGroupByOfficeRequest;
+use App\Http\Requests\ManageInventory\GetItemRequest;
+use App\Http\Resources\ItemGroup\ItemGroupResourceForBorrowers;
 use App\Http\Resources\ItemGroupBasedOnOfficeCollection;
 use App\Http\Resources\ItemGroupBasedOnOfficeResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
-use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
@@ -82,6 +83,8 @@ class ItemGroupController extends Controller
             $borrowedItems = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
                 ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                 ->where('item_groups.id', $itemGroupId)
+                // Only get the non-overdue items
+                ->where('due_date', '>', now())
                 ->where(function ($query) {
                     $query->where('borrowed_items.borrowed_item_status_id', $this->pendingStatus->id)
                         ->orWhere('borrowed_items.borrowed_item_status_id', $this->approvedStatus->id)
@@ -96,26 +99,14 @@ class ItemGroupController extends Controller
                 ->get();
 
             // 02. Get the count of the item with active status (ITEMS tb)
-            $activeItemCount = Item::where('item_group_id', $itemGroupId)
-                ->where('item_status_id', $this->activeItemStatus->id)
-                ->get()
-                ->count();
+            // $activeItemCount = Item::getActiveItemStatusCountByItemGroupId(itemGroupId: $itemGroupId);
 
             // 03. Get count of overdue status (BORROWED ITEMS tb)
-            $overdueCount = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
-                ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                ->where('item_groups.id', $itemGroupId)
-                // Where status is in-possession
-                ->where('borrowed_items.borrowed_item_status_id', $this->inPossessionStatus->id)
-                //where now() > due date
-                ->where('due_date', '<', now())
-                ->get()
-                ->count();
+            // $overdueCount = BorrowedItem::getOverdueItemCountByItemGroupId(itemGroupId: $itemGroupId);
 
+            // $actualActiveItemCount = $activeItemCount - $overdueCount;
+            $actualActiveItemCount = Item::getActiveItemStautCountExceptOverdueItems(itemGroupId: $itemGroupId);
 
-            $actualActiveItemCount = $activeItemCount - $overdueCount;
-
-            // return $borrowedItems;
 
             // $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
             //     // 04. Format the dates to the expected format by the frontend
@@ -162,10 +153,34 @@ class ItemGroupController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(BorrowedItem $borrowedItem)
+    public function show(GetItemRequest $request)
     {
-        //
+        // Access the validated data
+        $validatedData = $request->validated();
+
+        // Now you can use the validated data
+        $itemGroupId = $validatedData['item_group_id'];
+
+        // Example: find the item group by ID
+        $itemGroup = ItemGroup::find($itemGroupId);
+
+        $itemGroupResource = new ItemGroupResourceForBorrowers($itemGroup);
+
+        if (!$itemGroup) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Item group not found',
+                'method' => 'GET'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $itemGroupResource,
+            'method' => 'GET'
+        ], 200);
     }
+
 
     /**
      * Update the specified resource in storage.

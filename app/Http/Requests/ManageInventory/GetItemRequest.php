@@ -17,9 +17,9 @@ class GetItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'itemId' => [
+            'item_group_id' => [
                 'required',
-                'exists:items,id',
+                'exists:item_groups,id',
             ]
         ];
     }
@@ -42,5 +42,14 @@ class GetItemRequest extends FormRequest
         $message = "Failed to retrieve item data";
         $errorCode = $this->errorCode;
         RequestValidationFailedMsg::errorResponse($validator, $message, $errorCode);
+    }
+
+    /**
+     * Merge route parameters with request data for validation.
+     */
+    public function validationData()
+    {
+        // Merge route parameters (such as item_group_id) with request data
+        return array_merge($this->all(), $this->route()->parameters());
     }
 }

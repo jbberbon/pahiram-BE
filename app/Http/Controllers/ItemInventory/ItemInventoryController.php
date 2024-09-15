@@ -67,13 +67,4 @@ class ItemInventoryController extends Controller
             ], 500);
         }
     }
-
-
-
-    public function show(GetItemRequest $request)
-    {
-        $validatedData = $request->validated();
-
-        return $validatedData;
-    }
 }

@@ -16,8 +16,8 @@ class BORROW_PURPOSE
             "purpose" => self::ACADEMIC_REQUIREMENT,
             "description" => "For general academic projects, assignments, or coursework"
         ],
-        "ORG_CLUB_ACTIVITY" => [
-            "purpose" => self::ORG_CLUB_ACTIVITY,
+        "ORG_ACTIVITY" => [
+            "purpose" => self::ORG_ACTIVITY,
             "description" => "For org or club-related events and activities."
         ],
         "UPSKILLING" => [

@@ -33,4 +33,22 @@ class BorrowedItem extends Model
     {
         return $this->belongsTo(Item::class);
     }
+
+    public static function getOverdueItemCountByItemGroupId(string $itemGroupId): int
+    {
+        $inPossessionStatusId = BorrowedItemStatus::getIdByStatus(status: "IN_POSSESSION");
+
+        if (!$inPossessionStatusId) {
+            return 0;
+        }
+
+        return self::join('items', 'borrowed_items.item_id', '=', 'items.id')
+            ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+            ->where('item_groups.id', $itemGroupId)
+            // Where status is in-possession
+            ->where('borrowed_items.borrowed_item_status_id', $inPossessionStatusId)
+            //where now() > due date
+            ->where('due_date', '<', now())
+            ->count();
+    }
 }

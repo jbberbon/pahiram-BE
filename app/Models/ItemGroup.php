@@ -15,6 +15,7 @@ class ItemGroup extends Model
         'is_required_supervisor_approval',
         'total_quantity',
         'available_quantity',
+        'description',
         //FK
         'group_category_id',
         'department_id'

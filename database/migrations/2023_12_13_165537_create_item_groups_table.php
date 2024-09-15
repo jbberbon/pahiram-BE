@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,6 +15,8 @@ return new class extends Migration
             // Shouldnt be unique because there would be items that will be repeating accross different offices
             $table->string('model_name');
             $table->boolean('is_required_supervisor_approval')->default(0);
+            // Description column with a 500 character limit
+            $table->string('description', 500)->nullable();
 
             // FKs
             $table->uuid('group_category_id');
