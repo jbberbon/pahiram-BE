@@ -232,7 +232,6 @@ class ManageBorrowingRequestController extends Controller
      */
     public function submitBorrowRequestV2(SubmitBorrowRequestForMultipleOfficesRequest $borrowRequest)
     {
-        \Log::debug("DEPUTA", ['borrow_request' => $borrowRequest]);
         try {
             DB::beginTransaction();
             $validatedData = $borrowRequest->validated();
@@ -313,7 +312,6 @@ class ManageBorrowingRequestController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e);
             return response()->json([
                 'status' => false,
                 'message' => 'An error occurred while submittitng your request',

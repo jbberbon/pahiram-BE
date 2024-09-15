@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
 class SubmitBorrowRequestService
 {
     private $itemAvailability;
-    const MAX_ACTIVE_TRANSACTIONS = 3;
+    const MAX_ACTIVE_TRANSACTIONS = 4;
 
     // Item Statuses
     private $activeItemStatusId;

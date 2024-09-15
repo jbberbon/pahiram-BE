@@ -6,7 +6,7 @@ use App\Models\BorrowedItem;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Utils\DateUtil;
 use Carbon\Carbon;
-use DateFormatUtil;
+use Illuminate\Support\Collection;
 
 class ItemAvailability
 {
@@ -101,4 +101,81 @@ class ItemAvailability
         // if item is not is possession, then just return false
         return false;
     }
+
+
+    /**
+     * Combines overlapping and adjacent date ranges, splitting them where necessary.
+     *
+     * @param array $borrowedItems Array of borrowed items with start/end times and counts.
+     * @param int $maxAvailableItems The maximum number of available items.
+     * @return array The processed array with split and combined date ranges.
+     */
+    public function processBorrowedDates(array $borrowedItems, int $maxAvailableItems): array
+    {
+        // Sort items by start date
+        usort($borrowedItems, function ($a, $b) {
+            return strtotime($a['start']) - strtotime($b['start']);
+        });
+
+        $result = [];
+        $currentSlot = null;
+
+        foreach ($borrowedItems as $item) {
+            $start = $item['start'];
+            $end = $item['end'];
+            $count = $item['count'];
+
+            if ($currentSlot === null) {
+                // Start the first time slot
+                $currentSlot = $item;
+            } else {
+                // Check if the current item overlaps with the previous one
+                if (strtotime($currentSlot['end']) > strtotime($start)) {
+                    // There's an overlap: merge the time slot and update the count
+                    $currentSlot['end'] = max($currentSlot['end'], $end);
+                    $currentSlot['count'] += $count;
+
+                    // Apply "Fully Booked" title if the count reaches or exceeds max available items
+                    if ($currentSlot['count'] >= $maxAvailableItems) {
+                        $currentSlot['title'] = "Fully Booked";
+                        $currentSlot['color'] = "#f44336";
+                        $currentSlot['count'] = $maxAvailableItems;
+                    }
+                } else {
+                    // No overlap: add the previous time slot to the result
+                    $result[] = $currentSlot;
+                    // Start a new slot
+                    $currentSlot = $item;
+                }
+            }
+        }
+
+        // Add the last slot to the result
+        if ($currentSlot !== null) {
+            $result[] = $currentSlot;
+        }
+
+        // Adjust final result to ensure no duplicate or empty time slots
+        return self::fixTimeSlots($result);
+    }
+
+    // Helper function to split and fix overlapping time slots
+    function fixTimeSlots(array $timeSlots): array
+    {
+        $fixedSlots = [];
+
+        foreach ($timeSlots as $slot) {
+            // If the start time is equal to the end time, skip the slot
+            if (strtotime($slot['start']) >= strtotime($slot['end'])) {
+                continue;
+            }
+
+            $fixedSlots[] = $slot;
+        }
+
+        return $fixedSlots;
+    }
+
+
+
 }

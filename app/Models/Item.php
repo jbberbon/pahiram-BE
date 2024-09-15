@@ -52,5 +52,31 @@ class Item extends Model
         return $itemGroup ? $itemGroup->model_name : null;
     }
 
+    public static function getActiveItemStatusCountByItemGroupId(string $itemGroupId): int
+    {
+        $activeItemStatus = ItemStatus::where('item_status', "ACTIVE")->first();
+        // If no active item status found, return 0
+        if (!$activeItemStatus) {
+            return 0;
+        }
+        return self::where('item_group_id', $itemGroupId)
+            ->where('item_status_id', $activeItemStatus->id)
+            ->count();
+    }
 
+    /**
+     * Get the active item count minus the overdue item count by item group ID.
+     *
+     * @param string $itemGroupId
+     * @return object
+     */
+    public static function getActiveItemStautCountExceptOverdueItems(string $itemGroupId): int
+    {
+        $activeItemsCount = self::getActiveItemStatusCountByItemGroupId(itemGroupId: $itemGroupId);
+
+        $overdueItemCount = BorrowedItem::getOverdueItemCountByItemGroupId(itemGroupId: $itemGroupId);
+
+        $actualActiveItemsCount = $activeItemsCount - $overdueItemCount;
+        return abs(num: $actualActiveItemsCount);
+    }
 }

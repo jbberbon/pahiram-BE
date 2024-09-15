@@ -5,14 +5,16 @@ namespace App\Http\Controllers\BorrowTransaction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BorrowTransaction\BookedDatesRequest;
 use App\Http\Requests\BorrowTransaction\GetItemGroupByOfficeRequest;
+use App\Http\Requests\ManageInventory\GetItemRequest;
+use App\Http\Resources\ItemGroup\ItemGroupResourceForBorrowers;
 use App\Http\Resources\ItemGroupBasedOnOfficeCollection;
 use App\Http\Resources\ItemGroupBasedOnOfficeResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
-use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
+use App\Services\ItemAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -25,7 +27,7 @@ class ItemGroupController extends Controller
     private $pendingStatus;
     private $inPossessionStatus;
     private $approvedStatus;
-    private $overdueReturnStatus;
+    private $itemAvailability;
     public function __construct()
     {
         // Item status
@@ -34,7 +36,7 @@ class ItemGroupController extends Controller
         $this->pendingStatus = BorrowedItemStatus::where('borrowed_item_status', "PENDING_APPROVAL")->first();
         $this->approvedStatus = BorrowedItemStatus::where('borrowed_item_status', "APPROVED")->first();
         $this->inPossessionStatus = BorrowedItemStatus::where('borrowed_item_status', "IN_POSSESSION")->first();
-        $this->overdueReturnStatus = BorrowedItemStatus::where('borrowed_item_status', "OVERDUE_RETURN")->first();
+        $this->itemAvailability = new ItemAvailability();
 
     }
     /**
@@ -65,7 +67,6 @@ class ItemGroupController extends Controller
         $validatedData = $bookedDatesRequest->validated();
         $itemGroupId = $validatedData['itemGroupId'];
 
-
         // RAW Join method
         // User
         // SELECT item_groups.id AS item_group_id, 
@@ -82,6 +83,8 @@ class ItemGroupController extends Controller
             $borrowedItems = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
                 ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                 ->where('item_groups.id', $itemGroupId)
+                // Only get the non-overdue items
+                ->where('due_date', '>', now())
                 ->where(function ($query) {
                     $query->where('borrowed_items.borrowed_item_status_id', $this->pendingStatus->id)
                         ->orWhere('borrowed_items.borrowed_item_status_id', $this->approvedStatus->id)
@@ -96,37 +99,32 @@ class ItemGroupController extends Controller
                 ->get();
 
             // 02. Get the count of the item with active status (ITEMS tb)
-            $activeItemCount = Item::where('item_group_id', $itemGroupId)
-                ->where('item_status_id', $this->activeItemStatus->id)
-                ->get()
-                ->count();
+            // $activeItemCount = Item::getActiveItemStatusCountByItemGroupId(itemGroupId: $itemGroupId);
 
             // 03. Get count of overdue status (BORROWED ITEMS tb)
-            $overdueCount = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
-                ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                ->where('item_groups.id', $itemGroupId)
-                ->where('borrowed_items.borrowed_item_status_id', $this->overdueReturnStatus->id)
-                ->get()
-                ->count();
+            // $overdueCount = BorrowedItem::getOverdueItemCountByItemGroupId(itemGroupId: $itemGroupId);
+
+            // $actualActiveItemCount = $activeItemCount - $overdueCount;
+            $actualActiveItemCount = Item::getActiveItemStautCountExceptOverdueItems(itemGroupId: $itemGroupId);
 
 
-            $actualActiveItemCount = $activeItemCount - $overdueCount;
+            // $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
+            //     // 04. Format the dates to the expected format by the frontend
+            //     $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
+            //     $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
 
-            $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
-                // 04. Format the dates to the expected format by the frontend
-                $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
-                $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
+            //     // 05. Add Title Field for REACT FullCalendar display.
+            //     // This will display how many items are available within the current booked Dates
+            //     if ($actualActiveItemCount > $item['count']) {
+            //         $item['title'] = "Reserved quantity: " . $item['count'];
+            //     } else {
+            //         $item['title'] = "Item slot fully booked";
+            //         $item['color'] = "#f44336";
+            //     }
+            //     return $item;
+            // });
 
-                // 05. Add Title Field for REACT FullCalendar display.
-                // This will display how many items are available within the current booked Dates
-                if ($actualActiveItemCount > $item['count']) {
-                    $item['title'] = "Reserved quantity: " . $item['count'];
-                } else {
-                    $item['title'] = "Item slot fully booked";
-                    $item['color'] = "#f44336";
-                }
-                return $item;
-            });
+            $combinedDatesBorrowedItems = $this->itemAvailability->processBorrowedDates(borrowedItems: $borrowedItems->toArray(), maxAvailableItems: $actualActiveItemCount);
 
             // 05. Get the name of the item group
             $itemGroup = ItemGroup::where('id', $itemGroupId)->first();
@@ -134,8 +132,10 @@ class ItemGroupController extends Controller
             return response([
                 'status' => true,
                 'data' => [
-                    'item_model' => $itemGroup->model_name,
-                    'active_items' => $actualActiveItemCount, // Overdue shouldnt be booked
+                    'item_group_data' => [
+                        'item_model' => $itemGroup->model_name,
+                        'active_items' => $actualActiveItemCount,
+                    ],
                     'dates' => $borrowedItems
                 ],
                 'method' => "GET"
@@ -153,10 +153,34 @@ class ItemGroupController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(BorrowedItem $borrowedItem)
+    public function show(GetItemRequest $request)
     {
-        //
+        // Access the validated data
+        $validatedData = $request->validated();
+
+        // Now you can use the validated data
+        $itemGroupId = $validatedData['item_group_id'];
+
+        // Example: find the item group by ID
+        $itemGroup = ItemGroup::find($itemGroupId);
+
+        $itemGroupResource = new ItemGroupResourceForBorrowers($itemGroup);
+
+        if (!$itemGroup) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Item group not found',
+                'method' => 'GET'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $itemGroupResource,
+            'method' => 'GET'
+        ], 200);
     }
+
 
     /**
      * Update the specified resource in storage.

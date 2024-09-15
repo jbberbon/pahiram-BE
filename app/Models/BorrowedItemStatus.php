@@ -21,7 +21,7 @@ class BorrowedItemStatus extends Model
         'updated_at'
     ];
 
-    public static function getIdByStatus($status)
+    public static function getIdByStatus(string $status): string | null
     {
         $status = self::where('borrowed_item_status', $status)->first();
 
