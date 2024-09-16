@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\Uuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+// use App\Models\User;
 
 class BorrowTransaction extends Model
 {
@@ -27,4 +28,9 @@ class BorrowTransaction extends Model
     protected $hidden = [
         'updated_at'
     ];
+
+    public function borrower()
+    {
+        return $this->belongsTo(User::class, 'borrower_id');
+    }
 }

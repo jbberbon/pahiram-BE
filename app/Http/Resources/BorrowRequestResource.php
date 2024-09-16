@@ -6,7 +6,9 @@ use App\Models\BorrowPurpose;
 use App\Models\BorrowTransactionStatus;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\BorrowTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class BorrowRequestResource extends JsonResource
@@ -18,6 +20,14 @@ class BorrowRequestResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $departmentAcronym = Department::getAcronymById($this->department_id);
+        $apcId = substr(User::find($this->borrower_id)->apc_id, -6);
+        $createdAt = Carbon::parse($this->created_at);
+        $formattedDate = $createdAt->format('mdy');
+        $formattedTime = $createdAt->format('His');
+        
+        $customTransacId = "{$departmentAcronym}-{$apcId}-{$formattedDate}-{$formattedTime}";
+
         $resource = null;
         if (isset($this->endorsed_by)) {
             $resource = [
@@ -26,29 +36,29 @@ class BorrowRequestResource extends JsonResource
                     'full_name' => User::getNameBasedOnId($this->endorsed_by),
                     'apc_id' => User::where('id', $this->endorsed_by)->first()->apc_id
                 ],
-                'department' => Department::getDepartmentBasedOnId($this->department_id),
-                'department_acronym' => Department::getAcronymById($this->department_id),
+                'custom_transac_id' => $customTransacId,
+                'department_acronym' => $departmentAcronym,
                 'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
                 'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
                 'user_defined_purpose' => $this->user_defined_purpose,
                 'penalty' => $this->penalty,
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
-                'created_at' => $this->created_at,
+                'created_at' => $createdAt,
             ];
         } else {
 
             $resource = [
                 'id' => $this->id,
-                'department' => Department::getDepartmentBasedOnId($this->department_id),
-                'department_acronym' => Department::getAcronymById($this->department_id),
+                'custom_transac_id' => $customTransacId,
+                'department_acronym' => $departmentAcronym,
                 'transac_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
                 'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
                 'user_defined_purpose' => $this->user_defined_purpose,
                 'penalty' => $this->penalty,
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
-                'created_at' => $this->created_at,
+                'created_at' => $createdAt,
             ];
         }
 
