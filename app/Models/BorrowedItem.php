@@ -29,6 +29,11 @@ class BorrowedItem extends Model
         'updated_at'
     ];
 
+    public function borrowTransaction()
+    {
+        return $this->belongsTo(BorrowTransaction::class, 'borrowing_transac_id');
+    }
+
     public function item()
     {
         return $this->belongsTo(Item::class);

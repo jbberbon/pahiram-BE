@@ -47,7 +47,8 @@ class ManageBorrowingRequestController extends Controller
     {
         try {
             $userId = Auth::id();
-            $requestList = BorrowTransaction::where('borrower_id', $userId)->get();
+            $requestList = BorrowTransaction::where('borrower_id', $userId)
+            ->paginate(21);
 
             $requestCollection = new BorrowRequestCollection($requestList);
             return response([

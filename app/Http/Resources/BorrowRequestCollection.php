@@ -15,6 +15,16 @@ class BorrowRequestCollection extends ResourceCollection
     public function toArray(Request $request)
     {
         // return BorrowRequestResource::collection($this->collection);
-        return $this->collection->map->toArray($request)->all();
+        return [
+            'borrow_requests' => BorrowRequestResource::collection($this->collection),
+            'current_page' => $this->currentPage(),
+            'last_page' => $this->lastPage(),
+            'next_page_url' => $this->nextPageUrl(),
+            'path' => $this->path(),
+            'per_page' => $this->perPage(),
+            'prev_page_url' => $this->previousPageUrl(),
+            'to' => $this->lastItem(),
+            'total' => $this->total(),
+        ];
     }
 }
