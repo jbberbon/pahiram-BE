@@ -15,6 +15,7 @@ use App\Models\Item;
 use App\Models\ItemGroup;
 use App\Models\ItemStatus;
 use App\Services\ItemAvailability;
+use App\Utils\DateUtil;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -61,7 +62,6 @@ class ItemGroupController extends Controller
     /**
      *  Retrieve UNAVAILABLE dates
      */
-
     public function retrieveBookedDates(BookedDatesRequest $bookedDatesRequest)
     {
         $validatedData = $bookedDatesRequest->validated();
@@ -79,7 +79,10 @@ class ItemGroupController extends Controller
         //     item_groups.id = $certain_item_group_ids
         // );
         try {
-            // 01. Get the booked dates of the item_group
+            // Get Actual Active Item Count
+            $actualActiveItemCount = Item::getActiveItemStautCountExceptOverdueItems(itemGroupId: $itemGroupId);
+
+            // 01. Get the sorted booked dates of the queried item_group (Sorted ascending by start date)
             $borrowedItems = BorrowedItem::join('items', 'borrowed_items.item_id', '=', 'items.id')
                 ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                 ->where('item_groups.id', $itemGroupId)
@@ -96,47 +99,20 @@ class ItemGroupController extends Controller
                     'borrowed_items.due_date as end',
                     \DB::raw('COUNT(*) as count')
                 )
-                ->get();
+                ->orderBy('borrowed_items.start_date', 'asc')
+                ->get()
+                ->toArray();
 
-            // 02. Get the count of the item with active status (ITEMS tb)
-            // $activeItemCount = Item::getActiveItemStatusCountByItemGroupId(itemGroupId: $itemGroupId);
-
-            // 03. Get count of overdue status (BORROWED ITEMS tb)
-            // $overdueCount = BorrowedItem::getOverdueItemCountByItemGroupId(itemGroupId: $itemGroupId);
-
-            // $actualActiveItemCount = $activeItemCount - $overdueCount;
-            $actualActiveItemCount = Item::getActiveItemStautCountExceptOverdueItems(itemGroupId: $itemGroupId);
-
-
-            // $borrowedItems = $borrowedItems->map(function ($item) use ($actualActiveItemCount) {
-            //     // 04. Format the dates to the expected format by the frontend
-            //     $item['start'] = Carbon::parse($item['start'])->format('Y-m-d\TH:i');
-            //     $item['end'] = Carbon::parse($item['end'])->format('Y-m-d\TH:i');
-
-            //     // 05. Add Title Field for REACT FullCalendar display.
-            //     // This will display how many items are available within the current booked Dates
-            //     if ($actualActiveItemCount > $item['count']) {
-            //         $item['title'] = "Reserved quantity: " . $item['count'];
-            //     } else {
-            //         $item['title'] = "Item slot fully booked";
-            //         $item['color'] = "#f44336";
-            //     }
-            //     return $item;
-            // });
-
-            $combinedDatesBorrowedItems = $this->itemAvailability->processBorrowedDates(borrowedItems: $borrowedItems->toArray(), maxAvailableItems: $actualActiveItemCount);
-
-            // 05. Get the name of the item group
-            $itemGroup = ItemGroup::where('id', $itemGroupId)->first();
+            $mergedDates = DateUtil::mergeOverlappingDate($borrowedItems, $actualActiveItemCount);
 
             return response([
                 'status' => true,
                 'data' => [
                     'item_group_data' => [
-                        'item_model' => $itemGroup->model_name,
+                        // 'item_model' => $itemGroup->model_name,
                         'active_items' => $actualActiveItemCount,
                     ],
-                    'dates' => $borrowedItems
+                    'dates' => $mergedDates
                 ],
                 'method' => "GET"
             ], 200);
