@@ -4,12 +4,12 @@ namespace App\Http\Requests\BorrowTransaction;
 
 use App\Rules\AtLeastOneFieldPresent;
 use App\Rules\CheckMaxItemGroupCountPerRequest;
-use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
 use App\Rules\ItemGroupBelongsToBorrowedItems;
 use App\Rules\ItemGroupDoesNotBelongToBorrowedItems;
 use App\Rules\UniqueItemGroupIds;
 use App\Rules\UniqueIdsAcrossArrays;
+use App\Rules\UserRules\UserExistsOnPahiramOrApcis;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -51,8 +51,7 @@ class EditBorrowRequest extends FormRequest
                     return request()->input('request_data.endorsed_by') !== null &&
                         request()->input('request_data.endorsed_by') !== '';
                 }),
-                Rule::notIn([auth()->user()->apc_id]),
-                new ExistsInDbOrApcis,
+                new UserExistsOnPahiramOrApcis,
             ],
             'request_data.apcis_token' => [
                 'required_with:endorsed_by',
@@ -66,7 +65,6 @@ class EditBorrowRequest extends FormRequest
                 'exists:departments,department_acronym'
             ],
             'request_data.purpose' => [
-                // 'sometimes',
                 'string',
                 'min:4',
                 'exists:borrow_purposes,purpose'
