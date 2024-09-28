@@ -4,11 +4,6 @@ namespace App\Http\Requests\ManagePenalty;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\CancelTransacRule;
-use App\Rules\EndorsementRules\IsPendingEndorserApproval;
-use App\Rules\EndorsementRules\IsTransactionEndorser;
-use App\Rules\IsEmployeeEmail;
-use App\Rules\TransactionBelongsToUser;
 use App\Utils\Constants\Statuses\PENALIZED_TRANSAC_STATUS;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;

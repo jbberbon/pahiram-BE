@@ -8,7 +8,7 @@ class ApiResponseHandling
     {
         $response = [
             'status' => false,
-            'error' => 'Unexpected auth server response',
+            'error' => 'Unexpected auth server response.',
             'method' => 'POST'
         ];
 

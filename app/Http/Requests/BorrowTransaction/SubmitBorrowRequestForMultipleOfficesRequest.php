@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\BorrowTransaction;
 
-use App\Rules\ExistsInDbOrApcis;
 use App\Rules\HasEnoughActiveItems;
 use App\Rules\UniqueItemGroupIds;
+use App\Rules\UserRules\UserExistsOnPahiramOrApcis;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -37,8 +37,7 @@ class SubmitBorrowRequestForMultipleOfficesRequest extends FormRequest
                 'string',
                 'min:5',
                 'max:15',
-                Rule::notIn([auth()->user()->apc_id,]),
-                new ExistsInDbOrApcis,
+                new UserExistsOnPahiramOrApcis,
             ],
             'apcis_token' => [
                 'required_with:endorsed_by',

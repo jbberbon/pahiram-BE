@@ -12,8 +12,10 @@ use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowTransaction;
+use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
+use App\Services\UserService;
 use DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,15 +31,20 @@ class ManageBorrowingRequestController extends Controller
     private $cancelledTransacStatusId;
     private $cancelledBorrowedItemStatusId;
 
+    private $userService;
+
     public function __construct(
         SubmitBorrowRequestService $submitBorrowRequestService,
-        EditBorrowRequestService $editBorrowRequestService
+        EditBorrowRequestService $editBorrowRequestService,
+        UserService $userService
     ) {
         $this->submitBorrowRequestService = $submitBorrowRequestService;
         $this->editBorrowRequestService = $editBorrowRequestService;
 
         $this->cancelledTransacStatusId = BorrowTransactionStatusService::getCancelledTransactionId();
         $this->cancelledBorrowedItemStatusId = BorrowedItemStatusService::getCancelledStatusId();
+
+        $this->userService = $userService;
     }
 
     /**
@@ -48,7 +55,7 @@ class ManageBorrowingRequestController extends Controller
         try {
             $userId = Auth::id();
             $requestList = BorrowTransaction::where('borrower_id', $userId)
-            ->paginate(21);
+                ->paginate(21);
 
             $requestCollection = new BorrowRequestCollection($requestList);
             return response([
@@ -238,6 +245,24 @@ class ManageBorrowingRequestController extends Controller
             $validatedData = $borrowRequest->validated();
             $userId = Auth::id();
 
+            // CHECK FIRST IF THERE IS ENDORSER 
+            $endorserExistsInPahiram = User::where('apc_id', $validatedData['endorsed_by'])->exists();
+            if (!$endorserExistsInPahiram) {
+                $userDataFromApcis = $this->userService->getUserDataFromApcisWithoutLogin(
+                    apcId: $validatedData['endorsed_by'],
+                    apcisToken: $validatedData['apcis_token']
+                );
+
+                if (isset($userDataFromApcis['error'])) {
+                    return response()->json($userDataFromApcis, 500);
+                }
+
+                $storedNewUser = $this->userService->storeNewUser($userDataFromApcis);
+                if (isset($storedNewUser['error'])) {
+                    return response()->json($userDataFromApcis, 500);
+                }
+            }
+
             // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
             $maxTransactionCheck = $this
                 ->submitBorrowRequestService
@@ -295,7 +320,7 @@ class ManageBorrowingRequestController extends Controller
                     $groupedFinalItemList
                 );
 
-            \Log::debug('Controller', ['controller' => $newTransactionsCount]);
+
             // 08. Check if success
             if (is_int($newTransactionsCount)) {
                 DB::commit();

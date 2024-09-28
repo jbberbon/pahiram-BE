@@ -4,15 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
-use App\Models\AccountStatus;
 use App\Models\ApcisToken;
-use App\Models\Role;
 use App\Models\SystemAdmin;
 use App\Models\User;
-use App\Models\UserDepartment;
-use App\Services\AuthService;
+use App\Services\UserService;
 use App\Utils\ApiResponseHandling;
-use App\Utils\NewUserDefaultData;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
@@ -22,10 +18,14 @@ class AuthController extends Controller
     private $systemAdmin;
 
     private $course;
+    private $userService;
 
-    public function __construct(SystemAdmin $systemAdmin)
+
+    public function __construct(SystemAdmin $systemAdmin, UserService $userService)
     {
         $this->systemAdmin = $systemAdmin;
+
+        $this->userService = $userService;
     }
 
     /**
@@ -43,32 +43,30 @@ class AuthController extends Controller
             $parsedResponse = json_decode($response->body(), true);
 
             // Handle error responses from APCIS
+            // And Check the Array Fields from APCIS if they are as expected
             $apiResponse = ApiResponseHandling::handleApcisResponse($parsedResponse, $response->status());
             if ($apiResponse !== null) {
                 return response()->json($apiResponse, $response->status());
             }
 
-            // Continue because APCIS Request is success
+            // Continue because APCIS Request is success and the expected fields are there
             $parsedUserData = $parsedResponse['data']['user'];
             $parsedToken = $parsedResponse['data']['apcis_token'];
 
             /**
-             * 4. Check USER if already exist in pahiram-BE Database
+             * 4. Store new user if it still does not exist yet
              */
-            $user = User::where('apc_id', $parsedUserData['apc_id'])->first();
-
-            // Does NOT exist yet, add user to db
-            if (!$user) {
-                $defaultData = NewUserDefaultData::newUserDefaultData();
-                $mergedUserData = array_merge($parsedUserData, $defaultData);
-                $user = User::create($mergedUserData);
+            $isNewUserCreated = $this->userService->storeNewUser(userDataFromApcis: $parsedUserData);
+            if ($isNewUserCreated) {
+                return response()->json($isNewUserCreated, 500);
             }
 
             /**
              * 5. Store APCIS token to Pahiram DB
              */
-            $authService = new AuthService();
-            $isApcisStored = $authService->storeApcisTokenToDB($user->id, $parsedToken);
+            // Retrieve user first from PAHIRAM
+            $user = User::where('apc_id', $parsedUserData['apc_id'])->first();
+            $isApcisStored = $this->userService->storeApcisTokenToDB($user->id, $parsedToken);
             if ($isApcisStored) {
                 return response()->json($isApcisStored, 500);
             }
@@ -77,7 +75,7 @@ class AuthController extends Controller
              * 6. Generate and store Pahiram Token 
              *     with SAME expiration as APCIS
              */
-            $pahiramToken = $authService->generateAndStorePahiramToken($user, $parsedToken['expires_at']);
+            $pahiramToken = $this->userService->generateAndStorePahiramToken($user, $parsedToken['expires_at']);
             if (is_array($pahiramToken)) {
                 return response()->json($pahiramToken, 500);
             }
@@ -85,7 +83,7 @@ class AuthController extends Controller
             /**
              * 7. Prepare Return Data
              */
-            $returnData = $authService->retrieveUserLoginData(
+            $returnData = $this->userService->retrieveUserLoginData(
                 $user,
                 $pahiramToken,
                 $parsedToken['access_token'],

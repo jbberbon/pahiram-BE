@@ -5,7 +5,7 @@ namespace App\Http\Requests\BorrowTransaction;
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
 use App\Models\BorrowTransactionStatus;
-use App\Rules\IsEmployeeEmail;
+use App\Rules\UserRules\IsEmployeeEmail;
 use App\Rules\RequestBelongsToUser;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
