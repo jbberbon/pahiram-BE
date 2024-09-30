@@ -34,7 +34,6 @@ class BorrowRequestResource extends JsonResource
                 'id' => $this->id,
                 'endorsed_by' => [
                     'full_name' => User::getNameBasedOnId($this->endorsed_by),
-                    'apc_id' => User::where('id', $this->endorsed_by)->first()->apc_id
                 ],
                 'custom_transac_id' => $customTransacId,
                 'department_acronym' => $departmentAcronym,
