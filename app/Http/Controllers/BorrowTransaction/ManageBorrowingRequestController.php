@@ -12,8 +12,10 @@ use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowTransaction;
+use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
+use App\Services\UserService;
 use DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,15 +31,20 @@ class ManageBorrowingRequestController extends Controller
     private $cancelledTransacStatusId;
     private $cancelledBorrowedItemStatusId;
 
+    private $userService;
+
     public function __construct(
         SubmitBorrowRequestService $submitBorrowRequestService,
-        EditBorrowRequestService $editBorrowRequestService
+        EditBorrowRequestService $editBorrowRequestService,
+        UserService $userService
     ) {
         $this->submitBorrowRequestService = $submitBorrowRequestService;
         $this->editBorrowRequestService = $editBorrowRequestService;
 
         $this->cancelledTransacStatusId = BorrowTransactionStatusService::getCancelledTransactionId();
         $this->cancelledBorrowedItemStatusId = BorrowedItemStatusService::getCancelledStatusId();
+
+        $this->userService = $userService;
     }
 
     /**
@@ -48,7 +55,7 @@ class ManageBorrowingRequestController extends Controller
         try {
             $userId = Auth::id();
             $requestList = BorrowTransaction::where('borrower_id', $userId)
-            ->paginate(21);
+                ->paginate(21);
 
             $requestCollection = new BorrowRequestCollection($requestList);
             return response([
@@ -72,61 +79,69 @@ class ManageBorrowingRequestController extends Controller
     public function getBorrowRequest(GetBorrowRequest $borrowRequest)
     {
         $validatedData = $borrowRequest->validated();
+        
         try {
-            $retrievedRequest = BorrowTransaction::where('id', $validatedData['borrowRequest'])->first();
-
-
+            // Retrieve the borrow request transaction by its ID with the borrower relationship
+            $retrievedRequest = BorrowTransaction::with('borrower')
+                ->where('id', $validatedData['borrowRequest'])
+                ->first();
+    
             if ($retrievedRequest) {
+                // Transform transaction details using the BorrowRequestResource
                 $transactionDetails = new BorrowRequestResource($retrievedRequest);
-
+    
+                // Get the apc_id from the borrower relationship
+                $apcId = $retrievedRequest->borrower ? $retrievedRequest->borrower->apc_id : null;
+    
+                // Fetch individual borrowed items associated with the borrow transaction,
+                // excluding those with a status of "CANCELLED"
                 $items = BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
                     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                    ->join(
+                    ->leftJoin( // Use leftJoin to allow for null statuses
                         'borrowed_item_statuses',
                         'borrowed_items.borrowed_item_status_id',
                         '=',
                         'borrowed_item_statuses.id'
                     )
-                    ->groupBy(
-                        'item_groups.model_name',
-                        'item_groups.id',
-                        'borrowed_items.start_date',
-                        'borrowed_items.due_date',
-                        'borrowed_items.borrowed_item_status_id',
-                        'borrowed_item_statuses.borrowed_item_status'
-                    )
                     ->select(
+                        'borrowed_items.id as borrowed_item_id',
                         'item_groups.id',
                         'item_groups.model_name',
-                        DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
-                        'borrowed_item_statuses.borrowed_item_status'
+                        'borrowed_item_statuses.borrowed_item_status',
+                        'borrowed_item_statuses.id as borrowed_item_status_id'
                     )
+                    ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
                     ->get();
-
-                // // Restructure the $items array for front end but already fixed
-                // $restructuredItems = $items
-                //     ->map(function ($item) {
-                //         return [
-                //             'item' => [
-                //                 'model_name' => $item->model_name,
-                //                 'id' => $item->id,
-                //             ],
-                //             'quantity' => $item->quantity,
-                //             'start_date' => $item->start_date,
-                //             'due_date' => $item->due_date,
-                //             'borrowed_item_status' => $item->borrowed_item_status,
-                //         ];
-
-                //     });
-
+    
+                // Group items by model_name to calculate the total quantity for each group
+                $groupedItems = $items->groupBy('model_name');
+                $restructuredItems = collect();
+    
+                foreach ($groupedItems as $modelName => $groupedItem) {
+                    // General structure for the item
+                    $restructuredItems->push([
+                        'model_name' => $modelName,
+                        'quantity' => $groupedItem->count(), 
+                        'start_date' => $groupedItem->first()->start_date,
+                        'due_date' => $groupedItem->first()->due_date,
+                        'details' => $groupedItem->map(function ($item) use ($apcId) {
+                            return [
+                                'borrowed_item_id' => $item->borrowed_item_id,
+                                'borrowed_item_status' => $item->borrowed_item_status ?? 'Not Available',
+                                'apc_id' => $apcId,
+                            ];
+                        })
+                    ]);
+                }
+    
                 return response([
                     'status' => true,
                     'data' => [
                         'transac_data' => $transactionDetails,
-                        'items' => $items,
+                        'items' => $restructuredItems, // Use restructured items with detailed statuses
                     ],
                     'method' => 'GET',
                 ], 200);
@@ -138,6 +153,7 @@ class ManageBorrowingRequestController extends Controller
                 ], 404);
             }
         } catch (\Exception $e) {
+            // Catch and return any errors encountered
             return response([
                 'status' => false,
                 'message' => 'An error occurred while fetching the borrow request.',
@@ -146,6 +162,11 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
+    
+    
+
+    
+    
 
     /** 
      *  Submit borrowing request
@@ -238,6 +259,24 @@ class ManageBorrowingRequestController extends Controller
             $validatedData = $borrowRequest->validated();
             $userId = Auth::id();
 
+            // CHECK FIRST IF THERE IS ENDORSER 
+            $endorserExistsInPahiram = User::where('apc_id', $validatedData['endorsed_by'])->exists();
+            if (!$endorserExistsInPahiram) {
+                $userDataFromApcis = $this->userService->getUserDataFromApcisWithoutLogin(
+                    apcId: $validatedData['endorsed_by'],
+                    apcisToken: $validatedData['apcis_token']
+                );
+
+                if (isset($userDataFromApcis['error'])) {
+                    return response()->json($userDataFromApcis, 500);
+                }
+
+                $storedNewUser = $this->userService->storeNewUser($userDataFromApcis);
+                if (isset($storedNewUser['error'])) {
+                    return response()->json($userDataFromApcis, 500);
+                }
+            }
+
             // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
             $maxTransactionCheck = $this
                 ->submitBorrowRequestService
@@ -295,7 +334,7 @@ class ManageBorrowingRequestController extends Controller
                     $groupedFinalItemList
                 );
 
-            \Log::debug('Controller', ['controller' => $newTransactionsCount]);
+
             // 08. Check if success
             if (is_int($newTransactionsCount)) {
                 DB::commit();
