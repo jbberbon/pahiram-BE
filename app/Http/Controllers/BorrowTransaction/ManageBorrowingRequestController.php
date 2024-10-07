@@ -79,7 +79,7 @@ class ManageBorrowingRequestController extends Controller
     public function getBorrowRequest(GetBorrowRequest $borrowRequest)
     {
         $validatedData = $borrowRequest->validated();
-        
+    
         try {
             // Retrieve the borrow request transaction by its ID with the borrower relationship
             $retrievedRequest = BorrowTransaction::with('borrower')
@@ -98,7 +98,7 @@ class ManageBorrowingRequestController extends Controller
                 $items = BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
                     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                    ->leftJoin( // Use leftJoin to allow for null statuses
+                    ->join( // Use leftJoin to allow for null statuses
                         'borrowed_item_statuses',
                         'borrowed_items.borrowed_item_status_id',
                         '=',
@@ -106,7 +106,7 @@ class ManageBorrowingRequestController extends Controller
                     )
                     ->select(
                         'borrowed_items.id as borrowed_item_id',
-                        'item_groups.id',
+                        'item_groups.id as item_group_id',
                         'item_groups.model_name',
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
@@ -115,16 +115,19 @@ class ManageBorrowingRequestController extends Controller
                     )
                     ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
                     ->get();
+
+                
     
                 // Group items by model_name to calculate the total quantity for each group
                 $groupedItems = $items->groupBy('model_name');
                 $restructuredItems = collect();
     
+                // Iterate through grouped items to restructure, handling even single items correctly
                 foreach ($groupedItems as $modelName => $groupedItem) {
-                    // General structure for the item
+                    // General structure for the item, whether it's grouped or not
                     $restructuredItems->push([
                         'model_name' => $modelName,
-                        'quantity' => $groupedItem->count(), 
+                        'quantity' => $groupedItem->count(), // This works even for one item
                         'start_date' => $groupedItem->first()->start_date,
                         'due_date' => $groupedItem->first()->due_date,
                         'details' => $groupedItem->map(function ($item) use ($apcId) {
@@ -153,7 +156,6 @@ class ManageBorrowingRequestController extends Controller
                 ], 404);
             }
         } catch (\Exception $e) {
-            // Catch and return any errors encountered
             return response([
                 'status' => false,
                 'message' => 'An error occurred while fetching the borrow request.',
@@ -162,6 +164,9 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
+    
+    
+
     
     
 
