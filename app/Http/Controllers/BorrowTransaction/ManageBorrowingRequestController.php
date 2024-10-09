@@ -79,61 +79,72 @@ class ManageBorrowingRequestController extends Controller
     public function getBorrowRequest(GetBorrowRequest $borrowRequest)
     {
         $validatedData = $borrowRequest->validated();
+    
         try {
-            $retrievedRequest = BorrowTransaction::where('id', $validatedData['borrowRequest'])->first();
-
-
+            // Retrieve the borrow request transaction by its ID with the borrower relationship
+            $retrievedRequest = BorrowTransaction::with('borrower')
+                ->where('id', $validatedData['borrowRequest'])
+                ->first();
+    
             if ($retrievedRequest) {
+                // Transform transaction details using the BorrowRequestResource
                 $transactionDetails = new BorrowRequestResource($retrievedRequest);
-
+    
+                // Get the apc_id from the borrower relationship
+                $apcId = $retrievedRequest->borrower ? $retrievedRequest->borrower->apc_id : null;
+    
+                // Fetch individual borrowed items associated with the borrow transaction,
+                // excluding those with a status of "CANCELLED"
                 $items = BorrowedItem::where('borrowing_transac_id', $validatedData['borrowRequest'])
                     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                    ->join(
+                    ->join( // Use leftJoin to allow for null statuses
                         'borrowed_item_statuses',
                         'borrowed_items.borrowed_item_status_id',
                         '=',
                         'borrowed_item_statuses.id'
                     )
-                    ->groupBy(
-                        'item_groups.model_name',
-                        'item_groups.id',
-                        'borrowed_items.start_date',
-                        'borrowed_items.due_date',
-                        'borrowed_items.borrowed_item_status_id',
-                        'borrowed_item_statuses.borrowed_item_status'
-                    )
                     ->select(
-                        'item_groups.id',
+                        'borrowed_items.id as borrowed_item_id',
+                        'item_groups.id as item_group_id',
                         'item_groups.model_name',
-                        DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
-                        'borrowed_item_statuses.borrowed_item_status'
+                        'borrowed_item_statuses.borrowed_item_status',
+                        'borrowed_item_statuses.id as borrowed_item_status_id'
                     )
+                    ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
                     ->get();
 
-                // // Restructure the $items array for front end but already fixed
-                // $restructuredItems = $items
-                //     ->map(function ($item) {
-                //         return [
-                //             'item' => [
-                //                 'model_name' => $item->model_name,
-                //                 'id' => $item->id,
-                //             ],
-                //             'quantity' => $item->quantity,
-                //             'start_date' => $item->start_date,
-                //             'due_date' => $item->due_date,
-                //             'borrowed_item_status' => $item->borrowed_item_status,
-                //         ];
-
-                //     });
-
+                
+    
+                // Group items by model_name to calculate the total quantity for each group
+                $groupedItems = $items->groupBy('model_name');
+                $restructuredItems = collect();
+    
+                // Iterate through grouped items to restructure, handling even single items correctly
+                foreach ($groupedItems as $modelName => $groupedItem) {
+                    // General structure for the item, whether it's grouped or not
+                    $restructuredItems->push([
+                        'model_name' => $modelName,
+                        'quantity' => $groupedItem->count(), // This works even for one item
+                        'start_date' => $groupedItem->first()->start_date,
+                        'due_date' => $groupedItem->first()->due_date,
+                        'details' => $groupedItem->map(function ($item) use ($apcId) {
+                            return [
+                                'borrowed_item_id' => $item->borrowed_item_id,
+                                'borrowed_item_status' => $item->borrowed_item_status ?? 'Not Available',
+                                'apc_id' => $apcId,
+                            ];
+                        })
+                    ]);
+                }
+    
                 return response([
                     'status' => true,
                     'data' => [
                         'transac_data' => $transactionDetails,
-                        'items' => $items,
+                        'items' => $restructuredItems, // Use restructured items with detailed statuses
                     ],
                     'method' => 'GET',
                 ], 200);
@@ -153,6 +164,14 @@ class ManageBorrowingRequestController extends Controller
             ], 500);
         }
     }
+    
+    
+
+    
+    
+
+    
+    
 
     /** 
      *  Submit borrowing request
