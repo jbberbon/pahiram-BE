@@ -24,9 +24,9 @@ class IsLendingEmployee
 
     public function __construct()
     {
-        $this->bmoAcronym = OFFICE_LIST::OFFICE_ARRAY["BMO"]["acronym"];
-        $this->itroAcronym = OFFICE_LIST::OFFICE_ARRAY["ITRO"]["acronym"];
-        $this->esloAcronym = OFFICE_LIST::OFFICE_ARRAY["ESLO"]["acronym"];
+        $this->bmoAcronym = OFFICE_LIST::OFFICE_ARRAY["BMO"]["department_acronym"];
+        $this->itroAcronym = OFFICE_LIST::OFFICE_ARRAY["ITRO"]["department_acronym"];
+        $this->esloAcronym = OFFICE_LIST::OFFICE_ARRAY["ESLO"]["department_acronym"];
 
         $this->bmoId = Department::getIdBasedOnAcronym($this->bmoAcronym);
         $this->esloId = Department::getIdBasedOnAcronym($this->esloAcronym);
