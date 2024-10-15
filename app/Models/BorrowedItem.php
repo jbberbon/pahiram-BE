@@ -39,6 +39,26 @@ class BorrowedItem extends Model
         return $this->belongsTo(Item::class);
     }
 
+    /**
+     * Get the start date of the borrowed item.
+     *
+     * @return string
+     */
+    public function getStartDate(): string
+    {
+        return $this->start_date;
+    }
+
+    /**
+     * Get the due date of the borrowed item.
+     *
+     * @return string
+     */
+    public function getDueDate(): string
+    {
+        return $this->due_date;
+    }
+
     public static function getOverdueItemCountByItemGroupId(string $itemGroupId): int
     {
         $inPossessionStatusId = BorrowedItemStatus::getIdByStatus(status: "IN_POSSESSION");
