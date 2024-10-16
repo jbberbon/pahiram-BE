@@ -6,27 +6,26 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BorrowTransaction\CancelBorrowRequest;
 use App\Http\Requests\BorrowTransaction\EditBorrowRequest;
 use App\Http\Requests\BorrowTransaction\GetBorrowRequest;
-use App\Http\Requests\BorrowTransaction\SubmitBorrowRequest;
 use App\Http\Requests\BorrowTransaction\SubmitBorrowRequestForMultipleOfficesRequest;
 use App\Http\Resources\BorrowRequestCollection;
 use App\Http\Resources\BorrowRequestResource;
 use App\Models\BorrowedItem;
 use App\Models\BorrowTransaction;
-use App\Models\User;
+use App\Services\BorrowRequestService\BorrowRequestFinalizationService;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use App\Services\UserService;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 use App\Services\BorrowRequestService\EditBorrowRequestService;
-use App\Services\BorrowRequestService\SubmitBorrowRequestService;
-use Ramsey\Uuid\Type\Integer;
+use App\Services\BorrowRequestService\BorrowRequestHelperService;
 
 class ManageBorrowingRequestController extends Controller
 {
-    protected $submitBorrowRequestService;
+    protected $borrowRequestHelperService;
     protected $editBorrowRequestService;
+    protected $borrowRequestFinalizationService;
 
     private $cancelledTransacStatusId;
     private $cancelledBorrowedItemStatusId;
@@ -34,12 +33,14 @@ class ManageBorrowingRequestController extends Controller
     private $userService;
 
     public function __construct(
-        SubmitBorrowRequestService $submitBorrowRequestService,
+        BorrowRequestHelperService $borrowRequestHelperService,
         EditBorrowRequestService $editBorrowRequestService,
-        UserService $userService
+        UserService $userService,
+        BorrowRequestFinalizationService $borrowRequestFinalizationService,
     ) {
-        $this->submitBorrowRequestService = $submitBorrowRequestService;
+        $this->borrowRequestHelperService = $borrowRequestHelperService;
         $this->editBorrowRequestService = $editBorrowRequestService;
+        $this->borrowRequestFinalizationService = $borrowRequestFinalizationService;
 
         $this->cancelledTransacStatusId = BorrowTransactionStatusService::getCancelledTransactionId();
         $this->cancelledBorrowedItemStatusId = BorrowedItemStatusService::getCancelledStatusId();
@@ -114,9 +115,7 @@ class ManageBorrowingRequestController extends Controller
                         'borrowed_item_statuses.id as borrowed_item_status_id'
                     )
                     ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
-                    ->get();
-
-                
+                    ->get();  
     
                 // Group items by model_name to calculate the total quantity for each group
                 $groupedItems = $items->groupBy('model_name');
@@ -173,175 +172,86 @@ class ManageBorrowingRequestController extends Controller
     
     
 
-    /** 
-     *  Submit borrowing request
-     */
-    public function submitBorrowRequest(SubmitBorrowRequest $borrowRequest)
-    {
-        try {
-            DB::beginTransaction();
-            /**
-             * LOGIC!!
-             * 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
-             * 02. Get all items with "active" status in the items table.
-             * 03. Check the borrowed_items table to determine which items are available on the specified date.
-             * 04. If the requested quantity is greater than the available quantity, fail.
-             * 05. If the requested quantity is less than the available quantity, shuffle and choose items.
-             * 06. Insert a new borrowing transaction.
-             * 07. Insert new borrowed items.
-             * 08. If successful, return a success response; otherwise, return an error response.
-             */
-            $validatedData = $borrowRequest->validated();
-            $userId = Auth::id();
-
-            // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
-            $maxTransactionCheck = $this->submitBorrowRequestService->checkMaxTransactions($userId);
-            if ($maxTransactionCheck) {
-                return $maxTransactionCheck;
-            }
-
-            // 02. Get all items with "active" status in items TB  
-            $requestedItems = $validatedData['items'];
-            $activeItems = $this->submitBorrowRequestService->getActiveItems($requestedItems);
-
-            // 02.1. EDGE CASE: Check for empty active item_id array in activeItems variable
-            $emptyActiveItemsIdArray = $this->submitBorrowRequestService->checkActiveItemsForEmptyItemIdField($activeItems);
-            if ($emptyActiveItemsIdArray !== null) {
-                return $emptyActiveItemsIdArray;
-            }
-
-            // 03. Check borrowed_items if which ones are available on that date
-            $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
-
-            // 04. Requested qty > available items on schedule (Fail)
-            $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService
-                ->checkRequestQtyAndAvailableQty($availableItems);
-            if ($isRequestQtyMoreThanAvailableQty) {
-                return $isRequestQtyMoreThanAvailableQty;
-            }
-
-            // 05. Requested qty < available items on schedule (SHUFFLE then Choose)
-            $chosenItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-
-            // 06. Insert new borrowing transaction
-            $newBorrowRequest = $this->submitBorrowRequestService->insertNewBorrowingTransaction($validatedData);
-
-            // 07. Insert new borrowed items
-            $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenItems, $newBorrowRequest->id);
-
-
-            if (!$newBorrowRequest || !$newBorrowedItems) {
-                return response([
-                    'status' => false,
-                    'message' => 'Unable to insert new transaction and its corresponding items.',
-                    'method' => 'POST',
-                ], 500);
-            }
-            DB::commit();
-            return response([
-                'status' => true,
-                'message' => 'Successfully submitted borrow request',
-                'method' => 'POST',
-            ], 200);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response([
-                'status' => false,
-                'message' => 'An error occurred while submittitng your request.',
-                'error' => $e->getMessage(),
-                'method' => 'POST',
-            ], 500);
-        }
-    }
     /**
      *  Submit Request V2
      */
-    public function submitBorrowRequestV2(SubmitBorrowRequestForMultipleOfficesRequest $borrowRequest)
-    {
+    public function submitBorrowRequestV2(
+        SubmitBorrowRequestForMultipleOfficesRequest $borrowRequest
+    ) {
+        /* 
+         *  LOGIC FLOW
+         *  01. Import Endorser Account to Pahiram if it does not exist yet
+         *  02. Check if user has >= 3 ACTIVE, ONGOING, OVERDUE  transactions
+         *  03. Process requested items and create a final list
+         *  04. Group chosen items by office
+         *  05. Insert transaction/s and borrowed items
+         */
         try {
             DB::beginTransaction();
             $validatedData = $borrowRequest->validated();
             $userId = Auth::id();
 
-            // CHECK FIRST IF THERE IS ENDORSER 
-            $endorserExistsInPahiram = User::where('apc_id', $validatedData['endorsed_by'])->exists();
-            if (!$endorserExistsInPahiram) {
-                $userDataFromApcis = $this->userService->getUserDataFromApcisWithoutLogin(
-                    apcId: $validatedData['endorsed_by'],
-                    apcisToken: $validatedData['apcis_token']
-                );
+            // 01. Import Endorser Account to Pahiram if it does not exist yet
+            if (isset($validatedData['endorsed_by'])) {
+                $res = $this
+                    ->userService
+                    ->handleRetrieveUserDataFromApcisWithoutLogin(
+                        $validatedData['endorsed_by'],
+                        $validatedData['apcis_token']
+                    );
 
-                if (isset($userDataFromApcis['error'])) {
-                    return response()->json($userDataFromApcis, 500);
-                }
-
-                $storedNewUser = $this->userService->storeNewUser($userDataFromApcis);
-                if (isset($storedNewUser['error'])) {
-                    return response()->json($userDataFromApcis, 500);
+                if ($res !== null) {
+                    return response()->json($res, 500);
                 }
             }
 
-            // 01. Check if user has > 3 ACTIVE, ONGOING, OVERDUE  transactions
+            // 02. Check if user has >= 3 ACTIVE, ONGOING, OVERDUE  transactions
             $maxTransactionCheck = $this
-                ->submitBorrowRequestService
+                ->borrowRequestHelperService
                 ->checkMaxTransactions($userId);
 
             if ($maxTransactionCheck) {
-                return $maxTransactionCheck;
+                DB::rollBack();
+                return response()->json(
+                    $maxTransactionCheck,
+                    401
+                );
             }
+            // 03. Prepare transaction data
+            $preparedTransacData = $this
+                ->borrowRequestHelperService
+                ->prepareRequestArgs($validatedData);
 
-            // 02. Get all items with "active" status in items TB  
+            // 03. Process requested items and create a final list
             $requestedItems = $validatedData['items'];
-
-            $activeItems = $this
-                ->submitBorrowRequestService
-                ->getActiveItems($requestedItems);
-
-            // 02.1. EDGE CASE: Check for empty active item_id array in activeItems variable
-            $emptyActiveItemsIdArray = $this
-                ->submitBorrowRequestService
-                ->checkActiveItemsForEmptyItemIdField($activeItems);
-
-            if ($emptyActiveItemsIdArray !== null) {
-                return $emptyActiveItemsIdArray;
+            $chosenItemsList = $this
+                ->borrowRequestFinalizationService
+                ->processRequestedItems(
+                    requestedItems: $requestedItems
+                );
+            if (isset($finalItemList['status'])) {
+                DB::rollBack();
+                return response()->json(
+                    $chosenItemsList,
+                    500
+                );
             }
 
-            // 03. Check borrowed_items if which ones are available on that date
-            $availableItems = $this
-                ->submitBorrowRequestService
-                ->getAvailableItems($activeItems);
+            // 04. Group chosen items by office
+            $groupedItemsByOffice = $this
+                ->borrowRequestHelperService
+                ->groupFinalItemListByOffice(finalItemList: $chosenItemsList);
 
-            // 04. Requested qty > available items on schedule (Fail)
-            $isRequestQtyMoreThanAvailableQty = $this
-                ->submitBorrowRequestService
-                ->checkRequestQtyAndAvailableQty($availableItems);
-
-            if ($isRequestQtyMoreThanAvailableQty !== false) {
-                return $isRequestQtyMoreThanAvailableQty;
-            }
-
-            // 05. Requested qty < available items on schedule (SHUFFLE then Choose)
-            $chosenItems = $this
-                ->submitBorrowRequestService
-                ->shuffleAvailableItems($availableItems);
-
-            // 06. Group chosen items by office
-            $groupedFinalItemList = $this
-                ->submitBorrowRequestService
-                ->groupFinalItemListByOffice($chosenItems);
-
-            // 07. Insert transaction and Borrowed Items
+            // 05. Insert transaction/s and borrowed items
             $newTransactionsCount = $this
-                ->submitBorrowRequestService
+                ->borrowRequestFinalizationService
                 ->insertTransactionAndBorrowedItemsForMultipleOffices(
-                    $validatedData,
-                    $groupedFinalItemList
+                    validatedDataWithoutOffice: $preparedTransacData,
+                    groupedFinalItemList: $groupedItemsByOffice
                 );
 
-
-            // 08. Check if success
-            if (is_int($newTransactionsCount)) {
+            // Success
+            if (is_int($newTransactionsCount) && $newTransactionsCount > 0) {
                 DB::commit();
                 return response()->json([
                     'status' => true,
@@ -350,10 +260,13 @@ class ManageBorrowingRequestController extends Controller
                 ], 200);
             }
 
+            // Fail
             DB::rollBack();
-            if ($newTransactionsCount instanceof Response) {
-                dd($newTransactionsCount);
-                return $newTransactionsCount;
+            if (is_array($newTransactionsCount)) {
+                return response()->json(
+                    [$newTransactionsCount],
+                    409
+                );
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -364,8 +277,6 @@ class ManageBorrowingRequestController extends Controller
                 'method' => 'POST',
             ], 500);
         }
-
-
     }
 
     /**
@@ -374,310 +285,198 @@ class ManageBorrowingRequestController extends Controller
     public function editBorrowRequest(EditBorrowRequest $editBorrowRequest)
     {
         /**
-         *  LOGIC!!
-         *  01. If user does not want to edit/ add items, FINISH
-         *  01.1 If w/ Add new Items but no edit existing items
-         *  02. Segregate edit_existing_items into TWO :: with is_cancelled && without is_cancelled
-         *  03. Prepare Data for Querying for each
-         *      03.1 Cancel Items
-         *      03.2 Add New Items
-         *      03.3 Edit Items
-         *  04. Query DB with final data for each
-         *      04.1 Request Data
-         *      04.2 Cancel Items
-         *      04.3 Add New Items
-         *      04.4 Edit Itemss
+         *  New Logic
+         *  01. If request_data is provided, update it instantly
+         *  02. If edit_existing_items is provided
+         *      --> 02.01.  Segregate the edit_existing_items
+         *  03. Perform Cancel items with determined ItemGroup Ids
+         *  04. Perform Cancel items with determined BorrowedItem Ids
+         *  05. Add new items OR update the items that needs to be date changed
+         *      --> 05.01. Process requested items and create a final list
+         *      --> 05.02. Insert chosen items
          */
-        $validatedData = $editBorrowRequest->validated();
-        $requestId = $validatedData['requestId'];
-        $requestData = null;
-        // $requestData = $validatedData['request_data'];
-
-        $cancelledItems = [];
-        $editedItems = [];
-        $addNewItems = [];
-        $borrowRequestArgs = null;
-        $chosenNewItems = [];
-
-        // Check if Request_Data field is provided 
-        if (isset($validatedData['request_data'])) {
-            $requestData = $validatedData['request_data'];
-            // Prepare Transaction Data Payload for DB UPDATE QUERY
-            $borrowRequestArgs = $this->editBorrowRequestService->prepareRequestUpdateArgs($requestData);
-        }
-
-        if (isset($validatedData['add_new_items'])) {
-            $addNewItems = $validatedData['add_new_items'];
-
-            // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
-            if (count($addNewItems) > 0) {
-                // 03.2.1 Get all items with "active" status in items TB 
-                $activeItems = $this->submitBorrowRequestService->getActiveItems($addNewItems);
-
-                // 03.2.2 Check borrowed_items if which ones are available on that date
-                $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
-
-                // 03.2.3 Requested qty > available items on schedule (Fail)
-                $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
-                if ($isRequestQtyMoreThanAvailableQty) {
-                    return $isRequestQtyMoreThanAvailableQty;
-                }
-
-                // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
-                $chosenNewItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-            }
-
-        }
-
-        // 01. User DOES NOT want to edit or add items
-        if (
-            isset($validatedData['request_data']) &&
-            !isset($validatedData['edit_existing_items']) &&
-            !isset(
-            $validatedData['add_new_items']
-        )
-        ) {
-            try {
-                // Update Transaction
-                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
-                $currentBorrowRequest->update($borrowRequestArgs);
-                return response([
-                    'status' => true,
-                    'message' => 'Successfully edited borrow request',
-                    'method' => 'PATCH',
-                ], 200);
-            } catch (\Exception $e) {
-                return response([
-                    'status' => false,
-                    'message' => 'Transaction doesn`t exist based on ID',
-                    'error' => $e->getMessage(),
-                    'method' => 'POST',
-                ], 500);
-            }
-        }
-
-        // 01.01 Edit request data and Add items
-        if (
-            isset($validatedData['request_data']) &&
-            !isset($validatedData['edit_existing_items']) &&
-            isset(
-            $validatedData['add_new_items']
-        )
-        ) {
-            try {
-                // Update Transaction
-                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
-                $currentBorrowRequest->update($borrowRequestArgs);
-
-                // Add new items
-                if (count($chosenNewItems) > 0) {
-                    $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $currentBorrowRequest->id);
-                }
-
-                return response([
-                    'status' => true,
-                    'message' => 'Successfully edited borrow request',
-                    'method' => 'PATCH',
-                ], 200);
-            } catch (\Exception $e) {
-                return response([
-                    'status' => false,
-                    'message' => 'Transaction doesn`t exist based on ID',
-                    'error' => $e->getMessage(),
-                    'method' => 'POST',
-                ], 500);
-            }
-        }
-
-        // 01.02 Add items ONLY
-        if (
-            !isset($validatedData['request_data']) &&
-            !isset($validatedData['edit_existing_items']) &&
-            isset(
-            $validatedData['add_new_items']
-        )
-        ) {
-            try {
-                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
-
-                // Add new items
-                if (count($chosenNewItems) > 0) {
-                    $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $currentBorrowRequest->id);
-                }
-
-                return response([
-                    'status' => true,
-                    'message' => 'Successfully edited borrow request',
-                    'method' => 'PATCH',
-                ], 200);
-            } catch (\Exception $e) {
-                return response([
-                    'status' => false,
-                    'message' => 'Transaction doesn`t exist based on ID',
-                    'error' => $e->getMessage(),
-                    'method' => 'POST',
-                ], 500);
-            }
-        }
-
-
-
-        // 02. Segregate edit_existing_items into TWO :: with is_cancelled && without is_cancelled
-        $editExistingItems = $validatedData['edit_existing_items'];
-        foreach ($editExistingItems as $currentExistingItem) {
-            $currentExistingItemId = $currentExistingItem['item_group_id'];
-
-            // 02.1 With is_cancelled
-            $cancelledGroupId = $this->editBorrowRequestService->isCancelled($currentExistingItem);
-            if ($cancelledGroupId) {
-                array_push($cancelledItems, $cancelledGroupId);
-                continue; // Skip to the next iteration
-            }
-
-            // 02.2 Without is_cancelled
-            $editedItems[$currentExistingItemId] = [...$currentExistingItem];
-        }
-
-        // 03. Prepare Data for Querying for each
-        // 03.1 Cancel Items
-        $cancelQuery = $this->editBorrowRequestService->cancelQuery($cancelledItems, $requestId);
-        if (!$cancelQuery) {
-            return response([
-                'status' => false,
-                'message' => 'Something went wrong while cancelling your items.',
-                'method' => 'PATCH',
-            ], 500);
-        }
-
-        // // 03.2 Add New Items ::: PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
-        // $chosenNewItems = [];
-        // if (count($addNewItems) > 0) {
-        //     // 03.2.1 Get all items with "active" status in items TB 
-        //     $activeItems = $this->submitBorrowRequestService->getActiveItems($addNewItems);
-
-        //     // 03.2.2 Check borrowed_items if which ones are available on that date
-        //     $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
-
-        //     // 03.2.3 Requested qty > available items on schedule (Fail)
-        //     $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
-        //     if ($isRequestQtyMoreThanAvailableQty) {
-        //         return $isRequestQtyMoreThanAvailableQty;
-        //     }
-
-        //     // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
-        //     $chosenNewItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-        // }
-
-        // 03.3 Edit Items
-        $editedItemsGroupId = array_column($editedItems, 'item_group_id');
-        // 03.3.1 Perform same Logic sequence as Cancel
-        $cancelQuery = [];
-        if (count($editedItemsGroupId) > 0) {
-            // Same Logic Sequence as Cancel
-            $cancelQuery = $this->editBorrowRequestService->cancelQuery($editedItemsGroupId, $requestId);
-            if (!$cancelQuery) {
-                return response([
-                    'status' => false,
-                    'message' => 'Something went wrong while cancelling your items.',
-                    'method' => 'PATCH',
-                ], 500);
-            }
-        }
-
-        // 03.3.2 Get the additional data in preparation for adding items 
-        foreach ($editedItems as $editedItemKey => $editedItem) {
-            // Convert to array first
-            $cancelQueryArray = json_decode(json_encode($cancelQuery), true);
-            // 03.3.2.1 If the updated data is QTY ONLY
-            if (isset($editedItem['quantity']) && !isset($editedItem['start_date']) && !isset($editedItem['return_date'])) {
-                // Get start and due date from A RECENTLY cancelled item
-                $retrievedStartDate = $cancelQueryArray[$editedItemKey][0]['start_date'];  // 0th index as all items have same dates
-                $retrievedReturnDate = $cancelQueryArray[$editedItemKey][0]['due_date']; // 0th index as all items have same dates
-
-                $editedItems[$editedItemKey] = [
-                    ...$editedItem,
-                    'start_date' => $retrievedStartDate,
-                    'return_date' => $retrievedReturnDate
-                ];
-            }
-            //  03.3.2.2 If the updated data wants to EDIT DATES but no QTY field
-            if (isset($editedItem['start_date']) && isset($editedItem['return_date']) && !isset($editedItem['quantity'])) {
-                $retrievedQuantity = count($cancelQueryArray[$editedItemKey]);
-
-                $editedItems[$editedItemKey] = [
-                    ...$editedItem,
-                    'quantity' => $retrievedQuantity
-                ];
-
-            }
-            // If all fields are being updated
-            // DO NOTHING as all fields are already present
-        }
-
-        // 03.3.3 PERFORM SAME STEPS AS SUBMIT BORROW REQUEST
-        $chosenEditItems = [];
-        if (count($editedItems) > 0) {
-            // 03.2.1 Get all items with "active" status in items TB 
-            $activeItems = $this->submitBorrowRequestService->getActiveItems($editedItems);
-
-            // 03.2.2 Check borrowed_items if which ones are available on that date
-            $availableItems = $this->submitBorrowRequestService->getAvailableItems($activeItems);
-
-            // 03.2.3 Requested qty > available items on schedule (Fail)
-            $isRequestQtyMoreThanAvailableQty = $this->submitBorrowRequestService->checkRequestQtyAndAvailableQty($availableItems);
-            if ($isRequestQtyMoreThanAvailableQty) {
-                return $isRequestQtyMoreThanAvailableQty;
-            }
-
-            // 03.2.4 Requested qty < available items on schedule (SHUFFLE then Choose)
-            $chosenEditItems = $this->submitBorrowRequestService->shuffleAvailableItems($availableItems);
-        }
-
-        // 04. Query DB using final data for each part
-        // 04.1 Request Data
-        if ($requestData && $borrowRequestArgs) {
-            try {
-                // Update Transaction
-                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
-                $currentBorrowRequest->update($borrowRequestArgs);
-            } catch (\Exception $e) {
-                return response([
-                    'status' => false,
-                    'message' => 'Couldn`t find transaction based on given ID',
-                    'error' => $e->getMessage(),
-                    'method' => 'POST',
-                ], 500);
-            }
-        }
-
-        // 07. Insert new borrowed items
         try {
-            $borrowRequest = BorrowTransaction::findOrFail($requestId);
-            $newBorrowedItems = null;
-            $editedBorrowedItems = null;
+            DB::beginTransaction();
+            $validatedData = $editBorrowRequest->validated();
+            $requestId = $validatedData['requestId'];
 
-            if (count($chosenNewItems) > 0) {
-                $newBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenNewItems, $borrowRequest->id);
+            $requestData = null;
+            $requestedItems = isset($validatedData['add_new_items']) ? $validatedData['add_new_items'] : [];
+            $borrowRequestArgs = null;
+
+            // 01. If request_data is provided, update it instantly
+            if (isset($validatedData['request_data'])) {
+                $requestData = $validatedData['request_data'];
+
+                // Check if Endorser is indicated
+                if (isset($requestData['endorsed_by'])) {
+                    $res = $this
+                        ->userService
+                        ->handleRetrieveUserDataFromApcisWithoutLogin(
+                            endorserApcId: $requestData['endorsed_by'],
+                            apcisToken: $requestData['apcis_token']
+                        );
+
+                    if ($res !== null) {
+                        return response()->json($res, 500);
+                    }
+                }
+
+                // Prepare Transaction Data Payload for DB UPDATE QUERY
+                $borrowRequestArgs = $this
+                    ->editBorrowRequestService
+                    ->prepareRequestUpdateArgs($requestData);
+
+                // Update Transac Data
+                $currentBorrowRequest = BorrowTransaction::findOrFail($requestId);
+                $currentBorrowRequest->update($borrowRequestArgs);
             }
 
-            if (count($chosenEditItems) > 0) {
-                $editedBorrowedItems = $this->submitBorrowRequestService->insertNewBorrowedItems($chosenEditItems, $borrowRequest->id);
+
+            $toBeCancelledItemGroupIds = [];
+            $toBeCancelledBorrowedItemIds = [];
+            $itemsToBeAdded = $requestedItems;
+            $toBeEdited = [];
+
+            // 02. edit_existing_items field is provided. process the data
+            if (isset($validatedData['edit_existing_items'])) {
+                try {
+                    // 02.01.  Segregate the edit_existing_items
+                    $segregated = $this
+                        ->editBorrowRequestService
+                        ->segregateToBeEditedItems($validatedData['edit_existing_items']);
+
+                    $toBeEdited = $segregated['toBeEdited'];
+                    // Pluck the item Group id, and merge it to toBeCancelledItemGroupIds
+                    $toBeEditedIds = array_column(
+                        array: $toBeEdited,
+                        column_key: 'item_group_id'
+                    );
+
+                    // Store all the ids that need to be cancelled
+                    $toBeCancelledItemGroupIds = array_merge(
+                        $segregated['toBeCancelledIds'],
+                        $toBeEditedIds
+                    );
+
+                    // This will be segregated further
+                    $toBeQtyChangedOnly = $segregated['toBeQtyChangedOnly'];
+
+                    // Initialize the variable to a default value (could be null or an empty array)
+                    $processedToBeChangedQty = [
+                        'toBeCancelledBorrowedItemIds' => [],
+                        'itemsToBeAdded' => []
+                    ];
+
+                    // Process toBeQtyChangedOnly
+                    if (count($toBeQtyChangedOnly) > 0) {
+                        $processedToBeChangedQty = $this
+                            ->editBorrowRequestService
+                            ->processToBeQtyChangedOnly(
+                                transacId: $requestId,
+                                toBeQtyChangedOnly: $toBeQtyChangedOnly
+                            );
+                    }
+
+                    // --> Update the array value
+                    if (count($processedToBeChangedQty['toBeCancelledBorrowedItemIds']) > 0) {
+                        $toBeCancelledBorrowedItemIds = array_unique(
+                            array_merge(
+                                $toBeCancelledBorrowedItemIds,
+                                $processedToBeChangedQty['toBeCancelledBorrowedItemIds']
+                            )
+                        );
+                    }
+                    // --> Update the array value
+                    if (count($processedToBeChangedQty['itemsToBeAdded']) > 0) {
+                        $itemsToBeAdded = array_merge(
+                            $itemsToBeAdded,
+                            $processedToBeChangedQty['itemsToBeAdded']
+                        );
+                    }
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to edit items.',
+                        'error' => $e->getMessage(),
+                        'method' => 'POST',
+                    ], 500);
+                }
             }
 
-            return response([
+            // 03. Perform Cancel items with determined ItemGroup Ids
+            if (count($toBeCancelledItemGroupIds) > 0) {
+                BorrowedItem::where('borrowing_transac_id', $requestId)
+                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                    ->whereIn('item_groups.id', $toBeCancelledItemGroupIds) // Filter by item group ID
+                    ->update([
+                        'borrowed_items.borrowed_item_status_id' => $this->cancelledBorrowedItemStatusId
+                    ]);
+            }
+
+            // 04. Perform Cancel items with determined BorrowedItem Ids
+            if (count($toBeCancelledBorrowedItemIds) > 0) {
+                BorrowedItem::where('borrowing_transac_id', $requestId)
+                    ->whereIn('id', $toBeCancelledBorrowedItemIds)
+                    ->update([
+                        'borrowed_item_status_id' => $this->cancelledBorrowedItemStatusId
+                    ]);
+            }
+
+            // 05. Add new items OR update the items that needs to be date changed. 
+            //      --> This means we will go through what Submit request does
+            if (count($toBeEdited) > 0 || count($itemsToBeAdded) > 0) {
+                $mergedItems = array_merge($toBeEdited, $itemsToBeAdded);
+                // 05.01. Process requested items and create a final list
+                $chosenItemList = $this
+                    ->borrowRequestFinalizationService
+                    ->processRequestedItems(
+                        requestedItems: $mergedItems,
+                    );
+
+
+                if (isset($finalItemList['status'])) {
+                    DB::rollBack();
+                    return response()->json(
+                        $chosenItemList,
+                        500
+                    );
+                }
+
+                // 05.02. Insert chosen items 
+                $insertItems = $this->borrowRequestFinalizationService
+                    ->insertNewBorrowedItems(
+                        chosenItems: $chosenItemList,
+                        borrowRequestId: $requestId
+                    );
+
+                if (isset($finalItemList['status'])) {
+                    DB::rollBack();
+                    return response()->json(
+                        $insertItems,
+                        500
+                    );
+                }
+            }
+            DB::commit();
+            return response()->json([
                 'status' => true,
-                'message' => 'Successfully edited borrow request',
-                'method' => 'POST',
+                'message' => 'Successfully edited your borrow request.',
+                'method' => 'PATCH'
             ], 200);
 
         } catch (\Exception $e) {
-            return response([
+            DB::rollBack();
+            return response()->json([
                 'status' => false,
-                'message' => 'An error occurred while submittitng your request.',
+                'message' => 'An error occurred while editing you request.',
+                'method' => 'PATCH',
                 'error' => $e->getMessage(),
-                'method' => 'POST',
             ], 500);
         }
+
     }
 
     /**

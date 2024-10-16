@@ -58,9 +58,6 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
                 )
                 ->get();
 
-
-            // \Log::error('Borrowed Item ' . $borrowedItem); 
-
             if ($borrowedItem->is_required_supervisor_approval) {
                 return false;
             }

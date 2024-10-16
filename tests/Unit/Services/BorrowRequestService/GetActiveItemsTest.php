@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit\Services\SubmitBorrowRequestService;
+namespace Tests\Unit\Services\BorrowRequestService;
 
 use ReflectionClass;
 use Tests\TestCase;
 use Mockery as m;
 use App\Models\Item;
-use App\Services\BorrowRequestService\SubmitBorrowRequestService;
+use App\Services\BorrowRequestService\BorrowRequestHelperService;
 
 class GetActiveItemsTest extends TestCase
 {
@@ -18,7 +18,7 @@ class GetActiveItemsTest extends TestCase
         parent::setUp();
 
         // Initialize the service instance
-        $this->service = app(SubmitBorrowRequestService::class);
+        $this->service = app(BorrowRequestHelperService::class);
 
         // Use Reflection to set the protected/private property
         $reflection = new ReflectionClass($this->service);

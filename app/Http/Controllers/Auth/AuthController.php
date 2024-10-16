@@ -8,9 +8,7 @@ use App\Models\ApcisToken;
 use App\Models\SystemAdmin;
 use App\Models\User;
 use App\Services\UserService;
-use App\Utils\ApiResponseHandling;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -38,15 +36,14 @@ class AuthController extends Controller
             /**
              * 1. Access APCIS login API
              */
-            $dummyApcisUrl = env('APCIS_URL');
-            $response = Http::timeout(10)->post($dummyApcisUrl . '/login', $validatedData);
-            $parsedResponse = json_decode($response->body(), true);
+            $parsedResponse = $this
+                ->userService
+                ->retrieveUserDataFromApcisThroughLogin(
+                    loginCredentials: $validatedData
+                );
 
-            // Handle error responses from APCIS
-            // And Check the Array Fields from APCIS if they are as expected
-            $apiResponse = ApiResponseHandling::handleApcisResponse($parsedResponse, $response->status());
-            if ($apiResponse !== null) {
-                return response()->json($apiResponse, $response->status());
+            if ($parsedResponse instanceof JsonResponse) {
+                return $parsedResponse;
             }
 
             // Continue because APCIS Request is success and the expected fields are there
@@ -56,9 +53,12 @@ class AuthController extends Controller
             /**
              * 4. Store new user if it still does not exist yet
              */
-            $isNewUserCreated = $this->userService->storeNewUser(userDataFromApcis: $parsedUserData);
-            if ($isNewUserCreated) {
-                return response()->json($isNewUserCreated, 500);
+            $userExists = User::where('apc_id', $parsedUserData['apc_id'])->exists();
+            if (!$userExists) {
+                $isNewUserCreated = $this->userService->storeNewUser(userDataFromApcis: $parsedUserData);
+                if ($isNewUserCreated) {
+                    return response()->json($isNewUserCreated, 500);
+                }
             }
 
             /**
@@ -99,17 +99,9 @@ class AuthController extends Controller
                 'method' => 'POST'
             ], 200);
 
-        } catch (RequestException $exception) {
-            // Handle HTTP request exception
-            // \Log::error('API Request Failed:', ['exception' => $exception->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'error' => 'APCIS API login request failed',
-                'method' => 'POST'
-            ], 500);
         } catch (\Exception $exception) {
             // Handle other exceptions
-            // \Log::error('Unexpected Exception:', ['exception' => $exception->getMessage()]);
+            \Log::error('Unexpected Exception:', ['exception' => $exception->getMessage()]);
             return response()->json([
                 'status' => false,
                 'error' => 'Something went wrong',

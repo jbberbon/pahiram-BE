@@ -6,7 +6,6 @@ use App\Models\BorrowedItem;
 use App\Models\BorrowPurpose;
 use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
-use Illuminate\Support\Facades\DB;
 
 class EditBorrowRequestService
 {
@@ -39,143 +38,112 @@ class EditBorrowRequestService
             unset($borrowRequestArgs['apcis_token']);
         }
 
+        if (isset($borrowRequestArgs['department'])) {
+            unset($borrowRequestArgs['department']);
+        }
+
+        if (isset($borrowRequestArgs['items'])) {
+            unset($borrowRequestArgs['items']);
+        }
+
         return $borrowRequestArgs;
     }
 
-    public function isCancelled($itemGroup)
+    /**
+     * Segregates items to be edited into three categories:
+     *
+     * @param array $toBeEdited Array of items to be segregated for editing.
+     * @return array Segregated array includes keys:
+     *  - toBeEdited: Items where dates and/or quantities need to be changed.
+     *  - toBeCancelledIds: Item group IDs that are marked as cancelled.
+     *  - toBeQtyChangedOnly: Items where only the quantity needs to be changed, without any date changes.
+     */
+    public function segregateToBeEditedItems(array $toBeEdited): array
     {
-        $cancelledItemGroupId = null;
-        $itemGroupId = $itemGroup['item_group_id'];
+        $toBeCancelledIds = [];
+        $toBeQtyChangedOnly = [];
 
-        $hasCancel = isset($itemGroup['is_cancelled']);
-        $cancelIsTrue = $hasCancel === true;
-        if ($hasCancel && $cancelIsTrue) {
-            $cancelledItemGroupId = $itemGroupId;
-        }
-
-        return $cancelledItemGroupId === null ? false : $cancelledItemGroupId;
-    }
-
-    // public function itemGroupExistsInBorrowedItems($itemGroup, $requestId)
-    // {
-    //     $itemGroupId = $itemGroup['item_group_id'];
-
-    //     // Retrieve all borrowed items from the specific borrow transaction
-    //     $borrowedItems = BorrowedItem::where('borrowing_transac_id', $requestId)->get();
-
-    //     // Check if any of the borrowed items is associated with the provided item_group_id
-    //     $existingItem = $borrowedItems->first(function ($item) use ($itemGroupId) {
-    //         return $item->item->item_group_id == $itemGroupId;
-    //     });
-
-    //     return $existingItem;
-    // }
-    public function editQtyAndDate($itemGroup)
-    {
-        $hasQuantity = isset($itemGroup['quantity']);
-        $hasDates = isset($itemGroup['start_date']) && isset($itemGroup['return_date']);
-        $hasNoCancel = !isset($itemGroup['is_cancelled']);
-        if ($hasQuantity && $hasDates && $hasNoCancel) {
-            return $itemGroup;
-        }
-        return false;
-    }
-    public function editDate($itemGroup)
-    {
-        $hasDates = isset($itemGroup['start_date']) && isset($itemGroup['return_date']);
-        $hasNoQuantity = !isset($itemGroup['quantity']);
-        $hasNoCancel = !isset($itemGroup['is_cancelled']);
-
-        if ($hasDates && $hasNoQuantity && $hasNoCancel) {
-            return $itemGroup;
-        }
-        return false;
-    }
-    public function editQuantity($itemGroup)
-    {
-        $hasQuantity = isset($itemGroup['quantity']);
-        $hasNoDate = !isset($itemGroup['start_date']) && !isset($itemGroup['return_date']);
-        $hasNoCancel = !isset($itemGroup['is_cancelled']);
-
-        if ($hasQuantity && $hasNoDate && $hasNoCancel) {
-            return $itemGroup;
-        }
-        return false;
-    }
-
-    public function editExistingItem($itemGroup)
-    {
-        $hasQuantity = isset($itemGroup['quantity']);
-        $hasDates = isset($itemGroup['start_date']) && isset($itemGroup['return_date']);
-        $hasQtyOrDates = $hasQuantity || $hasDates;
-        $hasNoCancel = !isset($itemGroup['is_cancelled']);
-
-        if ($hasQtyOrDates && $hasNoCancel) {
-            return $itemGroup;
-        }
-        return false;
-    }
-
-
-    public function cancelQuery($cancelledItemGroupIds, $requestId)
-    {
-        if (count($cancelledItemGroupIds) > 0) {
-            try {
-                // Initialize an array to store retrieved pending item IDs
-                // $retrievedPendingItemIds = [];
-                $retrievedPendingItemData = [];
-
-                // Loop through each cancelled item group ID
-                foreach ($cancelledItemGroupIds as $cancelledItemGroupId) {
-                    // Query the database to retrieve pending item IDs associated with the cancelled item group
-                    $result = DB::table('borrowed_items')
-                        ->where('borrowing_transac_id', $requestId)
-                        ->where('borrowed_item_status_id', $this->pendingBorrowedItemStatusId)
-                        ->join('items', 'borrowed_items.item_id', '=', 'items.id')
-                        ->where('items.item_group_id', $cancelledItemGroupId)
-                        ->select('borrowed_items.id as borrowed_item_id', 'borrowed_items.start_date', 'borrowed_items.due_date')
-                        ->get()
-                        ->toArray();
-
-                    // Merge the retrieved item IDs with the overall array
-                    $retrievedPendingItemData[$cancelledItemGroupId] = $result;
-                    // $retrievedPendingItemIds = array_merge($retrievedPendingItemIds, $result);
-                }
-                // Begin a database transaction
-                DB::beginTransaction();
-
-                // Get only the Borrowed_item_id
-                $flattenedBorrowedItemIds = [];
-                foreach ($retrievedPendingItemData as $itemGroupData) {
-                    // Merge the arrays recursively
-                    $flattenedBorrowedItemIds = array_merge_recursive($flattenedBorrowedItemIds, $itemGroupData);
-                }
-                // Extract the "borrowed_item_id" values
-                $resultBorrowedItemIds = array_column($flattenedBorrowedItemIds, 'borrowed_item_id');
-
-                // Update the status of the retrieved pending items to 'Cancelled'
-                BorrowedItem::whereIn('id', $resultBorrowedItemIds)->update(['borrowed_item_status_id' => $this->cancelledBorrowedItemStatusId]);
-
-                // Commit the transaction if everything is successful
-                DB::commit();
-
-                // Return the array of cancelled item IDs FOR DEBUGGING
-                return $retrievedPendingItemData;
-            } catch (\Exception $e) {
-                // Rollback the transaction in case of an exception and return false
-                // DB::rollBack();
-                // return $e;
-                return false;
-
+        // Single loop to handle both cancelled items and quantity-only changes
+        foreach ($toBeEdited as $index => $item) {
+            if (isset($item['is_cancelled']) && $item['is_cancelled'] === true) {
+                // Add cancelled item's group ID to $toBeCancelledIds array
+                $toBeCancelledIds[] = $item['item_group_id'];
+                // Remove the cancelled item from $toBeEdited
+                unset($toBeEdited[$index]);
+            } elseif (
+                // If quantity only to be changed
+                !isset($item['start_date']) &&
+                !isset($item['return_date']) &&
+                isset($item['quantity'])
+            ) {
+                // Filter the items that are ONLY to be changed in Qty
+                $toBeQtyChangedOnly[] = $item;
+                // Remove the toBeQtyChangedOnly item from $toBeEdited
+                unset($toBeEdited[$index]);
             }
-        } else {
-            return true;
         }
+
+        return [
+            'toBeEdited' => $toBeEdited,
+            'toBeCancelledIds' => $toBeCancelledIds,
+            'toBeQtyChangedOnly' => $toBeQtyChangedOnly
+        ];
     }
 
-
-    public function editDateQuery()
+    public function processToBeQtyChangedOnly(string $transacId, array $toBeQtyChangedOnly): array
     {
+        $toBeCancelledBorrowedItemIds = [];
+        $itemsToBeAdded = [];
+        foreach ($toBeQtyChangedOnly as $item) {
+            // Get the active qty of that specific model
+            $activeQty = BorrowedItem::getActiveModelItemQtyInTransaction(
+                transacId: $transacId,
+                itemGroupId: $item['item_group_id']
+            );
 
+            $absoluteDifference = abs($activeQty - $item['quantity']);
+
+            // User wants to SUBTRACT items
+            if ($activeQty > $item['quantity']) {
+                $toBeSubtracted = BorrowedItem::where('borrowing_transac_id', $transacId)
+                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                    ->where('item_groups.id', $item['item_group_id']) // Filter by item group ID
+                    ->limit($absoluteDifference)
+                    ->pluck('borrowed_items.id')
+                    ->toArray();
+
+                // Add it to the toBeCancelled Array
+                $toBeCancelledBorrowedItemIds = array_unique(
+                    array_merge($toBeCancelledBorrowedItemIds, $toBeSubtracted)
+                );
+            }
+
+
+            // User wants to ADD more qty of an existing item in request
+            if ($activeQty < $item['quantity']) {
+                // Get the start and due date ONLY including keys
+                $itemStartAndReturnDate = BorrowedItem::where('borrowing_transac_id', $transacId)
+                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                    ->where('item_groups.id', $item['item_group_id']) // Filter by item group ID
+                    ->select('borrowed_items.start_date', 'borrowed_items.due_date as return_date')  // Select specific columns
+                    ->first() // Retrieve the first matching record
+                    ->toArray();
+
+                // Group it in a single array to be processed later
+                $itemsToBeAdded[] = [
+                    ...$item,
+                    ...$itemStartAndReturnDate,
+                    'quantity' => $absoluteDifference
+                ];
+            }
+
+        }
+
+        return [
+            'toBeCancelledBorrowedItemIds' => $toBeCancelledBorrowedItemIds,
+            'itemsToBeAdded' => $itemsToBeAdded
+        ];
     }
 }
