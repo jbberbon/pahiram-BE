@@ -25,7 +25,6 @@ class UserExistsOnPahiramOrApcis implements Rule
             apcId: $value,
             apcisToken: $apcisToken
         );
-        // \Log::info("USER ON APCIS", ['user_exists' => $userExistsOnApcis]);
 
         return $userExistsOnApcis;
     }

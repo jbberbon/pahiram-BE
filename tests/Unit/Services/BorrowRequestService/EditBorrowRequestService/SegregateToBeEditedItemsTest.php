@@ -120,7 +120,6 @@ class SegregateToBeEditedItemsTest extends TestCase
 
         $result = $this->service->segregateToBeEditedItems($toBeEdited);
 
-        \Log::info("sfsf", ["result" => $result]);
         $this->assertEmpty($result['toBeEdited']);
         $this->assertEmpty($result['toBeCancelledIds']);
         $this->assertCount(3, $result['toBeQtyChangedOnly']);

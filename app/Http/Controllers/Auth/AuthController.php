@@ -41,7 +41,6 @@ class AuthController extends Controller
                 ->retrieveUserDataFromApcisThroughLogin(
                     loginCredentials: $validatedData
                 );
-            \Log::info("controller", ['controller' => $parsedResponse]);
 
             if ($parsedResponse instanceof JsonResponse) {
                 return $parsedResponse;

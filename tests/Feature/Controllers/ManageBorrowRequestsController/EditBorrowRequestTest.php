@@ -245,7 +245,6 @@ class EditBorrowRequestTest extends TestCase
                 'api/user/borrow-request/' . $borrowTransaction->id . '/edit',
                 $editedData
             );
-        \Log::info("Edit Response", ['res' => $editResponse]);
         $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
 
         $endorserResource = User::where('email', 'jdcruz@apc.edu.ph')->first();

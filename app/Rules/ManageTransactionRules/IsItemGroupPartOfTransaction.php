@@ -28,7 +28,6 @@ class IsItemGroupPartOfTransaction implements Rule
             ->where('item_groups.id', $value)
             ->exists();
 
-        \Log::error('Borrowed Item ' . $borrowedItemExists);
         if ($borrowedItemExists) {
             return true;
         }

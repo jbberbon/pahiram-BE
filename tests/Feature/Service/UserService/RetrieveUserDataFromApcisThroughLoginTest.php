@@ -94,7 +94,6 @@ class RetrieveUserDataFromApcisThroughLoginTest extends TestCase
         // Call the method
         $response = $this->userService
             ->retrieveUserDataFromApcisThroughLogin($this->loginCredentials);
-        \Log::info("TEST", ['controller' => $response]);
 
         // Assert the structure of the response
         $this->assertEquals(response()->json([
