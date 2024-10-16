@@ -99,51 +99,46 @@ class ManageBorrowTransactionController extends Controller
      */
     public function index(Request $request)
     {
-        // Check from which office the user belongs
+        // Get authenticated user and their department
         $user = Auth::user();
         $userDepartment = UserDepartment::where('user_id', $user->id)->first();
-
-        // Filtering
-        $transactions = BorrowTransaction::where('department_id', $userDepartment->department_id);
-
-        // Get all lapsed approval
-        if ($request->has('is_lapsed')) {
-            if ($request['is_lapsed']) {
-                $transactions
-                    ->where('transac_status_id', $this->pendingBorrowingApprovalStatusId)
-                    ->join(
-                        'borrowed_items',
-                        'borrow_transactions.id',
-                        '=',
-                        'borrowed_items.borrowing_transac_id'
-                    )
-                    ->where('borrowed_items.start_date', '<', \Carbon\Carbon::now()->toDateTimeString())
-                    ->groupBy('borrowed_items.borrowing_transac_id')
-                    ->select(
-                        'borrow_transactions.id as id',
-                        'borrow_transactions.borrower_id',
-                        'borrow_transactions.transac_status_id',
-                        'borrow_transactions.purpose_id',
-                        'borrow_transactions.user_defined_purpose',
-                        'borrow_transactions.created_at'
-                    );
-            }
+    
+        if (!$userDepartment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User department not found',
+                'method' => "GET"
+            ], 404);
         }
-
-        // Filter by Transac Status
+    
+        // Start the query for filtering transactions by department
+        $transactions = BorrowTransaction::where('department_id', $userDepartment->department_id);
+    
+        // Filter by lapsed approval (past start date)
+        if ($request->has('is_lapsed') && $request['is_lapsed']) {
+            $transactions->where('transac_status_id', $this->pendingBorrowingApprovalStatusId)
+                ->join('borrowed_items', 'borrow_transactions.id', '=', 'borrowed_items.borrowing_transac_id')
+                ->where('borrowed_items.start_date', '<', Carbon::now()->toDateTimeString())
+                ->groupBy('borrowed_items.borrowing_transac_id')
+                ->select(
+                    'borrow_transactions.id as id',
+                    'borrow_transactions.borrower_id',
+                    'borrow_transactions.transac_status_id',
+                    'borrow_transactions.purpose_id',
+                    'borrow_transactions.user_defined_purpose',
+                    'borrow_transactions.created_at'
+                );
+        }
+    
+        // Filter by transaction status
         if ($request->has('status')) {
             $transacStatusId = BorrowTransactionStatus::getIdByStatus($request['status']);
             $transactions->where('transac_status_id', $transacStatusId);
-
-            if ($request['status'] === TRANSAC_STATUS::PENDING_BORROWING_APPROVAL) {
-                $transactions
-                    ->join(
-                        'borrowed_items',
-                        'borrow_transactions.id',
-                        '=',
-                        'borrowed_items.borrowing_transac_id'
-                    )
-                    ->where('borrowed_items.start_date', '>', \Carbon\Carbon::now()->toDateTimeString())
+    
+            // Additional filtering for pending borrowing approval
+            if ($request['status'] === 'PENDING_BORROWING_APPROVAL') {
+                $transactions->join('borrowed_items', 'borrow_transactions.id', '=', 'borrowed_items.borrowing_transac_id')
+                    ->where('borrowed_items.start_date', '>', Carbon::now()->toDateTimeString())
                     ->groupBy('borrowed_items.borrowing_transac_id')
                     ->select(
                         'borrow_transactions.id as id',
@@ -155,15 +150,22 @@ class ManageBorrowTransactionController extends Controller
                     );
             }
         }
-        // Execute the query
-        $transactions = $transactions->get();
-
-        return response([
+    
+        // Define the number of results per page 
+        $perPage = $request->get('per_page', 8);
+    
+        // Paginate the filtered transactions
+        $paginatedTransactions = $transactions->paginate($perPage);
+    
+        // Return the paginated transactions using the EndorsementCollection
+        return response()->json([
             'status' => true,
-            'data' => new EndorsementCollection($transactions),
+            'data' => new EndorsementCollection($paginatedTransactions),
             'method' => "GET"
         ]);
     }
+    
+
 
     /**
      * Get specific Borrow request
