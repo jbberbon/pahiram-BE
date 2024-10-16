@@ -7,26 +7,34 @@ use App\Models\ApcisToken;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDepartment;
+use App\Utils\ApiResponseHandling;
 use App\Utils\Constants\Statuses\ACCOUNT_STATUS;
 use App\Utils\Constants\USER_ROLE;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
 class UserService
 {
+    private $apcisBaseUrl;
+    private $apcisUsersUrl;
+    private $apcisUsersExistsUrl;
+
+    public function __construct()
+    {
+        $this->apcisBaseUrl = env('APCIS_URL');
+        $this->apcisUsersUrl = env('APCIS_USERS');
+        $this->apcisUsersExistsUrl = env('APCIS_CHECK_USERS_EXIST');
+    }
 
     //public function migrateUserDataFromApcisToPahiram(string $apcID, array $apcisTokenData): null|array
-    public function storeNewUser(array $userDataFromApcis)
+    public function storeNewUser(array $userDataFromApcis): array|null
     {
-        // Check first if APC ID Exists
-        $user = User::where('apc_id', $userDataFromApcis['apc_id'])->first();
-
         try {
-            // Store new user
-            if (!$user) {
-                $newUserDefaultData = self::newUserDefaultData();
-                $mergedUserData = array_merge($userDataFromApcis, $newUserDefaultData);
-                User::create($mergedUserData);
-            }
+            $newUserDefaultData = self::newUserDefaultData();
+            $mergedUserData = array_merge($userDataFromApcis, $newUserDefaultData);
+            User::create($mergedUserData);
+
+            return null;
         } catch (\Exception) {
             return [
                 'status' => false,
@@ -50,19 +58,21 @@ class UserService
         ];
     }
 
-    public function getUserDataFromApcisWithoutLogin(string $apcId, string $apcisToken)
+    public function retrieveUserDataFromApcisWithoutLogin(string $apcId, string $apcisToken)
     {
-        $baseUrl = env('APCIS_URL');
-        $users = env('APCIS_USERS');
-
         // Make the API request using the passed token
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apcisToken,
             'Accept' => 'application/json',
-        ])->get($baseUrl . $users . '/' . $apcId);
-
+        ])->get(
+                $this->apcisBaseUrl . $this->apcisUsersUrl . '/' . $apcId
+            );
         // Check if the API request was successful
-        if ($response->successful() && isset($response['status']) && $response['status'] === true) {
+        if (
+            $response->successful() &&
+            isset($response['status']) &&
+            $response['status'] === true
+        ) {
             return $response->json('data');
         }
 
@@ -74,17 +84,58 @@ class UserService
         ];
     }
 
-    public function checkIfUserExistsOnApcis(string $apcId, string $apcisToken): bool
+    public function handleRetrieveUserDataFromApcisWithoutLogin(string $endorserApcId, string $apcisToken): null|array
     {
-        $baseUrl = env('APCIS_URL');
-        $users = env('APCIS_USERS');
-        $usersExists = env('APCIS_CHECK_USERS_EXIST');
+        $endorserExistsInPahiram = User::where('apc_id', $endorserApcId)->exists();
+        if (!$endorserExistsInPahiram) {
+            // Connect to APCIS to gather user data
+            $userDataFromApcis = self::retrieveUserDataFromApcisWithoutLogin(
+                apcId: $endorserApcId,
+                apcisToken: $apcisToken
+            );
 
+            if (isset($userDataFromApcis['error'])) {
+                return $userDataFromApcis;
+            }
+
+            $storedNewUser = self::storeNewUser(
+                userDataFromApcis: $userDataFromApcis
+            );
+
+            if (isset($storedNewUser['error'])) {
+                return $storedNewUser;
+            }
+        }
+        return null;
+    }
+
+    public function retrieveUserDataFromApcisThroughLogin($loginCredentials): array|JsonResponse
+    {
+        $response = Http::timeout(10)
+            ->post($this->apcisBaseUrl . '/login', $loginCredentials);
+        $parsedResponse = json_decode($response->body(), true);
+
+        // Handle error responses from APCIS
+        // And Check the Array Fields from APCIS if they are as expected
+        $apiResponse = ApiResponseHandling::handleApcisResponse(
+            parsedResponse: $parsedResponse,
+            responseCode: $response->status()
+        );
+        return $apiResponse;
+    }
+
+    public function checkIfUserExistsOnApcis(string $apcId, string $apcisToken): bool|array
+    {
         // Make the API request using the passed token
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apcisToken,
             'Accept' => 'application/json',
-        ])->get($baseUrl . $users . $usersExists . '/' . $apcId);
+        ])->get(
+                $this->apcisBaseUrl .
+                $this->apcisUsersUrl .
+                $this->apcisUsersExistsUrl .
+                '/' . $apcId
+            );
 
         // Check if the API request was successful
         if ($response->successful() && ($response['status']) && $response['status'] === true) {

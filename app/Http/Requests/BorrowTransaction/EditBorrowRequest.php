@@ -29,10 +29,6 @@ class EditBorrowRequest extends FormRequest
                 'exists:borrow_transactions,id'
                 // ADD VALIDATION FOR STATUSES THAT CANNOT BE EDITED
             ],
-            'at_least_one_field_present' =>
-                'required_without_all:request_data,edit_existing_items,add_new_items',
-                [new AtLeastOneFieldPresent],
-                
             /**
              * Request Data ----------------------------------------------------
              */
@@ -44,27 +40,18 @@ class EditBorrowRequest extends FormRequest
             ],
             'request_data.endorsed_by' => [
                 'sometimes',
-                'nullable',
                 'string',
                 'max:15',
-                Rule::requiredIf(function () {
-                    return request()->input('request_data.endorsed_by') !== null &&
-                        request()->input('request_data.endorsed_by') !== '';
-                }),
                 new UserExistsOnPahiramOrApcis,
             ],
             'request_data.apcis_token' => [
+                'sometimes',
                 'required_with:endorsed_by',
                 'string',
                 'regex:/^[a-zA-Z0-9|]+$/',
             ],
-            'request_data.department' => [
-                'sometimes',
-                'string',
-                'min:2',
-                'exists:departments,department_acronym'
-            ],
             'request_data.purpose' => [
+                'sometimes',
                 'string',
                 'min:4',
                 'exists:borrow_purposes,purpose'
@@ -76,7 +63,6 @@ class EditBorrowRequest extends FormRequest
                 'min:5',
                 'max:50'
             ],
-
             /**
              * Edit Existing items ----------------------------------------------------
              */
@@ -91,8 +77,9 @@ class EditBorrowRequest extends FormRequest
                 'required',
                 'array',
                 'min:2',
+
                 // Checks the count of the currently Active Status item in Items Table
-                new HasEnoughActiveItems
+                // new HasEnoughActiveItems
             ],
             'edit_existing_items.*.item_group_id' => [
                 'required',
@@ -120,9 +107,13 @@ class EditBorrowRequest extends FormRequest
             ],
             'edit_existing_items.*.quantity' => [
                 'prohibited_if:edit_existing_items.*.is_cancelled,true',
+                'required_with:edit_existing_items.*.start_date',
+                'required_with:edit_existing_items.*.return_date',
                 'integer',
                 'min:1',
-                'max:3'
+                'max:4'
+
+                // Add validation that it does not exceed max items 
             ],
             'edit_existing_items.*.is_cancelled' => [
                 Rule::in([true]),
@@ -135,9 +126,9 @@ class EditBorrowRequest extends FormRequest
                 'array',
                 'min:1',
                 new UniqueItemGroupIds,
-                // new UniqueIdsAcrossArrays($this->all()),
+                new UniqueIdsAcrossArrays($this->all()),
 
-                // On controller because its hard to implement here
+                // TODO: Create Test Case for this
                 new CheckMaxItemGroupCountPerRequest($this->all()),
             ],
             'add_new_items.*' => [
@@ -152,6 +143,8 @@ class EditBorrowRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9-]+$/',
                 'exists:item_groups,id',
+
+                // DONE:: Implement Unique Item Group Checking accross his existing request and his to be added items so it wont duplicate
                 new ItemGroupDoesNotBelongToBorrowedItems,
             ],
             'add_new_items.*.start_date' => [

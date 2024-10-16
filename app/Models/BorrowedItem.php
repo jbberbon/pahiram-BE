@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Traits\Uuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,6 +55,19 @@ class BorrowedItem extends Model
             ->where('borrowed_items.borrowed_item_status_id', $inPossessionStatusId)
             //where now() > due date
             ->where('due_date', '<', now())
+            ->count();
+    }
+
+    public static function getActiveModelItemQtyInTransaction(string $transacId, string $itemGroupId): int
+    {
+        $statusIds = BorrowedItemStatusService::getActiveStatuses();
+
+        return self::where('borrowing_transac_id', $transacId)
+            // We could just put PENDING_APPROVAL, but just for measure, lets put all relevant Statuses
+            ->whereIn('borrowed_item_status_id', $statusIds)
+            ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+            ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+            ->where('item_groups.id', $itemGroupId) // Filter by item group ID
             ->count();
     }
 }

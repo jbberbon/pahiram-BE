@@ -15,15 +15,15 @@ class UserExistsOnPahiramOrApcis implements Rule
         $userExists = User::where('apc_id', $value)->first();
         // Check if APC ID exists in the local database
         if ($userExists) {
-            \Log::info("USER EXISTS ON PAH", ['user_exists' => $userExists]);
             return true;
         }
 
         // Check if APC ID Exists on APCIS
         $userService = new UserService();
+        $apcisToken = request()->input('request_data.endorsed_by') ? request()->input('request_data.endorsed_by') : request()->input('endorsed_by');
         $userExistsOnApcis = $userService->checkIfUserExistsOnApcis(
             apcId: $value,
-            apcisToken: request()->input('apcis_token')
+            apcisToken: $apcisToken
         );
         // \Log::info("USER ON APCIS", ['user_exists' => $userExistsOnApcis]);
 

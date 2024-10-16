@@ -22,11 +22,6 @@ class BorrowTransactionStatusService
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::APPROVED);
     }
 
-    // public static function getOverdueTransactionId()
-    // {
-    //     return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::OVERDUE_TRANSACTION_COMPLETION);
-    // }
-
     public static function getCancelledTransactionId()
     {
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::CANCELLED);
@@ -37,9 +32,19 @@ class BorrowTransactionStatusService
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::DISAPPROVED);
     }
 
-    public static function geOnGoingTransactionId()
+    public static function getOnGoingTransactionId()
     {
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::ON_GOING);
+    }
+
+    public static function getActiveTransactionIds()
+    {
+        return [
+            self::getApprovedTransactionId(),
+            self::getPendingEndorserApprovalTransactionId(),
+            self::getPendingBorrowingApprovalTransactionId(),
+            self::getOnGoingTransactionId()
+        ];
     }
 
 }
