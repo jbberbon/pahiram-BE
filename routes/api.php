@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BorrowTransaction\GeneralBorrowTransactionController;
 use App\Http\Controllers\BorrowTransaction\ItemGroupController;
 use App\Http\Controllers\BorrowTransaction\ManageBorrowingRequestController;
 use App\Http\Controllers\Auth\AuthController;
@@ -38,6 +39,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::patch('/user/borrow-request/{requestId}/edit', [ManageBorrowingRequestController::class, 'editBorrowRequest']);
     });
 
+    // Borrower Transaction 
     Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
     Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
     Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
@@ -46,12 +48,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/user/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
     });
 
+    Route::get('/borrow-transaction/endorsed/{transactionId}/borrowed-items', [GeneralBorrowTransactionController::class, 'getSpecificItemsOfBorrowTransaction']);
 
     // Is Endorser
     Route::group(['middleware' => ['is_endorser']], function () {
         Route::get('/user/endorsement', [ManageEndorsementController::class, 'index']);
-        Route::get('/borrow-transaction/endorsed/{transactionId}', [ManageEndorsementController::class, 'show']);
         Route::patch('/endorsement/{transactionId}/approval', [ManageEndorsementController::class, 'endorsementApproval']);
+
+        // Route::get('/borrow-transaction/endorsed/{transactionId}', [ManageEndorsementController::class, 'show']);
     });
 
     // Is Lending Employee

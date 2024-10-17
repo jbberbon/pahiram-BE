@@ -166,7 +166,6 @@ class ManageBorrowTransactionController extends Controller
             'method' => "GET"
         ]);
     }
-    
 
 
     /**
