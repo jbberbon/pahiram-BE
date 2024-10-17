@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Services\SubmitBorrowRequestService;
+namespace Tests\Unit\Services\BorrowRequestService;
 
-use App\Services\BorrowRequestService\SubmitBorrowRequestService;
+use App\Services\BorrowRequestService\BorrowRequestHelperService;
 use App\Services\ItemAvailability;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class GetAvailableItemsTest extends TestCase
         $this->mockItemAvailability = $this->createMock(ItemAvailability::class);
 
         // Initializing the service with the mocked dependency
-        $this->service = new SubmitBorrowRequestService($this->mockItemAvailability);
+        $this->service = new BorrowRequestHelperService($this->mockItemAvailability);
     }
 
     /** @test */

@@ -61,8 +61,6 @@ class IsEmployeeAuthorizedToApproveAllItems implements Rule
                 )
                 ->get();
 
-            \Log::error($borrowedItems);
-
             // Check if the items require supervisor approval
             foreach ($borrowedItems as $item) {
                 if ($item->is_required_supervisor_approval) {

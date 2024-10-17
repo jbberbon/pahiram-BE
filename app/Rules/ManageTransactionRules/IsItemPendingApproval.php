@@ -29,8 +29,6 @@ class IsItemPendingApproval implements Rule
             ->select('borrowed_items.borrowed_item_status_id as status')
             ->get();
 
-        \Log::error("borrowed item " . $borrowedItem);
-
         // the items are already filtered down.
         // Transactions may contain same item models, like 2 canon 200Ds
         // but only one instance of that item model will have 'PENDING APPROVAL' status

@@ -10,7 +10,6 @@ class IsEmployeeEmail implements Rule
     {
         // Check for employee email
         $user = auth()->user();
-        // \Illuminate\Support\Facades\Log::error('User Data: ' . json_encode($user->toArray()));
         return str_ends_with($user->email, '@apc.edu.ph');
     }
 

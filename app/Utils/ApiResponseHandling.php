@@ -1,10 +1,11 @@
 <?php
 
 namespace App\Utils;
+use Illuminate\Http\JsonResponse;
 
 class ApiResponseHandling
 {
-    public static function handleApcisResponse(array|null $parsedResponse, int $responseCode): null|array
+    public static function handleApcisResponse(array|null $parsedResponse, int $responseCode): array|JsonResponse
     {
         $response = [
             'status' => false,
@@ -13,35 +14,35 @@ class ApiResponseHandling
         ];
 
         if ($responseCode === 401) {
-            return $parsedResponse;
+            return response()->json($parsedResponse, $responseCode);
         }
 
         // Check if the response is null
         if (is_null($parsedResponse)) {
-            return $response;
+            return response()->json($response, $responseCode);
         }
 
         // Check if the response status is not 200 (OK) 
         // and there's no 'status' field in the API response
         if ($responseCode !== 200 && !isset($parsedResponse['status'])) {
-            return $response;
+            return response()->json($response, $responseCode);
         }
 
         // Check if the 'status' field is present and set to false
         if (isset($parsedResponse['status']) && $parsedResponse['status'] === false) {
-            return $response;
+            return response()->json($parsedResponse, $responseCode);
         }
 
         // Handle 200 response and validate its structure
         if ($responseCode === 200) {
             if (self::isValidResponseStructure($parsedResponse) && self::hasRequiredFields($parsedResponse)) {
-                return null; // Valid response
+                return $parsedResponse; // Valid response
             } else {
-                return $response; // Invalid structure
+                return response()->json($response, 502); // Invalid structure
             }
         }
 
-        return null;
+        return response()->json($response, 500); 
     }
 
     private static function isValidResponseStructure(array $response): bool
