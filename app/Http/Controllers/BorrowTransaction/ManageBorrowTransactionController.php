@@ -9,6 +9,7 @@ use App\Http\Requests\ManageBorrowTransaction\GetSpecificPendingTransactionReque
 use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
 use App\Http\Resources\BorrowTransactionResource;
+use App\Http\Resources\BorrowTransactionCollection;
 use App\Http\Resources\EndorsementCollection;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
@@ -160,7 +161,7 @@ class ManageBorrowTransactionController extends Controller
         // Return the paginated transactions using the EndorsementCollection
         return response()->json([
             'status' => true,
-            'data' => new EndorsementCollection($paginatedTransactions),
+            'data' => new BorrowTransactionCollection($paginatedTransactions),
             'method' => "GET"
         ]);
     }
