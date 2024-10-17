@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\ManageEndorsement\GetEndorsementRequest;
 use App\Http\Requests\ManageEndorsement\EndorsementApprovalRequest;
+use App\Http\Resources\BorrowTransaction\BorrowTransactionCollection;
 use App\Http\Resources\BorrowTransactionResource;
 use App\Http\Resources\EndorsementCollection;
 use App\Models\BorrowedItem;
@@ -40,9 +41,9 @@ class ManageEndorsementController extends Controller
     {
         try {
             $userId = Auth::id();
-            $endorsementList = BorrowTransaction::where('endorsed_by', $userId)->get();
-
-            $endorsementResource = new EndorsementCollection($endorsementList);
+            $endorsementList = BorrowTransaction::where('endorsed_by', $userId)->paginate();
+            $endorsementResource = new BorrowTransactionCollection($endorsementList);
+            
             return response()->json([
                 'status' => true,
                 'data' => $endorsementResource,

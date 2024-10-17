@@ -124,7 +124,7 @@ class UserService
         return $apiResponse;
     }
 
-    public function checkIfUserExistsOnApcis(string $apcId, string $apcisToken): bool|array
+    public function checkIfUserExistsOnApcis(string $apcId, string $apcisToken): bool
     {
         // Make the API request using the passed token
         $response = Http::withHeaders([
@@ -138,7 +138,9 @@ class UserService
             );
 
         // Check if the API request was successful
-        if ($response->successful() && ($response['status']) && $response['status'] === true) {
+        if ($response->successful() && $response->json('status') === true) {
+            // True of False Value
+            \Log::info("USER EXISTS API", ['res' => $response->json('data')]);
             return $response->json('data');
         }
 

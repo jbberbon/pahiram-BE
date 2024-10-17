@@ -14,6 +14,6 @@ class ItemCollection extends ResourceCollection
      */
     public function toArray(Request $request)
     {
-        return $this->collection->map->toArray($request)->all();
+        return $this->collection->toArray();
     }
 }
