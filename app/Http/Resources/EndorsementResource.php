@@ -33,11 +33,19 @@ class EndorsementResource extends JsonResource
         $items = BorrowedItem::where('borrowing_transac_id', $this->id)
             ->join('items', 'borrowed_items.item_id', '=', 'items.id')
             ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+            ->join( // Use leftJoin to allow for null statuses
+                'borrowed_item_statuses',
+                'borrowed_items.borrowed_item_status_id',
+                '=',
+                'borrowed_item_statuses.id'
+            )
             ->select(
                 'item_groups.model_name',
                 'borrowed_items.id as borrowed_item_id',
                 'borrowed_items.start_date',
-                'borrowed_items.due_date'
+                'borrowed_items.due_date',
+                'borrowed_item_statuses.borrowed_item_status',
+                'borrowed_item_statuses.id as borrowed_item_status_id'
             )
             ->get();
 
@@ -53,19 +61,47 @@ class EndorsementResource extends JsonResource
                 'quantity' => $groupedItem->count(),
                 'start_date' => Carbon::parse($item->start_date)->format('Y-m-d H:i:s'),
                 'due_date' => Carbon::parse($item->due_date)->format('Y-m-d H:i:s'),
+                'details' => $groupedItem->map(function ($item) use ($apcId) {
+                    return [
+                        'borrowed_item_id' => $item->borrowed_item_id,
+                        'borrowed_item_status' => $item->borrowed_item_status ?? 'Unknown',
+                        'apc_id' => User::find($this->borrower_id)->apc_id,
+                    ];
+                })
             ]);
+        } 
+
+        // Include endorsed_by only if it's set
+        if (isset($this->endorsed_by)) {
+            $response = [
+                'id' => $this->id,
+                'borrower' => User::getNameBasedOnId($this->borrower_id),
+                'endorsed_by' => [
+                    'full_name' => User::getNameBasedOnId($this->endorsed_by),
+                ],
+                'apc_id' => User::find($this->borrower_id)->apc_id,
+                'custom_transac_id' => $customTransacId,
+                'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
+                'user_defined_purpose' => $this->user_defined_purpose,
+                'created_at' => $this->created_at,
+                'items' => $restructuredItems,
+            ];
+        }
+        else {
+            $response = [
+                'id' => $this->id,
+                'borrower' => User::getNameBasedOnId($this->borrower_id),
+                'apc_id' => User::find($this->borrower_id)->apc_id,
+                'custom_transac_id' => $customTransacId,
+                'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
+                'user_defined_purpose' => $this->user_defined_purpose,
+                'created_at' => $this->created_at,
+                'items' => $restructuredItems,
+            ];
         }
 
-        return [
-            'id' => $this->id,
-            'borrower' => User::getNameBasedOnId($this->borrower_id),
-            'apc_id' => User::find($this->borrower_id)->apc_id,
-            'custom_transac_id' => $customTransacId,
-            'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
-            'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
-            'user_defined_purpose' => $this->user_defined_purpose,
-            'created_at' => $this->created_at,
-            'items' => $restructuredItems, // Add the restructured items here with dates
-        ];
+        return $response;
     }
 }

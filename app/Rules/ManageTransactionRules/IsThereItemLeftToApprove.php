@@ -27,10 +27,10 @@ class IsThereItemLeftToApprove implements Rule
             ->count();
 
         if ($pendingItemCount === 0) {
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public function message()
