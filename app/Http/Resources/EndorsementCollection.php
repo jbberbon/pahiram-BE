@@ -15,7 +15,7 @@ class EndorsementCollection extends ResourceCollection
     public function toArray(Request $request)
     {
         return [
-            'endorsements' => $this->collection->map->toArray($request)->all(), // The collection of endorsements
+            'endorsements' => $this->collection, // The collection of endorsements
             'current_page' => $this->currentPage(),
             'last_page' => $this->lastPage(),
             'next_page_url' => $this->nextPageUrl(),

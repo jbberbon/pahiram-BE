@@ -88,6 +88,7 @@ class BorrowTransactionResource extends JsonResource
                 'id' => $this->id,
                 'borrower' => User::getNameBasedOnId($this->borrower_id),
                 'endorsed_by' => [
+                    'apc_id' => User::getApcIdBasedOnId($this->endorsed_by),
                     'full_name' => User::getNameBasedOnId($this->endorsed_by),
                 ],
                 'apc_id' => User::find($this->borrower_id)->apc_id,

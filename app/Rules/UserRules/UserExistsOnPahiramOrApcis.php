@@ -20,7 +20,9 @@ class UserExistsOnPahiramOrApcis implements Rule
 
         // Check if APC ID Exists on APCIS
         $userService = new UserService();
-        $apcisToken = request()->input('request_data.endorsed_by') ? request()->input('request_data.endorsed_by') : request()->input('endorsed_by');
+        $apcisToken = request()->input('apcis_token')
+            ? request()->input('apcis_token') :
+            request()->input('request_data.apcis_token');
         $userExistsOnApcis = $userService->checkIfUserExistsOnApcis(
             apcId: $value,
             apcisToken: $apcisToken

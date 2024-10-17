@@ -1,7 +1,6 @@
 <?php
 
-// App/Http/Resources/EndorsementResource.php
-namespace App\Http\Resources;
+namespace App\Http\Resources\BorrowTransaction;
 
 use App\Models\BorrowPurpose;
 use App\Models\BorrowTransactionStatus;
@@ -12,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class EndorsementResource extends JsonResource
+class BorrowTransactionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -61,13 +60,13 @@ class EndorsementResource extends JsonResource
                 'quantity' => $groupedItem->count(),
                 'start_date' => Carbon::parse($item->start_date)->format('Y-m-d H:i:s'),
                 'due_date' => Carbon::parse($item->due_date)->format('Y-m-d H:i:s'),
-                'details' => $groupedItem->map(function ($item) use ($apcId) {
-                    return [
-                        'borrowed_item_id' => $item->borrowed_item_id,
-                        'borrowed_item_status' => $item->borrowed_item_status ?? 'Unknown',
-                        'apc_id' => User::find($this->borrower_id)->apc_id,
-                    ];
-                })
+                // 'details' => $groupedItem->map(function ($item) use ($apcId) {
+                //     return [
+                //         'borrowed_item_id' => $item->borrowed_item_id,
+                //         'borrowed_item_status' => $item->borrowed_item_status ?? 'Unknown',
+                //         'apc_id' => User::find($this->borrower_id)->apc_id,
+                //     ];
+                // })
             ]);
         } 
 

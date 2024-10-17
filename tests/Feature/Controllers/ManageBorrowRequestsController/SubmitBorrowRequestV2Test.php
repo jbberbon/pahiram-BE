@@ -245,8 +245,17 @@ class SubmitBorrowRequestV2Test extends TestCase
             "items" => $this->requestedItemsForThreeOffices
         ];
 
+        // Fake HTTP
         Http::fake([
-            $this->apcisUrl . '/*' => Http::response([
+            $this->apcisUrl . '/users/exists/*' => Http::response([
+                'status' => true,
+                'data' => true,
+                'method' => "GET"
+            ], 200),
+        ]);
+
+        Http::fake([
+            $this->apcisUrl . '/users/*' => Http::response([
                 'status' => true,
                 'data' => [
                     'apc_id' => "XXX-XXX",

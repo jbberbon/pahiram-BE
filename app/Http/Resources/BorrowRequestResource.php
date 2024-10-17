@@ -25,7 +25,7 @@ class BorrowRequestResource extends JsonResource
         $createdAt = Carbon::parse($this->created_at);
         $formattedDate = $createdAt->format('mdy');
         $formattedTime = $createdAt->format('His');
-        
+
         $customTransacId = "{$departmentAcronym}-{$apcId}-{$formattedDate}-{$formattedTime}";
 
         $resource = null;
@@ -33,6 +33,7 @@ class BorrowRequestResource extends JsonResource
             $resource = [
                 'id' => $this->id,
                 'endorsed_by' => [
+                    'apc_id' => User::getApcIdBasedOnId($this->endorsed_by),
                     'full_name' => User::getNameBasedOnId($this->endorsed_by),
                 ],
                 'custom_transac_id' => $customTransacId,
@@ -44,7 +45,6 @@ class BorrowRequestResource extends JsonResource
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
                 'created_at' => $createdAt,
-                'updated_at' => $this->updated_at,
             ];
         } else {
 
@@ -59,7 +59,6 @@ class BorrowRequestResource extends JsonResource
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
                 'created_at' => $createdAt,
-                'updated_at' => $this->updated_at,
             ];
         }
 

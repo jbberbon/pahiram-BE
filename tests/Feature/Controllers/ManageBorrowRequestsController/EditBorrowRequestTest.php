@@ -92,119 +92,127 @@ class EditBorrowRequestTest extends TestCase
      */
 
 
-   // 01. Edit Transaction data with no item data change
-   public function test_able_to_edit_transaction_with_no_item_data_change(): void
-   {
-       $this->withoutMiddleware(); // Skips all middleware
+    // 01. Edit Transaction data with no item data change
+    public function test_able_to_edit_transaction_with_no_item_data_change(): void
+    {
+        $this->withoutMiddleware(); // Skips all middleware
 
-       // Prepare
-       // --> submit the borrow transaction for this tc
-       $requestData = [
-           'purpose' => "OTHERS",
-           'user_defined_purpose' => 'sfsfs',
-           "items" => [
-               // ITRO
-               [
-                   'item_group_id' => $this->itemGroups['Canon 200d'],
-                   'quantity' => 3,
-                   'start_date' => (string) now()->addDay(),
-                   'return_date' => (string) now()->addWeek(),
-               ]
-           ]
-       ];
-       $this->postJson('api/user/borrow-request/submit-V2', $requestData);
+        // Prepare
+        // --> submit the borrow transaction for this tc
+        $requestData = [
+            'purpose' => "OTHERS",
+            'user_defined_purpose' => 'sfsfs',
+            "items" => [
+                // ITRO
+                [
+                    'item_group_id' => $this->itemGroups['Canon 200d'],
+                    'quantity' => 3,
+                    'start_date' => (string) now()->addDay(),
+                    'return_date' => (string) now()->addWeek(),
+                ]
+            ]
+        ];
+        $this->postJson('api/user/borrow-request/submit-V2', $requestData);
 
-       // Edit the transaction
-       $borrowTransaction = BorrowTransaction::latest('created_at')->first();
+        // Edit the transaction
+        $borrowTransaction = BorrowTransaction::latest('created_at')->first();
 
-       $editedData = [
-           'request_data' => [
-               // 'endorsed_by' => '',
-               // 'apcis_token' => '',
-               'purpose' => 'ACADEMIC_REQUIREMENT',
-               'user_defined_purpose' => 'edited purpose'
-           ]
-       ];
+        $editedData = [
+            'request_data' => [
+                // 'endorsed_by' => '',
+                // 'apcis_token' => '',
+                'purpose' => 'ACADEMIC_REQUIREMENT',
+                'user_defined_purpose' => 'edited purpose'
+            ]
+        ];
 
-       $editResponse = $this->patchJson('api/user/borrow-request/' . $borrowTransaction->id . '/edit', $editedData);
-       $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
+        $editResponse = $this->patchJson('api/user/borrow-request/' . $borrowTransaction->id . '/edit', $editedData);
+        $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
 
-       // Assert 
-       $editResponse->assertJsonStructure([
-           'status',
-           'message',
-           'method'
-       ]);
-       $this->assertEquals($editedData['request_data']['user_defined_purpose'], $updatedBorrowTransaction->user_defined_purpose);
-       $this->assertEquals(true, $editResponse['status']);
-   }
+        // Assert 
+        $editResponse->assertJsonStructure([
+            'status',
+            'message',
+            'method'
+        ]);
+        $this->assertEquals($editedData['request_data']['user_defined_purpose'], $updatedBorrowTransaction->user_defined_purpose);
+        $this->assertEquals(true, $editResponse['status']);
+    }
 
-   // 01.01. Able to tag endorser that already exists in pahiram db
-   public function test_able_to_tag_endorser_that_already_exists_in_pah_db(): void
-   {
-       $this->withoutMiddleware(); // Skips all middleware
+    // 01.01. Able to tag endorser that already exists in pahiram db
+    public function test_able_to_tag_endorser_that_already_exists_in_pah_db(): void
+    {
+        $this->withoutMiddleware(); // Skips all middleware
 
-       // Submit the request
-       $requestData = [
-           'purpose' => "OTHERS",
-           'user_defined_purpose' => 'sfsfs',
-           "items" => [
-               // ITRO
-               [
-                   'item_group_id' => $this->itemGroups['Canon 200d'],
-                   'quantity' => 3,
-                   'start_date' => (string) now()->addDay(),
-                   'return_date' => (string) now()->addWeek(),
-               ]
-           ]
-       ];
-       $this->postJson('api/user/borrow-request/submit-V2', $requestData);
-       $borrowTransaction = BorrowTransaction::latest('created_at')->first();
+        // Submit the request
+        $requestData = [
+            'purpose' => "OTHERS",
+            'user_defined_purpose' => 'sfsfs',
+            "items" => [
+                // ITRO
+                [
+                    'item_group_id' => $this->itemGroups['Canon 200d'],
+                    'quantity' => 3,
+                    'start_date' => (string) now()->addDay(),
+                    'return_date' => (string) now()->addWeek(),
+                ]
+            ]
+        ];
+        $this->postJson('api/user/borrow-request/submit-V2', $requestData);
+        $borrowTransaction = BorrowTransaction::latest('created_at')->first();
 
-       // Create the dummy endorser
-       $endorserResource = User::create([
-           'apc_id' => 'XXX-XXX',
-           'first_name' => 'Juan',
-           'last_name' => "de la Cruz",
-           'email' => "jdcruz@apc.edu.ph",
-           'user_role_id' => $this->borrowerRoleId,
-           'acc_status_id' => $this->activeAccStatusId
-       ]);
+        // Create the dummy endorser
+        $endorserResource = User::create([
+            'apc_id' => 'XXX-XXX',
+            'first_name' => 'Juan',
+            'last_name' => "de la Cruz",
+            'email' => "jdcruz@apc.edu.ph",
+            'user_role_id' => $this->borrowerRoleId,
+            'acc_status_id' => $this->activeAccStatusId
+        ]);
 
-       // Edit the transaction
-       $editedData = [
-           'request_data' => [
-               'endorsed_by' => 'XXX-XXX',
-               'apcis_token' => '1306|WeLWJb5xAdtAhZ5FUSIz5MgIzPgiSvG84botQ8yv8070c589' // Just a sample
-           ]
-       ];
+        // Edit the transaction
+        $editedData = [
+            'request_data' => [
+                'endorsed_by' => 'XXX-XXX',
+                'apcis_token' => '1306|WeLWJb5xAdtAhZ5FUSIz5MgIzPgiSvG84botQ8yv8070c589' // Just a sample
+            ]
+        ];
 
-       $editResponse = $this
-           ->patchJson(
-               'api/user/borrow-request/' . $borrowTransaction->id . '/edit',
-               $editedData
-           );
-       $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
+        $editResponse = $this
+            ->patchJson(
+                'api/user/borrow-request/' . $borrowTransaction->id . '/edit',
+                $editedData
+            );
+        $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
 
-       // Assert Controller Return Data
-       $editResponse->assertJsonStructure([
-           'status',
-           'message',
-           'method'
-       ]);
-       $this->assertEquals(true, $editResponse['status']);
+        // Assert Controller Return Data
+        $editResponse->assertJsonStructure([
+            'status',
+            'message',
+            'method'
+        ]);
+        $this->assertEquals(true, $editResponse['status']);
 
-       // Assert Transaction Values
-       $this->assertEquals($updatedBorrowTransaction->endorsed_by, $endorserResource->id);
-   }
+        // Assert Transaction Values
+        $this->assertEquals($updatedBorrowTransaction->endorsed_by, $endorserResource->id);
+    }
 
     // 01.02. Able to tag endorser that not yet exist in pahiram db
     public function test_able_to_tag_endorser_that_not_yet_exist_in_pah_db(): void
     {
         $this->withoutMiddleware(); // Skips all middleware
+
         // Fake HTTP
         Http::fake([
-            $this->apcisUrl . '/*'=> Http::response([
+            $this->apcisUrl . '/users/exists/*' => Http::response([
+                'status' => true,
+                'data' => true,
+                'method' => "GET"
+            ], 200),
+        ]);
+        Http::fake([
+            $this->apcisUrl . '/users/*' => Http::response([
                 'status' => true,
                 'data' => [
                     'apc_id' => "XXX-XXX",
@@ -247,8 +255,7 @@ class EditBorrowRequestTest extends TestCase
             );
         $updatedBorrowTransaction = BorrowTransaction::latest('created_at')->first();
 
-        $endorserResource = User::where('email', 'jdcruz@apc.edu.ph')->first();
-
+        $endorserResource = User::where('email', 'jdcruz@apc.edu.ph')->first();        
         // Assert Controller Return Data
         $editResponse->assertJsonStructure([
             'status',
