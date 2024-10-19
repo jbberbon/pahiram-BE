@@ -4,7 +4,6 @@ namespace App\Http\Requests\ManageBorrowTransaction;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\ManageTransactionRules\IsTransactionPendingBorrowApprovalStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

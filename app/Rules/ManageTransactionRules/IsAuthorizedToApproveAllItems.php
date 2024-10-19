@@ -7,6 +7,7 @@ use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
 use App\Models\Role;
+use App\Models\UserDepartment;
 use App\Utils\Constants\Statuses\BORROWED_ITEM_STATUS;
 use App\Utils\Constants\Statuses\TRANSAC_STATUS;
 use App\Utils\Constants\USER_ROLE;
@@ -14,7 +15,7 @@ use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class IsEmployeeAuthorizedToApproveAllItems implements Rule
+class IsAuthorizedToApproveAllItems implements Rule
 {
     // private $pendingBorrowApprovalStatusId;
     private $pendingItemApprovalStatusId;
@@ -39,44 +40,36 @@ class IsEmployeeAuthorizedToApproveAllItems implements Rule
     {
         $user = Auth::user();
 
-        // If user is supervisor / co-supervisor of the designated office then, passed
+        // Check if the user is a supervisor or co-supervisor
         $isSupervisor = $user->user_role_id === $this->supervisorId;
         $isCoSupervisor = $user->user_role_id === $this->coSupervisorId;
 
+        // Supervisors or co-supervisors are authorized to approve all items
         if ($isSupervisor || $isCoSupervisor) {
+            // \Log::info("Approve response", [$user]);
             return true;
         }
 
-        // User is lending or inventory manager
-        $lendingEmployeeId = $user->user_role_id === $this->lendingEmployeeId;
+        // Check if the user is a lending employee
+        $isLendingEmployee = $user->user_role_id === $this->lendingEmployeeId;
 
-        if ($lendingEmployeeId) {
-            $borrowedItems = BorrowedItem::where('borrowing_transac_id', $this->request['transactionId'])
+        if ($isLendingEmployee) {
+            // Check if any items require supervisor approval
+            $requiresSupervisorApproval = BorrowedItem::where('borrowing_transac_id', $this->request['transactionId'])
                 ->where('borrowed_item_status_id', $this->pendingItemApprovalStatusId)
                 ->join('items', 'items.id', '=', 'borrowed_items.item_id')
                 ->join('item_groups', 'item_groups.id', '=', 'items.item_group_id')
-                ->select(
-                    'borrowed_items.id as borrowed_item_id',
-                    'item_groups.is_required_supervisor_approval'
-                )
-                ->get();
+                ->where('item_groups.is_required_supervisor_approval', true)
+                ->exists();
 
-            // Check if the items require supervisor approval
-            foreach ($borrowedItems as $item) {
-                if ($item->is_required_supervisor_approval) {
-                    return false;
-                }
-            }
-
-            if ($borrowedItems) {
-                return true;
-            }
+            // Lending employees cannot approve if any items require supervisor approval
+            return !$requiresSupervisorApproval;
         }
 
-        // If other role 
+        // All other roles are unauthorized
         return false;
-
     }
+
 
     public function message()
     {

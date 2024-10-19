@@ -23,9 +23,7 @@ class IsItemGroupPartOfTransaction implements Rule
     public function passes($attribute, $value)
     {
         $borrowedItemExists = BorrowedItem::where('borrowing_transac_id', $this->request['transactionId'])
-            ->join('items', 'items.id', '=', 'borrowed_items.item_id')
-            ->join('item_groups', 'item_groups.id', '=', 'items.item_group_id')
-            ->where('item_groups.id', $value)
+            ->where('id', $value)
             ->exists();
 
         if ($borrowedItemExists) {

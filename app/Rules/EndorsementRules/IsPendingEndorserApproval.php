@@ -5,7 +5,6 @@ namespace App\Rules\EndorsementRules;
 use App\Models\BorrowTransaction;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Support\Facades\Auth;
 
 class IsPendingEndorserApproval implements Rule
 {

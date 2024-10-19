@@ -3,15 +3,10 @@
 namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BorrowTransaction\BookedDatesRequest;
 use App\Http\Requests\ManageBorrowTransaction\GetSpecificItemsOfBorrowTransactionRequest;
-use App\Http\Resources\BorrowedItemResource;
 use App\Models\BorrowedItem;
-use App\Models\Item;
-use App\Models\User;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class GeneralBorrowTransactionController extends Controller
 {

@@ -53,7 +53,6 @@ class IsEmployeeAuthorizedToApproveBorrowedItem implements Rule
                 ->where('items.item_group_id', $value)
                 ->join('item_groups', 'item_groups.id', '=', 'items.item_group_id')
                 ->select(
-                    // 'borrowed_items.id as borrowed_item_id',
                     'item_groups.is_required_supervisor_approval'
                 )
                 ->get();
