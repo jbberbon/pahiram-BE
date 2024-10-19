@@ -4,13 +4,13 @@ namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ManageBorrowTransaction\ApproveTransactionRequest;
+use App\Http\Requests\ManageBorrowTransaction\ApproveTransactionRequestV2;
 use App\Http\Requests\ManageBorrowTransaction\FacilitateReturnRequest;
 use App\Http\Requests\ManageBorrowTransaction\GetSpecificPendingTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
 use App\Http\Resources\BorrowTransactionResource;
 use App\Http\Resources\BorrowTransactionCollection;
-use App\Http\Resources\EndorsementCollection;
 use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
@@ -104,7 +104,7 @@ class ManageBorrowTransactionController extends Controller
         // Get authenticated user and their department
         $user = Auth::user();
         $userDepartment = UserDepartment::where('user_id', $user->id)->first();
-    
+
         if (!$userDepartment) {
             return response()->json([
                 'status' => false,
@@ -112,10 +112,10 @@ class ManageBorrowTransactionController extends Controller
                 'method' => "GET"
             ], 404);
         }
-    
+
         // Start the query for filtering transactions by department
         $transactions = BorrowTransaction::where('department_id', $userDepartment->department_id);
-    
+
         // Filter by lapsed approval (past start date)
         if ($request->has('is_lapsed') && $request['is_lapsed']) {
             $transactions->where('transac_status_id', $this->pendingBorrowingApprovalStatusId)
@@ -131,12 +131,12 @@ class ManageBorrowTransactionController extends Controller
                     'borrow_transactions.created_at'
                 );
         }
-    
+
         // Filter by transaction status
         if ($request->has('status')) {
             $transacStatusId = BorrowTransactionStatus::getIdByStatus($request['status']);
             $transactions->where('transac_status_id', $transacStatusId);
-    
+
             // Additional filtering for pending borrowing approval
             if ($request['status'] === 'PENDING_BORROWING_APPROVAL') {
                 $transactions->join('borrowed_items', 'borrow_transactions.id', '=', 'borrowed_items.borrowing_transac_id')
@@ -152,13 +152,13 @@ class ManageBorrowTransactionController extends Controller
                     );
             }
         }
-    
+
         // Define the number of results per page 
         $perPage = $request->get('per_page', 8);
-    
+
         // Paginate the filtered transactions
         $paginatedTransactions = $transactions->paginate($perPage);
-    
+
         // Return the paginated transactions using the EndorsementCollection
         return response()->json([
             'status' => true,
@@ -272,36 +272,36 @@ class ManageBorrowTransactionController extends Controller
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function approveTransaction(ApproveTransactionRequest $request)
     {
-        $validatedData = $request->validated();
-        $transacId = $validatedData['transactionId'];
-        $transaction = BorrowTransaction::find($transacId);
+        try {
+            DB::beginTransaction();
+            $validatedData = $request->validated();
+            $transacId = $validatedData['transactionId'];
+            $transaction = BorrowTransaction::find($transacId);
 
-        $userId = Auth::user()->id;
+            $approverId = Auth::user()->id;
 
 
-        if (isset($validatedData['approve_all_items']) && !isset($validatedData['items'])) {
-            $transacStatusId = ($validatedData['approve_all_items'] === true) ?
-                $this->approvedTransacStatusId :
-                $this->disapprovedTransacStatusId;
+            if (
+                isset($validatedData['approve_all_items']) &&
+                !isset($validatedData['items'])
+            ) {
+                $transacStatusId = ($validatedData['approve_all_items'] === true) ?
+                    $this->approvedTransacStatusId :
+                    $this->disapprovedTransacStatusId;
 
-            $borrowedItemStatus = ($validatedData['approve_all_items'] === true) ?
-                $this->approvedItemStatusId :
-                $this->disapprovedItemStatusId;
+                $borrowedItemStatus = ($validatedData['approve_all_items'] === true) ?
+                    $this->approvedItemStatusId :
+                    $this->disapprovedItemStatusId;
 
-            try {
-                DB::beginTransaction();
+
                 // Update items status
                 BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                    ->join('items', 'items.id', '=', 'borrowed_items.item_id')
                     ->update([
                         'borrowed_items.borrowed_item_status_id' => $borrowedItemStatus,
-                        'borrowed_items.approver_id' => $userId,
+                        'borrowed_items.approver_id' => $approverId,
                     ]);
 
                 // Update transaction status
@@ -310,35 +310,26 @@ class ManageBorrowTransactionController extends Controller
                 ]);
 
                 DB::commit();
-                return response([
+                return response()->json([
                     'status' => true,
                     'message' => 'Successfully updated transaction status',
                     'method' => "PATCH"
                 ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
             }
-        }
 
-        if (!isset($validatedData['approve_all_items']) && isset($validatedData['items'])) {
-            try {
-                DB::beginTransaction();
+            if (
+                !isset($validatedData['approve_all_items']) &&
+                isset($validatedData['items'])
+            ) {
                 foreach ($validatedData['items'] as $item) {
-                    $isItemApprovedStatus = ($item['is_approved'] === true) ? $this->approvedItemStatusId : $this->disapprovedItemStatusId;
-                    // Update items status
-                    BorrowedItem::where('borrowing_transac_id', $transacId)
-                        ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                        ->join('items', 'items.id', '=', 'borrowed_items.item_id')
-                        ->where('items.item_group_id', $item['item_group_id'])
+                    $isItemApprovedStatus =
+                        ($item['is_approved'] === true) ? $this->approvedItemStatusId : $this->disapprovedItemStatusId;
+
+                    // Update items status to approved or disapproved
+                    BorrowedItem::where('id', $item['borrowed_item_id'])
                         ->update([
-                            'borrowed_items.borrowed_item_status_id' => $isItemApprovedStatus,
-                            'borrowed_items.approver_id' => $userId,
+                            'borrowed_item_status_id' => $isItemApprovedStatus,
+                            'approver_id' => $approverId,
                         ]);
                 }
 
@@ -353,7 +344,6 @@ class ManageBorrowTransactionController extends Controller
                 // If no more pending items && no approved items 
                 // then, the whole transaction is DISAPPROVED
                 if ($pendingApprovalItemCount == 0 && $approvedItemCount == 0) {
-                    // return "hi";
                     $transaction->update([
                         'transac_status_id' => $this->disapprovedTransacStatusId
                     ]);
@@ -373,24 +363,24 @@ class ManageBorrowTransactionController extends Controller
                     'message' => 'Successfully updated transaction status',
                     'method' => "PATCH"
                 ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
             }
-        }
 
-        // Error CATCH
-        return response([
-            'status' => false,
-            'message' => 'Failed to approve transaction',
-            'method' => "PATCH"
-        ]);
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to approve transaction',
+                'method' => "PATCH"
+            ]);
+        } catch (\Exception) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to approve transaction',
+                'method' => "PATCH"
+            ]);
+        }
     }
+
 
     /**
      * Release Approved Items
