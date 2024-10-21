@@ -45,6 +45,7 @@ class BorrowRequestResource extends JsonResource
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
                 'created_at' => $createdAt,
+                'updated_at' => $this->updated_at,
             ];
         } else {
 
@@ -59,6 +60,7 @@ class BorrowRequestResource extends JsonResource
                 'remarks_by_endorser' => $this->remarks_by_endorser,
                 'remarks_by_approver' => $this->remarks_by_approver,
                 'created_at' => $createdAt,
+                'updated_at' => $this->updated_at,
             ];
         }
 
