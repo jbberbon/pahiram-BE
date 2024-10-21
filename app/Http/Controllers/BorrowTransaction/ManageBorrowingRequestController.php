@@ -117,33 +117,11 @@ class ManageBorrowingRequestController extends Controller
                     ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
                     ->get();  
     
-                // Group items by model_name to calculate the total quantity for each group
-                $groupedItems = $items->groupBy('model_name');
-                $restructuredItems = collect();
-    
-                // Iterate through grouped items to restructure, handling even single items correctly
-                foreach ($groupedItems as $modelName => $groupedItem) {
-                    // General structure for the item, whether it's grouped or not
-                    $restructuredItems->push([
-                        'model_name' => $modelName,
-                        'quantity' => $groupedItem->count(), // This works even for one item
-                        'start_date' => $groupedItem->first()->start_date,
-                        'due_date' => $groupedItem->first()->due_date,
-                        'details' => $groupedItem->map(function ($item) use ($apcId) {
-                            return [
-                                'borrowed_item_id' => $item->borrowed_item_id,
-                                'borrowed_item_status' => $item->borrowed_item_status ?? 'Not Available',
-                                'apc_id' => $apcId,
-                            ];
-                        })
-                    ]);
-                }
-    
                 return response([
                     'status' => true,
                     'data' => [
                         'transac_data' => $transactionDetails,
-                        'items' => $restructuredItems, // Use restructured items with detailed statuses
+                        'items' => $items, // Use restructured items with detailed statuses
                     ],
                     'method' => 'GET',
                 ], 200);
