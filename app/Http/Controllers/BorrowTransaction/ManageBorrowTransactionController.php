@@ -9,9 +9,9 @@ use App\Http\Requests\ManageBorrowTransaction\FacilitateReturnRequest;
 use App\Http\Requests\ManageBorrowTransaction\GetSpecificPendingTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
-use App\Http\Resources\BorrowTransactionResource;
-use App\Http\Resources\BorrowTransactionCollection;
-use App\Models\BorrowedItem;
+use App\Http\Resources\BorrowTransaction\BorrowTransactionResource;
+use App\Http\Resources\BorrowTransaction\BorrowTransactionCollection;
+use App\Models\BorrowedItem;    
 use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
@@ -195,9 +195,11 @@ class ManageBorrowTransactionController extends Controller
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
                         'borrowed_items.borrowed_item_status_id',
+                        'borrowed_items.id' // Include borrowed_items.id in groupBy
                     )
                     ->select(
-                        'item_groups.id',
+                        'borrowed_items.id', // Select the borrowed item ID
+                        'item_groups.id as item_group_id', // Renaming to avoid ambiguity
                         'item_groups.model_name',
                         \DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
@@ -205,29 +207,27 @@ class ManageBorrowTransactionController extends Controller
                         'borrowed_item_statuses.borrowed_item_status'
                     )
                     ->get();
-
-
+        
                 $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
                     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                     ->where('item_groups.is_required_supervisor_approval', true)
                     ->count();
-
+        
                 // Checks if any pending approval item is overdue for approval
                 // Current Time and Date > Item start date 
                 $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
                     ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
                     ->count();
-
-
+        
                 $formattedTransacData = new BorrowTransactionResource(
                     $transacData,
                     $isSupervisorApprovalReqd > 0,
                     $isApprovalOverdue > 0
                 );
-
+        
                 return response([
                     'status' => true,
                     'data' => [
@@ -239,12 +239,13 @@ class ManageBorrowTransactionController extends Controller
             } catch (\Exception $e) {
                 return response([
                     'status' => false,
-                    'message' => "An error occured, try again later",
+                    'message' => "An error occurred, try again later",
                     'error' => $e,
                     'method' => "GET"
                 ], 500);
             }
         }
+        
 
         if (isset($request['view_individual_items'])) {
             try {
