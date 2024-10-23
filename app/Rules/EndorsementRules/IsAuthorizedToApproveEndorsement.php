@@ -6,7 +6,7 @@ use App\Models\BorrowTransaction;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 
-class IsTransactionEndorser implements Rule
+class IsAuthorizedToApproveEndorsement implements Rule
 {
     public function passes($attribute, $value)
     {
@@ -24,6 +24,6 @@ class IsTransactionEndorser implements Rule
 
     public function message()
     {
-        return 'Unauthorized access';
+        return 'Unauthorized access: not the indicated endorser';
     }
 }
