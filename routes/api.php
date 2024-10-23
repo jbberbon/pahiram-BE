@@ -48,7 +48,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/user/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
     });
 
-    Route::get('/borrow-transaction/endorsed/{transactionId}/borrowed-items', [GeneralBorrowTransactionController::class, 'getSpecificItemsOfBorrowTransaction']);
+    Route::get('/borrow-transaction/{transactionId}/borrowed-items', [GeneralBorrowTransactionController::class, 'getSpecificItemsOfBorrowTransaction']);
 
     // Is Endorser
     Route::group(['middleware' => ['is_endorser']], function () {
