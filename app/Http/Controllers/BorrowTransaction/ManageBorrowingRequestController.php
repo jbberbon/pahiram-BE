@@ -112,7 +112,8 @@ class ManageBorrowingRequestController extends Controller
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
                         'borrowed_item_statuses.borrowed_item_status',
-                        'borrowed_item_statuses.id as borrowed_item_status_id'
+                        'borrowed_item_statuses.id as borrowed_item_status_id',
+                        'items.apc_item_id as apc_item_id',
                     )
                     ->where('borrowed_item_statuses.borrowed_item_status', '!=', 'CANCELLED') // Exclude CANCELLED status
                     ->get();  
