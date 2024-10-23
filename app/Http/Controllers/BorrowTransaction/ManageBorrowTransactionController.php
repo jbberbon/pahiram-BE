@@ -11,7 +11,7 @@ use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
 use App\Http\Resources\BorrowTransaction\BorrowTransactionResource;
 use App\Http\Resources\BorrowTransaction\BorrowTransactionCollection;
-use App\Models\BorrowedItem;    
+use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
@@ -207,28 +207,28 @@ class ManageBorrowTransactionController extends Controller
                         'borrowed_item_statuses.borrowed_item_status'
                     )
                     ->get();
-        
+
                 $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
                     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
                     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
                     ->where('item_groups.is_required_supervisor_approval', true)
                     ->count();
-        
+
                 // Checks if any pending approval item is overdue for approval
                 // Current Time and Date > Item start date 
                 $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
                     ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
                     ->count();
-        
+
                 $formattedTransacData = new BorrowTransactionResource(
                     $transacData,
                     $isSupervisorApprovalReqd > 0,
                     $isApprovalOverdue > 0
                 );
-        
-                return response([
+
+                return response()->json([
                     'status' => true,
                     'data' => [
                         'transac_data' => $formattedTransacData,
@@ -237,7 +237,7 @@ class ManageBorrowTransactionController extends Controller
                     'method' => "GET"
                 ], 200);
             } catch (\Exception $e) {
-                return response([
+                return response()->json([
                     'status' => false,
                     'message' => "An error occurred, try again later",
                     'error' => $e,
@@ -245,7 +245,7 @@ class ManageBorrowTransactionController extends Controller
                 ], 500);
             }
         }
-        
+
 
         if (isset($request['view_individual_items'])) {
             try {

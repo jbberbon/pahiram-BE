@@ -21,12 +21,14 @@ class BorrowTransactionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $departmentAcronym = Department::getAcronymById($this->department_id);
-        $apcId = substr(User::find($this->borrower_id)->apc_id, -6);
+        $borrower = User::find($this->borrower_id);
+        $borrowerApcId = substr($borrower->apc_id, -6);
+        
         $createdAt = Carbon::parse($this->created_at);
         $formattedDate = $createdAt->format('mdy');
         $formattedTime = $createdAt->format('His');
 
-        $customTransacId = "{$departmentAcronym}-{$apcId}-{$formattedDate}-{$formattedTime}";
+        $customTransacId = "{$departmentAcronym}-{$borrowerApcId}-{$formattedDate}-{$formattedTime}";
 
         // Fetch and restructure the borrowed items
         $items = BorrowedItem::where('borrowing_transac_id', $this->id)
@@ -68,37 +70,26 @@ class BorrowTransactionResource extends JsonResource
                 //     ];
                 // })
             ]);
-        } 
-
-        // Include endorsed_by only if it's set
-        if (isset($this->endorsed_by)) {
-            $response = [
-                'id' => $this->id,
-                'borrower' => User::getNameBasedOnId($this->borrower_id),
-                'endorsed_by' => [
-                    'apc_id' => User::getApcIdBasedOnId($this->endorsed_by),
-                    'full_name' => User::getNameBasedOnId($this->endorsed_by),
-                ],
-                'apc_id' => User::find($this->borrower_id)->apc_id,
-                'custom_transac_id' => $customTransacId,
-                'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
-                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
-                'user_defined_purpose' => $this->user_defined_purpose,
-                'created_at' => $this->created_at,
-                'items' => $restructuredItems,
-            ];
         }
-        else {
-            $response = [
-                'id' => $this->id,
-                'borrower' => User::getNameBasedOnId($this->borrower_id),
-                'apc_id' => User::find($this->borrower_id)->apc_id,
-                'custom_transac_id' => $customTransacId,
-                'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
-                'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
-                'user_defined_purpose' => $this->user_defined_purpose,
-                'created_at' => $this->created_at,
-                'items' => $restructuredItems,
+
+        $response = [
+            'id' => $this->id,
+            'borrower' => $borrower->first_name . ' ' . $borrower->last_name,
+            'apc_id' => $borrowerApcId,
+            'custom_transac_id' => $customTransacId,
+            'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+            'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
+            'user_defined_purpose' => $this->user_defined_purpose,
+            'created_at' => $this->created_at,
+            'items' => $restructuredItems,
+        ];
+
+
+        if (isset($this->endorsed_by)) {
+            // Include endorsed_by only if it's set
+            $response['endorsed_by'] = [
+                'apc_id' => User::getApcIdBasedOnId($this->endorsed_by),
+                'full_name' => User::getNameBasedOnId($this->endorsed_by),
             ];
         }
 
