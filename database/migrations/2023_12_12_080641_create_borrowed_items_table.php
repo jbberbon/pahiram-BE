@@ -15,6 +15,7 @@ return new class extends Migration {
             // FKs
             $table->uuid('borrowing_transac_id');
             $table->uuid('approver_id');
+            $table->uuid('releaser_id')->nullable();
             $table->uuid('borrowed_item_status_id');
             $table->uuid('item_id');
 
