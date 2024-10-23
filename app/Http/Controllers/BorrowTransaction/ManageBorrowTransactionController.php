@@ -208,24 +208,24 @@ class ManageBorrowTransactionController extends Controller
                     )
                     ->get();
 
-                $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
-                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                    ->where('item_groups.is_required_supervisor_approval', true)
-                    ->count();
+                // $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
+                //     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
+                //     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                //     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                //     ->where('item_groups.is_required_supervisor_approval', true)
+                //     ->count();
 
-                // Checks if any pending approval item is overdue for approval
-                // Current Time and Date > Item start date 
-                $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                    ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
-                    ->count();
+                // // Checks if any pending approval item is overdue for approval
+                // // Current Time and Date > Item start date 
+                // $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
+                //     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
+                //     ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
+                //     ->count();
 
                 $formattedTransacData = new BorrowTransactionResource(
-                    $transacData,
-                    $isSupervisorApprovalReqd > 0,
-                    $isApprovalOverdue > 0
+                    $transacData
+                    // $isSupervisorApprovalReqd > 0,
+                    // $isApprovalOverdue > 0
                 );
 
                 return response()->json([
