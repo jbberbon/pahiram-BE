@@ -10,7 +10,6 @@ use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
 use App\Rules\ManageTransactionRules\IsItemGroupPartOfTransaction;
 use App\Rules\ManageTransactionRules\IsItemInPossessionOrUnreturned;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToReturn;
-use App\Rules\ManageTransactionRules\IsTransactionApprovedStatus;
 use App\Rules\ManageTransactionRules\IsTransactionOnGoingOrUnreturned;
 use App\Rules\ManageTransactionRules\ValidateReturnItemStatus;
 use App\Rules\UniqueBorrowedItemIds;
@@ -22,16 +21,8 @@ use Illuminate\Validation\Rule;
 class FacilitateReturnRequest extends FormRequest
 {
     private $errorCode = 422;
-    private $returnedItemStatusArray = [
-        'RETURNED',
-        'DAMAGED_BUT_REPAIRABLE',
-        'UNREPAIRABLE',
-    ];
-    private $unreturnedItemStatusArray = [
-        'UNRETURNED',
-        'LOST'
-    ];
-
+    private $returnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::RETURNED_STATUSES);
+    private $unreturnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::UNRETURNED_STATUSES);
 
     public function rules(): array
     {
@@ -41,36 +32,26 @@ class FacilitateReturnRequest extends FormRequest
                 'exists:borrow_transactions,id',
                 new IsTransactionOnGoingOrUnreturned,
             ],
-            'return_all_items' => [
-                'required_without:items', // Required if 'items' is not present
-                'required_without_all:items', // Required if none of the 'items' are present
-                new AcceptOnlyAllowedObjFields(['is_returned', 'transac_remarks']),
-                new IsThereItemLeftToReturn($this->all()),
-            ],
-            'return_all_items.is_returned' => [
-                'required_without:items', // Required if 'items' is not present
-                'required_without_all:items', // Required if none of the 'items' are present
-                'bool',
-            ],
-            'return_all_items.transac_remarks' => [
-                'sometimes',
-                'string',
-                'regex:/^[a-zA-Z0-9-]+$/',
-                'max:50'
-            ],
+            // 'return_all_items' => [
+            //     'required_without:items', // Required if 'items' is not present
+            //     'required_without_all:items', // Required if none of the 'items' are present
+            //     new AcceptOnlyAllowedObjFields(['is_returned', 'transac_remarks']),
+            //     new IsThereItemLeftToReturn($this->all()),
+            // ],
+            // 'return_all_items.is_returned' => [
+            //     'required_without:items', // Required if 'items' is not present
+            //     'required_without_all:items', // Required if none of the 'items' are present
+            //     'bool',
+            // ],
+            // 'return_all_items.transac_remarks' => [
+            //     'sometimes',
+            //     'string',
+            //     'regex:/^[a-zA-Z0-9-]+$/',
+            //     'max:50'
+            // ],
 
             'items' => [
-                'required_without:return_all_items',
-                'required_without_all:return_all_items',
-                'prohibited_if:return_all_items.is_returned,true',
-                // items and return_all_items shouldnt exist at the same time
-                function ($attribute, $value, $fail) {
-                    $request = $this->all();
-
-                    if (isset($request['return_all_items'])) {
-                        $fail('Invalid request');
-                    }
-                },
+                'required',
                 'array',
                 'min:1',
                 'max:10',
@@ -106,17 +87,16 @@ class FacilitateReturnRequest extends FormRequest
                     ...$this->returnedItemStatusArray,
                     ...$this->unreturnedItemStatusArray
                 ]),
-                // new ValidateReturnItemStatus($this->all())
             ],
             'items.*.item_penalty' => [
                 'sometimes',
                 'numeric',
-                'between:1,100000',
+                'between:1,1000000',
             ],
-            'items.*.item_remarks' => [
+            'items.*.remarks_by_receiver' => [
                 'sometimes',
                 'string',
-                'max:50'
+                'max:400'
             ]
         ];
     }

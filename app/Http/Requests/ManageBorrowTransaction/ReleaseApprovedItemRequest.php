@@ -4,15 +4,12 @@ namespace App\Http\Requests\ManageBorrowTransaction;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\AcceptOnlyAllowedObjFields;
 use App\Rules\ManageTransactionRules\IsBorrowApproverFromCorrectOffice;
 use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
 use App\Rules\ManageTransactionRules\IsEarlyToReleaseItem;
 use App\Rules\ManageTransactionRules\IsItemApproved;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToRelease;
-use App\Rules\ManageTransactionRules\IsTransactionApprovedStatus;
-use App\Rules\UniqueBorrowedItemIds;
-use App\Rules\UniqueItemGroupIds;
+use App\Rules\ManageTransactionRules\IsTransactionApprovedOrOngoingStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -25,7 +22,7 @@ class ReleaseApprovedItemRequest extends FormRequest
             'transactionId' => [
                 'required',
                 'exists:borrow_transactions,id',
-                new IsTransactionApprovedStatus,
+                new IsTransactionApprovedOrOngoingStatus,
                 new IsBorrowApproverFromCorrectOffice
 
             ],

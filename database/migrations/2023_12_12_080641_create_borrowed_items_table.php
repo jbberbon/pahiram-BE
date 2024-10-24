@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->uuid('borrowing_transac_id');
             $table->uuid('approver_id');
             $table->uuid('releaser_id')->nullable();
+            $table->uuid('receiver_id')->nullable();
+            $table->uuid('penalty_finalized_by')->nullable();
             $table->uuid('borrowed_item_status_id');
             $table->uuid('item_id');
 
@@ -32,7 +34,8 @@ return new class extends Migration {
 
             $table->dateTime('date_returned');
             $table->decimal('penalty')->nullable();
-            $table->string('remarks')->nullable();
+            $table->text('remarks_by_receiver')->nullable();
+            $table->text('remarks_by_penalty_finalizer')->nullable();
             $table->timestamps();
         });
     }
