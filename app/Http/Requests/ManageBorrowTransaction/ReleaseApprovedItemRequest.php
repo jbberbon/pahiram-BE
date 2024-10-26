@@ -4,14 +4,12 @@ namespace App\Http\Requests\ManageBorrowTransaction;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\AcceptOnlyAllowedObjFields;
+use App\Rules\ManageTransactionRules\IsBorrowApproverFromCorrectOffice;
 use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
 use App\Rules\ManageTransactionRules\IsEarlyToReleaseItem;
 use App\Rules\ManageTransactionRules\IsItemApproved;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToRelease;
-use App\Rules\ManageTransactionRules\IsTransactionApprovedStatus;
-use App\Rules\UniqueBorrowedItemIds;
-use App\Rules\UniqueItemGroupIds;
+use App\Rules\ManageTransactionRules\IsTransactionApprovedOrOngoingStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,11 +22,17 @@ class ReleaseApprovedItemRequest extends FormRequest
             'transactionId' => [
                 'required',
                 'exists:borrow_transactions,id',
-                new IsTransactionApprovedStatus,
+                new IsTransactionApprovedOrOngoingStatus,
+                new IsBorrowApproverFromCorrectOffice
+
             ],
             'release_all_items' => [
                 'required_without:items', // Required if 'items' is not present
-                'required_without_all:items', // Required if none of the 'items' are present
+                function ($attribute, $value, $fail) {
+                    if (isset($this->items)) {
+                        $fail('Both release_all_items and items cannot be present at the same time.');
+                    }
+                },
                 'boolean',
                 new IsThereItemLeftToRelease($this->all()),
 
@@ -36,20 +40,23 @@ class ReleaseApprovedItemRequest extends FormRequest
             ],
             'items' => [
                 'required_without:release_all_items',
-                'required_without_all:release_all_items',
-                'prohibited_if:release_all_items,true',
                 function ($attribute, $value, $fail) {
-                    $request = $this->all();
-
-                    if (isset($request['release_all_items'])) {
-                        $fail('Invalid request');
+                    if (isset($this->release_all_items)) {
+                        $fail('Both items and release_all_items cannot be present at the same time.');
                     }
                 },
                 'array',
                 'min:1',
                 'max:10',
-                new UniqueBorrowedItemIds,
-                new IsThereItemLeftToRelease($this->all()),
+
+                // Check for uniqueness of IDs
+                function ($attribute, $value, $fail) {
+                    // Flatten the nested array and check if the 'borrowed_item_id' values are unique
+                    $ids = collect($value)->pluck('borrowed_item_id');
+                    if ($ids->count() !== $ids->unique()->count()) {
+                        $fail('The borrowed_item_id values must be unique.');
+                    }
+                }
             ],
             'items.*' => [
                 'required',

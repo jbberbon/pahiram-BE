@@ -11,7 +11,7 @@ use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;
 use App\Http\Resources\BorrowedItemCollection;
 use App\Http\Resources\BorrowTransaction\BorrowTransactionResource;
 use App\Http\Resources\BorrowTransaction\BorrowTransactionCollection;
-use App\Models\BorrowedItem;    
+use App\Models\BorrowedItem;
 use App\Models\BorrowedItemStatus;
 use App\Models\BorrowTransaction;
 use App\Models\BorrowTransactionStatus;
@@ -167,7 +167,6 @@ class ManageBorrowTransactionController extends Controller
         ]);
     }
 
-
     /**
      * Get specific Borrow request
      */
@@ -208,28 +207,28 @@ class ManageBorrowTransactionController extends Controller
                         'items.apc_item_id as items_apc_id',
                     )
                     ->get();
-        
-                $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                    ->join('items', 'borrowed_items.item_id', '=', 'items.id')
-                    ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
-                    ->where('item_groups.is_required_supervisor_approval', true)
-                    ->count();
-        
-                // Checks if any pending approval item is overdue for approval
-                // Current Time and Date > Item start date 
-                $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
-                    ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
-                    ->count();
-        
+
+                // $isSupervisorApprovalReqd = BorrowedItem::where('borrowing_transac_id', $transacId)
+                //     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
+                //     ->join('items', 'borrowed_items.item_id', '=', 'items.id')
+                //     ->join('item_groups', 'items.item_group_id', '=', 'item_groups.id')
+                //     ->where('item_groups.is_required_supervisor_approval', true)
+                //     ->count();
+
+                // // Checks if any pending approval item is overdue for approval
+                // // Current Time and Date > Item start date 
+                // $isApprovalOverdue = BorrowedItem::where('borrowing_transac_id', $transacId)
+                //     ->where('borrowed_item_status_id', $this->pendingItemApprovalId)
+                //     ->where('start_date', '<', Carbon::now()->toDateTimeString()) // Where start date is greater than the current time
+                //     ->count();
+
                 $formattedTransacData = new BorrowTransactionResource(
-                    $transacData,
-                    $isSupervisorApprovalReqd > 0,
-                    $isApprovalOverdue > 0
+                    $transacData
+                    // $isSupervisorApprovalReqd > 0,
+                    // $isApprovalOverdue > 0
                 );
-        
-                return response([
+
+                return response()->json([
                     'status' => true,
                     'data' => [
                         'transac_data' => $formattedTransacData,
@@ -238,7 +237,7 @@ class ManageBorrowTransactionController extends Controller
                     'method' => "GET"
                 ], 200);
             } catch (\Exception $e) {
-                return response([
+                return response()->json([
                     'status' => false,
                     'message' => "An error occurred, try again later",
                     'error' => $e,
@@ -246,7 +245,7 @@ class ManageBorrowTransactionController extends Controller
                 ], 500);
             }
         }
-        
+
 
         if (isset($request['view_individual_items'])) {
             try {
@@ -284,7 +283,6 @@ class ManageBorrowTransactionController extends Controller
 
             $approverId = Auth::user()->id;
 
-
             if (
                 isset($validatedData['approve_all_items']) &&
                 !isset($validatedData['items'])
@@ -316,7 +314,7 @@ class ManageBorrowTransactionController extends Controller
                     'status' => true,
                     'message' => 'Successfully updated transaction status',
                     'method' => "PATCH"
-                ]);
+                ], 200);
             }
 
             if (
@@ -324,8 +322,9 @@ class ManageBorrowTransactionController extends Controller
                 isset($validatedData['items'])
             ) {
                 foreach ($validatedData['items'] as $item) {
-                    $isItemApprovedStatus =
-                        ($item['is_approved'] === true) ? $this->approvedItemStatusId : $this->disapprovedItemStatusId;
+                    $isItemApprovedStatus = ($item['is_approved'] === true) ?
+                        $this->approvedItemStatusId :
+                        $this->disapprovedItemStatusId;
 
                     // Update items status to approved or disapproved
                     BorrowedItem::where('id', $item['borrowed_item_id'])
@@ -360,11 +359,11 @@ class ManageBorrowTransactionController extends Controller
                 }
 
                 DB::commit();
-                return response([
+                return response()->json([
                     'status' => true,
                     'message' => 'Successfully updated transaction status',
                     'method' => "PATCH"
-                ]);
+                ], 200);
             }
 
             DB::rollBack();
@@ -372,14 +371,14 @@ class ManageBorrowTransactionController extends Controller
                 'status' => false,
                 'message' => 'Failed to approve transaction',
                 'method' => "PATCH"
-            ]);
+            ], 500);
         } catch (\Exception) {
             DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to approve transaction',
                 'method' => "PATCH"
-            ]);
+            ], 500);
         }
     }
 
@@ -389,25 +388,29 @@ class ManageBorrowTransactionController extends Controller
      */
     public function releaseApprovedItems(ReleaseApprovedItemRequest $request)
     {
-        $validatedData = $request->validated();
-        $transacId = $validatedData['transactionId'];
-        $transaction = BorrowTransaction::find($transacId);
+        try {
+            DB::beginTransaction();
+            $validatedData = $request->validated();
+            $transacId = $validatedData['transactionId'];
+            $transaction = BorrowTransaction::find($transacId);
 
-        if (isset($validatedData['release_all_items']) && !isset($validatedData['items'])) {
-            $transacStatusId = ($validatedData['release_all_items'] === true) ?
-                $this->ongoingTransacStatusId :
-                $this->unreleasedTransacStatusId;
+            $releaserId = Auth::user()->id;
 
-            $borrowedItemStatusId = ($validatedData['release_all_items'] === true) ?
-                $this->inpossessionItemStatusId :
-                $this->unreleasedItemStatusId;
+            if (
+                isset($validatedData['release_all_items']) &&
+                !isset($validatedData['items'])
+            ) {
+                $transacStatusId = ($validatedData['release_all_items'] === true) ?
+                    $this->ongoingTransacStatusId :
+                    $this->unreleasedTransacStatusId;
 
-            try {
-                DB::beginTransaction();
+                $borrowedItemStatusId = ($validatedData['release_all_items'] === true) ?
+                    $this->inpossessionItemStatusId :
+                    $this->unreleasedItemStatusId;
+
                 // Update items status
                 BorrowedItem::where('borrowing_transac_id', $transacId)
                     ->where('borrowed_item_status_id', $this->approvedItemStatusId)
-                    ->join('items', 'items.id', '=', 'borrowed_items.item_id')
                     ->update([
                         'borrowed_items.borrowed_item_status_id' => $borrowedItemStatusId
                     ]);
@@ -418,25 +421,17 @@ class ManageBorrowTransactionController extends Controller
                 ]);
 
                 DB::commit();
-                return response([
+                return response()->json([
                     'status' => true,
-                    'message' => 'Successfully all released items',
+                    'message' => 'Successfully released all items',
                     'method' => "PATCH"
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
+                ], 200);
             }
-        }
 
-        if (!isset($validatedData['approve_all_items']) && isset($validatedData['items'])) {
-            try {
-                DB::beginTransaction();
+            if (
+                !isset($validatedData['approve_all_items']) &&
+                isset($validatedData['items'])
+            ) {
                 foreach ($validatedData['items'] as $item) {
                     $borrowedItemStatusId = ($item['is_released'] === true) ?
                         $this->inpossessionItemStatusId :
@@ -445,7 +440,8 @@ class ManageBorrowTransactionController extends Controller
                     // Update item status
                     $borrowedItem = BorrowedItem::findOrfail($item['borrowed_item_id']);
                     $borrowedItem->update([
-                        'borrowed_item_status_id' => $borrowedItemStatusId
+                        'borrowed_item_status_id' => $borrowedItemStatusId,
+                        'releaser_id' => $releaserId,
                     ]);
                 }
 
@@ -465,6 +461,14 @@ class ManageBorrowTransactionController extends Controller
                     ]);
                 }
 
+                // If HAS approved items && HAS possession items 
+                // then, the transaction is ONGOING
+                if ($approvedItemCount > 0 && $inpossessionItemCount > 0) {
+                    $transaction->update([
+                        'transac_status_id' => $this->ongoingTransacStatusId
+                    ]);
+                }
+
                 // If no more approved items && HAS possession items 
                 // then, the transaction is ONGOING
                 if ($approvedItemCount == 0 && $inpossessionItemCount > 0) {
@@ -474,282 +478,241 @@ class ManageBorrowTransactionController extends Controller
                 }
 
                 DB::commit();
-                return response([
+                return response()->json([
                     'status' => true,
-                    'message' => 'Successfully released item/s',
+                    'message' => 'Successfully released items',
                     'method' => "PATCH"
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
+                ], 200);
             }
-        }
 
-        // Error CATCH
-        return response([
-            'status' => false,
-            'message' => 'Failed to release items',
-            'method' => "PATCH"
-        ]);
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to approve transaction',
+                'method' => "PATCH"
+            ], 500);
+        } catch (\Exception) {
+            // Error CATCH
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong while releasing items',
+                'method' => "PATCH"
+            ], 500);
+        }
     }
 
     /**
      * Facilitate Return
      */
-
     public function facilitateReturn(FacilitateReturnRequest $request)
     {
-        $validatedData = $request->validated();
-        $transacId = $validatedData['transactionId'];
-        $transaction = BorrowTransaction::find($transacId);
+        try {
+            $validatedData = $request->validated();
+            $transacId = $validatedData['transactionId'];
+            $transaction = BorrowTransaction::find($transacId);
+            $items = isset($validatedData['items']) ? $validatedData['items'] : null;
+            $returnedStatuses = BORROWED_ITEM_STATUS::RETURNED_STATUSES;
 
-        if (isset($validatedData['return_all_items']) && !isset($validatedData['items'])) {
-            $isReturned = $validatedData['return_all_items']['is_returned'];
-            $transacStatusId = ($isReturned === true) ?
-                $this->completeTransacStatusId :
-                $this->unreturnedTransacStatusId;
+            if ($items === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to update return status',
+                    'method' => "PATCH"
+                ], 500);
+            }
 
-            $borrowedItemStatusId = ($isReturned === true) ?
-                $this->returnedItemStatusId :
-                $this->unreturnedItemStatusId;
+            DB::beginTransaction();
+            foreach ($items as $item) {
+                $borrowedItemStatusId = BorrowedItemStatus::getIdByStatus($item['item_status']);
+                // Update borrowed item status
+                $borrowedItem = BorrowedItem::findOrfail($item['borrowed_item_id']);
+                $dateReturned = in_array(
+                    $item['item_status'],
+                    array_values($returnedStatuses)
+                ) ?
+                    now()->format('Y-m-d H:i:s') :
+                    null;
 
-            try {
-                DB::beginTransaction();
-                // Update items status
-                // Check also for Late returns
-                // Impose penalty
-                BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->inpossessionItemStatusId)
-                    ->update([
-                        'borrowed_item_status_id' => $borrowedItemStatusId
+                if (isset($item['item_remarks']) && isset($item['item_penalty'])) {
+                    $borrowedItem->update([
+                        'borrowed_item_status_id' => $borrowedItemStatusId,
+                        'remarks' => $item['item_remarks'],
+                        'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
+                        'date_returned' => $dateReturned
                     ]);
+                }
 
-                // Update transaction status
-                // w/ transac_remarks
-                if (isset($validatedData['return_all_items']['transac_remarks'])) {
+                if (isset($item['item_remarks']) && !isset($item['item_penalty'])) {
+                    $borrowedItem->update([
+                        'borrowed_item_status_id' => $borrowedItemStatusId,
+                        'remarks' => $item['item_remarks'],
+                        'date_returned' => $dateReturned
+                    ]);
+                }
+
+                if (!isset($item['item_remarks']) && isset($item['item_penalty'])) {
+                    $borrowedItem->update([
+                        'borrowed_item_status_id' => $borrowedItemStatusId,
+                        'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
+                        'date_returned' => $dateReturned
+                    ]);
+                }
+
+                if (!isset($item['item_remarks']) && !isset($item['item_penalty'])) {
+                    $latePenaltyAmount = $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']);
+                    if ($latePenaltyAmount < 0) {
+                        $borrowedItem->update([
+                            'borrowed_item_status_id' => $borrowedItemStatusId,
+                            'date_returned' => $dateReturned
+                        ]);
+                    } else {
+                        $borrowedItem->update([
+                            'borrowed_item_status_id' => $borrowedItemStatusId,
+                            'penalty' => $latePenaltyAmount,
+                            'date_returned' => $dateReturned
+                        ]);
+                    }
+                }
+
+
+                // Update status of the item in inventory
+                // Lost
+                if ($borrowedItem->borrowed_item_status_id === $this->lostItemStatusId) {
+                    Item::find($borrowedItem->item_id)
+                        ->update(['item_status_id' => $this->lostInventoryStatusId]);
+                }
+                // Unreturned
+                if ($borrowedItem->borrowed_item_status_id === $this->unreturnedItemStatusId) {
+                    Item::find($borrowedItem->item_id)
+                        ->update(['item_status_id' => $this->unreturnedInventoryStatusId]);
+                }
+                // Damaged
+                if ($borrowedItem->borrowed_item_status_id === $this->damageButRepairableItemStatusId) {
+                    Item::find($borrowedItem->item_id)
+                        ->update([
+                            'item_status_id' => $this->forRepairInventoryStatusId,
+                        ]);
+                }
+                // Unrepairable
+                if ($borrowedItem->borrowed_item_status_id === $this->unrepairableItemStatusId) {
+                    Item::find($borrowedItem->item_id)
+                        ->update([
+                            'item_status_id' => $this->beyondRepairInventoryStatusId,
+                        ]);
+                }
+
+            }
+
+            // Update Transaction Status
+            $inpossessionItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->inpossessionItemStatusId)
+                ->count();
+            $returnedItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->returnedItemStatusId)
+                ->count();
+            $damageButRepairableItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->damageButRepairableItemStatusId)
+                ->count();
+            $unrepairableItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->unrepairableItemStatusId)
+                ->count();
+            $unreturnedItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->unreturnedItemStatusId)
+                ->count();
+            $lostItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('borrowed_item_status_id', $this->lostItemStatusId)
+                ->count();
+
+            // $totalCount = $inpossessionItemCount + $damageButRepairableItemCount +
+            //     $unrepairableItemCount + $lostItemCount + $returnedItemCount;
+
+            $totalPenalty = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->where('penalty', '>', 0)
+                ->sum('penalty');
+
+            $consolidatedReturnedItemCount = $returnedItemCount + $damageButRepairableItemCount + $unrepairableItemCount;
+            $consolidatedUnreturnedItemCount = $unreturnedItemCount + $lostItemCount;
+
+            // Transaction is UNRETURNED
+            $isTransactionUnreturned =
+                $inpossessionItemCount === 0 &&
+                $consolidatedReturnedItemCount === 0 &&
+                $consolidatedUnreturnedItemCount > 0;
+
+            if ($isTransactionUnreturned) {
+                if ($totalPenalty > 0) {
                     $transaction->update([
-                        'transac_status_id' => $transacStatusId,
-                        'remarks_by_return_facilitator' => $validatedData['return_all_items']['transac_remarks']
+                        'transac_status_id' => $this->unreturnedTransacStatusId,
+                        'penalty' => $totalPenalty
                     ]);
+
+                    // Add transaction to PenalizedTransaction
+                    $penalizedTransacExists = PenalizedTransaction::where('borrowing_transac_id', $transacId)->exists();
+                    if (!$penalizedTransacExists) {
+                        PenalizedTransaction::create([
+                            'borrowing_transac_id' => $transacId,
+                            'status_id' => $this->pendingPenaltyPaymentStatusId,
+                        ]);
+                    }
                 } else {
                     $transaction->update([
-                        'transac_status_id' => $transacStatusId
+                        'transac_status_id' => $this->unreturnedTransacStatusId,
                     ]);
                 }
-
-                DB::commit();
-                return response([
-                    'status' => true,
-                    'message' => 'Successfully updated return status',
-                    'method' => "PATCH"
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
             }
 
+            // Transaction is COMPLETE
+            //  ->  inPossession > 0
+            //  ->  returned > 0
+            //  ->  damageButRepairable > 0
+            //  ->  unrepairable > 0
+            //  ->  lost > 0
+            $isTransactionComplete = $consolidatedReturnedItemCount > 0 && $inpossessionItemCount == 0;
 
-        }
+            if ($isTransactionComplete) {
+                if ($totalPenalty > 0) {
+                    $transaction->update([
+                        'transac_status_id' => $this->completeTransacStatusId,
+                        'penalty' => $totalPenalty
+                    ]);
 
-        $returnedStatuses = ['RETURNED', 'DAMAGED_BUT_REPAIRABLE', 'UNREPAIRABLE'];
-        if (!isset($validatedData['return_all_items']) && isset($validatedData['items'])) {
-            try {
-                DB::beginTransaction();
-                foreach ($validatedData['items'] as $item) {
-                    $borrowedItemStatusId = BorrowedItemStatus::getIdByStatus($item['item_status']);
-                    // Update borrowed item status
-                    $borrowedItem = BorrowedItem::findOrfail($item['borrowed_item_id']);
-                    $dateReturned = in_array($item['item_status'], $returnedStatuses) ? now()->format('Y-m-d H:i:s') : null;
-                    if (isset($item['item_remarks']) && isset($item['item_penalty'])) {
-                        $borrowedItem->update([
-                            'borrowed_item_status_id' => $borrowedItemStatusId,
-                            'remarks' => $item['item_remarks'],
-                            'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
-                            'date_returned' => $dateReturned
+                    // Add transaction to PenalizedTransaction
+                    $penalizedTransacExists = PenalizedTransaction::where('borrowing_transac_id', $transacId)->exists();
+                    if (!$penalizedTransacExists) {
+                        PenalizedTransaction::create([
+                            'borrowing_transac_id' => $transacId,
+                            'status_id' => $this->pendingPenaltyPaymentStatusId,
                         ]);
                     }
-
-                    if (isset($item['item_remarks']) && !isset($item['item_penalty'])) {
-                        $borrowedItem->update([
-                            'borrowed_item_status_id' => $borrowedItemStatusId,
-                            'remarks' => $item['item_remarks'],
-                            'date_returned' => $dateReturned
-                        ]);
-                    }
-
-                    if (!isset($item['item_remarks']) && isset($item['item_penalty'])) {
-                        $borrowedItem->update([
-                            'borrowed_item_status_id' => $borrowedItemStatusId,
-                            'penalty' => $item['item_penalty'] + $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']),
-                            'date_returned' => $dateReturned
-                        ]);
-                    }
-
-                    if (!isset($item['item_remarks']) && !isset($item['item_penalty'])) {
-                        $latePenaltyAmount = $this->calculatePenalty->penaltyAmount($item['borrowed_item_id']);
-                        if ($latePenaltyAmount < 0) {
-                            $borrowedItem->update([
-                                'borrowed_item_status_id' => $borrowedItemStatusId,
-                                'date_returned' => $dateReturned
-                            ]);
-                        } else {
-                            $borrowedItem->update([
-                                'borrowed_item_status_id' => $borrowedItemStatusId,
-                                'penalty' => $latePenaltyAmount,
-                                'date_returned' => $dateReturned
-                            ]);
-                        }
-                    }
-
-
-                    // Update status of the item in inventory
-                    // Lost
-                    if ($borrowedItem->borrowed_item_status_id === $this->lostItemStatusId) {
-                        Item::find($borrowedItem->item_id)
-                            ->update(['item_status_id' => $this->lostInventoryStatusId]);
-                    }
-                    // Unreturned
-                    if ($borrowedItem->borrowed_item_status_id === $this->unreturnedItemStatusId) {
-                        Item::find($borrowedItem->item_id)
-                            ->update(['item_status_id' => $this->unreturnedInventoryStatusId]);
-                    }
-                    // Damaged
-                    if ($borrowedItem->borrowed_item_status_id === $this->damageButRepairableItemStatusId) {
-                        Item::find($borrowedItem->item_id)
-                            ->update([
-                                'item_status_id' => $this->forRepairInventoryStatusId,
-                            ]);
-                    }
-                    // Unrepairable
-                    if ($borrowedItem->borrowed_item_status_id === $this->unrepairableItemStatusId) {
-                        Item::find($borrowedItem->item_id)
-                            ->update([
-                                'item_status_id' => $this->beyondRepairInventoryStatusId,
-                            ]);
-                    }
-
+                } else {
+                    $transaction->update([
+                        'transac_status_id' => $this->completeTransacStatusId,
+                    ]);
                 }
-
-                // Update Transaction Status
-                $inpossessionItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->inpossessionItemStatusId)
-                    ->count();
-                $returnedItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->returnedItemStatusId)
-                    ->count();
-                $damageButRepairableItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->damageButRepairableItemStatusId)
-                    ->count();
-                $unrepairableItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->unrepairableItemStatusId)
-                    ->count();
-                $unreturnedItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->unreturnedItemStatusId)
-                    ->count();
-                $lostItemCount = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('borrowed_item_status_id', $this->lostItemStatusId)
-                    ->count();
-
-                // $totalCount = $inpossessionItemCount + $damageButRepairableItemCount +
-                //     $unrepairableItemCount + $lostItemCount + $returnedItemCount;
-
-                $totalPenalty = BorrowedItem::where('borrowing_transac_id', $transacId)
-                    ->where('penalty', '>', 0)
-                    ->sum('penalty');
-
-                $consolidatedReturnedItemCount = $returnedItemCount + $damageButRepairableItemCount + $unrepairableItemCount;
-                $consolidatedUnreturnedItemCount = $unreturnedItemCount + $lostItemCount;
-
-                // Transaction is UNRETURNED
-                $isTransactionUnreturned =
-                    $inpossessionItemCount === 0 &&
-                    $consolidatedReturnedItemCount === 0 &&
-                    $consolidatedUnreturnedItemCount > 0;
-
-                if ($isTransactionUnreturned) {
-                    if ($totalPenalty > 0) {
-                        $transaction->update([
-                            'transac_status_id' => $this->unreturnedTransacStatusId,
-                            'penalty' => $totalPenalty
-                        ]);
-
-                        // Add transaction to PenalizedTransaction
-                        $penalizedTransacExists = PenalizedTransaction::where('borrowing_transac_id', $transacId)->exists();
-                        if (!$penalizedTransacExists) {
-                            PenalizedTransaction::create([
-                                'borrowing_transac_id' => $transacId,
-                                'status_id' => $this->pendingPenaltyPaymentStatusId,
-                            ]);
-                        }
-                    } else {
-                        $transaction->update([
-                            'transac_status_id' => $this->unreturnedTransacStatusId,
-                        ]);
-                    }
-                }
-
-                // Transaction is COMPLETE
-                //  ->  inPossession > 0
-                //  ->  returned > 0
-                //  ->  damageButRepairable > 0
-                //  ->  unrepairable > 0
-                //  ->  lost > 0
-                $isTransactionComplete = $consolidatedReturnedItemCount > 0 && $inpossessionItemCount == 0;
-
-                if ($isTransactionComplete) {
-                    if ($totalPenalty > 0) {
-                        $transaction->update([
-                            'transac_status_id' => $this->completeTransacStatusId,
-                            'penalty' => $totalPenalty
-                        ]);
-
-                        // Add transaction to PenalizedTransaction
-                        $penalizedTransacExists = PenalizedTransaction::where('borrowing_transac_id', $transacId)->exists();
-                        if (!$penalizedTransacExists) {
-                            PenalizedTransaction::create([
-                                'borrowing_transac_id' => $transacId,
-                                'status_id' => $this->pendingPenaltyPaymentStatusId,
-                            ]);
-                        }
-                    } else {
-                        $transaction->update([
-                            'transac_status_id' => $this->completeTransacStatusId,
-                        ]);
-                    }
-                }
-
-                DB::commit();
-                return response([
-                    'status' => true,
-                    'message' => 'Successfully returned items',
-                    'method' => "PATCH"
-                ]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response([
-                    'status' => false,
-                    'message' => "An error occured, try again later",
-                    'error' => $e,
-                    'method' => "PATCH"
-                ], 500);
             }
+
+            DB::commit();
+            return response([
+                'status' => true,
+                'message' => 'Successfully returned items',
+                'method' => "PATCH"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response([
+                'status' => false,
+                'message' => "An error occured, try again later",
+                'error' => $e,
+                'method' => "PATCH"
+            ], 500);
         }
 
-        return response([
-            'status' => false,
-            'message' => 'Failed to update return status',
-            'method' => "PATCH"
-        ]);
+
+        // return response([
+        //     'status' => false,
+        //     'message' => 'Failed to update return status',
+        //     'method' => "PATCH"
+        // ]);
 
     }
 }

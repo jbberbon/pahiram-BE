@@ -4,11 +4,9 @@ namespace App\Http\Requests\ManageEndorsement;
 
 use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
-use App\Rules\CancelTransacRule;
+use App\Rules\EndorsementRules\IsAuthorizedToApproveEndorsement;
 use App\Rules\EndorsementRules\IsPendingEndorserApproval;
-use App\Rules\EndorsementRules\IsTransactionEndorser;
 use App\Rules\UserRules\IsEmployeeEmail;
-use App\Rules\TransactionBelongsToUser;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,7 +20,7 @@ class EndorsementApprovalRequest extends FormRequest
                 'required',
                 'exists:borrow_transactions,id',
                 new IsEmployeeEmail,
-                new IsTransactionEndorser,
+                new IsAuthorizedToApproveEndorsement,
                 new IsPendingEndorserApproval
             ],
             'approval' => [

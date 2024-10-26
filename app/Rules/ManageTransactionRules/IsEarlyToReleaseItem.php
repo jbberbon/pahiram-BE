@@ -39,6 +39,6 @@ class IsEarlyToReleaseItem implements Rule
 
     public function message()
     {
-        return "Item is still not available for release";
+        return "Item is available for release after start date";
     }
 }

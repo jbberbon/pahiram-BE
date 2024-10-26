@@ -17,6 +17,15 @@ return new class extends Migration {
             $table->foreign('approver_id')->references('id')->on('users')
                 ->onDelete('restrict')
                 ->cascadeOnUpdate();
+            $table->foreign('releaser_id')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
+            $table->foreign('receiver_id')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
+            $table->foreign('penalty_finalized_by')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
             $table->foreign('borrowed_item_status_id')->references('id')->on('borrowed_item_statuses')
                 ->onDelete('restrict')
                 ->cascadeOnUpdate();

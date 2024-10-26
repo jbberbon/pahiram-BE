@@ -62,4 +62,15 @@ class BORROWED_ITEM_STATUS
             "description" => "Item is lost by the borrower"
         ]
     ];
+
+    const RETURNED_STATUSES = [
+        'RETURNED' => self::RETURNED,
+        'DAMAGED_BUT_REPAIRABLE' => self::DAMAGED_BUT_REPAIRABLE,
+        'UNREPAIRABLE' => self::UNREPAIRABLE
+    ];
+
+    const UNRETURNED_STATUSES = [
+        'UNRETURNED' => self::UNRETURNED,
+        'LOST' => self::LOST
+    ];
 }

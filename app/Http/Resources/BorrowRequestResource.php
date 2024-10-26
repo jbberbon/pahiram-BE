@@ -48,7 +48,6 @@ class BorrowRequestResource extends JsonResource
                 'updated_at' => $this->updated_at,
             ];
         } else {
-
             $resource = [
                 'id' => $this->id,
                 'custom_transac_id' => $customTransacId,

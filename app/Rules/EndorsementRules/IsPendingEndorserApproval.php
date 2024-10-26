@@ -23,6 +23,6 @@ class IsPendingEndorserApproval implements Rule
 
     public function message()
     {
-        return 'Unauthorized access';
+        return 'Transaction should be pending endorse approval';
     }
 }
