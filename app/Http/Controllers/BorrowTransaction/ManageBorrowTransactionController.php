@@ -204,7 +204,8 @@ class ManageBorrowTransactionController extends Controller
                         \DB::raw('COUNT(borrowed_items.id) as quantity'),
                         'borrowed_items.start_date',
                         'borrowed_items.due_date',
-                        'borrowed_item_statuses.borrowed_item_status'
+                        'borrowed_item_statuses.borrowed_item_status',
+                        'items.apc_item_id as items_apc_id',
                     )
                     ->get();
         
