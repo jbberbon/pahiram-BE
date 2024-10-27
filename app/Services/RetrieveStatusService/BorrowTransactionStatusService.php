@@ -37,6 +37,16 @@ class BorrowTransactionStatusService
         return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::ON_GOING);
     }
 
+    public static function getCompletedTransactionId()
+    {
+        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::TRANSACTION_COMPLETE);
+    }
+
+    public static function getUnreturnedTransactionId()
+    {
+        return BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::UNRETURNED);
+    }
+
     public static function getActiveTransactionIds()
     {
         return [

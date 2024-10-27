@@ -12,8 +12,14 @@ return new class extends Migration {
     {
         Schema::create('penalized_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            
             $table->uuid('borrowing_transac_id');
             $table->uuid('status_id');
+            $table->uuid('payment_receiver_id')->nullable();
+            $table->uuid('balance_finalized_by')->nullable();
+
+            $table->text('remarks_by_payment_receiver')->nullable();
+            $table->text('remarks_by_payment_finalizer')->nullable();
             $table->timestamps();
         });
     }

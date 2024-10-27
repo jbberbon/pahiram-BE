@@ -8,17 +8,17 @@ class OFFICE_LIST
         "BMO" => [
             "department_acronym" => "BMO",
             "department" => "Buidling Maintenance Office",
-            "is_lending_office" => true
+            "is_lending_office" => true,
         ],
         "ESLO" => [
             "department_acronym" => "ESLO",
             "department" => "Engineering and Science Laboratory Office",
-            "is_lending_office" => true
+            "is_lending_office" => true,
         ],
         "ITRO" => [
             "department_acronym" => "ITRO",
             "department" => "Information Technology and Resource Office",
-            "is_lending_office" => true
+            "is_lending_office" => true,
         ],
 
         // Non Lending Offices

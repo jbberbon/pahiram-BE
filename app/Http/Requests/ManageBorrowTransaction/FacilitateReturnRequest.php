@@ -11,9 +11,11 @@ use App\Rules\ManageTransactionRules\IsItemGroupPartOfTransaction;
 use App\Rules\ManageTransactionRules\IsItemInPossessionOrUnreturned;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToReturn;
 use App\Rules\ManageTransactionRules\IsTransactionOnGoingOrUnreturned;
+use App\Rules\ManageTransactionRules\ReturnItems\IsPenaltyRequiredForReturnedItems;
 use App\Rules\ManageTransactionRules\ValidateReturnItemStatus;
 use App\Rules\UniqueBorrowedItemIds;
 use App\Rules\UniqueItemGroupIds;
+use App\Utils\Constants\Statuses\BORROWED_ITEM_STATUS;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -21,34 +23,18 @@ use Illuminate\Validation\Rule;
 class FacilitateReturnRequest extends FormRequest
 {
     private $errorCode = 422;
-    private $returnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::RETURNED_STATUSES);
-    private $unreturnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::UNRETURNED_STATUSES);
 
     public function rules(): array
     {
+        $returnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::RETURNED_STATUSES);
+        $unreturnedItemStatusArray = array_values(BORROWED_ITEM_STATUS::UNRETURNED_STATUSES);
         return [
             'transactionId' => [
                 'required',
+                'string',
                 'exists:borrow_transactions,id',
                 new IsTransactionOnGoingOrUnreturned,
             ],
-            // 'return_all_items' => [
-            //     'required_without:items', // Required if 'items' is not present
-            //     'required_without_all:items', // Required if none of the 'items' are present
-            //     new AcceptOnlyAllowedObjFields(['is_returned', 'transac_remarks']),
-            //     new IsThereItemLeftToReturn($this->all()),
-            // ],
-            // 'return_all_items.is_returned' => [
-            //     'required_without:items', // Required if 'items' is not present
-            //     'required_without_all:items', // Required if none of the 'items' are present
-            //     'bool',
-            // ],
-            // 'return_all_items.transac_remarks' => [
-            //     'sometimes',
-            //     'string',
-            //     'regex:/^[a-zA-Z0-9-]+$/',
-            //     'max:50'
-            // ],
 
             'items' => [
                 'required',
@@ -57,6 +43,9 @@ class FacilitateReturnRequest extends FormRequest
                 'max:10',
                 new UniqueBorrowedItemIds,
                 new IsThereItemLeftToReturn($this->all()),
+                
+                // Make penalty required when the status is part of the unreturnedItemStatusArr
+                new IsPenaltyRequiredForReturnedItems($this->all()),
             ],
             'items.*' => [
                 'required',
@@ -65,10 +54,9 @@ class FacilitateReturnRequest extends FormRequest
                 'max:5',
                 new AcceptOnlyAllowedObjFields([
                     'borrowed_item_id',
-                    'is_returned',
                     'item_status',
-                    'item_penalty',
-                    'item_remarks'
+                    'penalty',
+                    'remarks_by_receiver'
                 ]),
             ],
             'items.*.borrowed_item_id' => [
@@ -78,24 +66,24 @@ class FacilitateReturnRequest extends FormRequest
                 'exists:borrowed_items,id',
                 new IsBorrowedItemPartOfTransaction($this->all()),
                 // Ofc you can only return currently possessed item or unreturned item
-                new IsItemInPossessionOrUnreturned($this->all()),
+                new IsItemInPossessionOrUnreturned,
             ],
             'items.*.item_status' => [
                 'required',
                 'string',
                 Rule::in([
-                    ...$this->returnedItemStatusArray,
-                    ...$this->unreturnedItemStatusArray
+                    ...$returnedItemStatusArray,
+                    ...$unreturnedItemStatusArray
                 ]),
             ],
-            'items.*.item_penalty' => [
-                'sometimes',
+            'items.*.penalty' => [
                 'numeric',
                 'between:1,1000000',
             ],
             'items.*.remarks_by_receiver' => [
-                'sometimes',
+                'required',
                 'string',
+                'min:10',
                 'max:400'
             ]
         ];

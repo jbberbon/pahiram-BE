@@ -108,7 +108,6 @@ class ReleaseTransactionTest extends TestCase
      * 04. Able to release and withold at the same time
      */
 
-
     // 01. Able to release all items
     public function test_able_to_approve_all_items(): void
     {
@@ -164,7 +163,6 @@ class ReleaseTransactionTest extends TestCase
         // Act: Update Transaction
         sleep(1); // Delay in seconds
         $response = $this->patchJson("api/office/borrow-transaction/{$transac->id}/release-item", $requestBody);
-        \Log::info('02 res', [$response]);
 
         // Assert
         $response->assertJsonStructure([

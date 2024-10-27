@@ -13,18 +13,14 @@ class IsItemInPossessionOrUnreturned implements Rule
     private $inpossessionStatusId;
     private $unreturnedStatusId;
 
-    private $request;
-
-    public function __construct($request)
+    public function __construct()
     {
-        $this->request = $request;
         $this->inpossessionStatusId = BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::IN_POSSESSION);
         $this->unreturnedStatusId = BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::UNRETURNED);
     }
 
     public function passes($attribute, $value)
     {
-
         $borrowedItem = BorrowedItem::find($value);
 
         if (!$borrowedItem) {
