@@ -7,25 +7,17 @@ use Illuminate\Contracts\Validation\Rule;
 
 class IsBorrowedItemPartOfTransaction implements Rule
 {
-    protected $request;
+    protected $transacId;
 
     public function __construct($request)
     {
-        $this->request = $request;
+        $this->transacId = $request['transactionId'];
     }
     public function passes($attribute, $value)
     {
-        $borrowedItem = BorrowedItem::find($value);
-
-        if(!$borrowedItem) {
-            return false;
-        }
-
-        if ($borrowedItem->borrowing_transac_id !== $this->request['transactionId']) {
-            return false;
-        }
-
-        return true;
+        return BorrowedItem::where('id', $value)
+            ->where('borrowing_transac_id', $this->transacId)
+            ->exists();
     }
 
     public function message()

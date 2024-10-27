@@ -73,4 +73,11 @@ class BORROWED_ITEM_STATUS
         'UNRETURNED' => self::UNRETURNED,
         'LOST' => self::LOST
     ];
+
+    const PENALIZED_STATUSES = [
+        'DAMAGED_BUT_REPAIRABLE' => self::DAMAGED_BUT_REPAIRABLE,
+        'UNREPAIRABLE' => self::UNREPAIRABLE,
+        'UNRETURNED' => self::UNRETURNED,
+        'LOST' => self::LOST
+    ];
 }

@@ -33,6 +33,6 @@ class IsTransactionApprovedOrOngoingStatus implements Rule
 
     public function message()
     {
-        return 'Transaction must be approved before releasing items';
+        return 'Transaction must be approved or ongoing before releasing items';
     }
 }

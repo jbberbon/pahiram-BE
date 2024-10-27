@@ -4,8 +4,8 @@ namespace App\Utils\Constants\Statuses;
 
 class PENALIZED_TRANSAC_STATUS
 {
+    const PENDING_SUPERVISOR_FINALIZATION = 'PENDING_SUPERVISOR_FINALIZATION';
     const PENDING_PAYMENT = 'PENDING_PAYMENT';
-    const SETTLED = 'SETTLED';
     const UNPAID = 'UNPAID';
     const PAID = 'PAID';
 
@@ -17,6 +17,10 @@ class PENALIZED_TRANSAC_STATUS
     ];
 
     const PENALIZED_TRANSAC_STATUS_ARRAY = [
+        "PENDING_SUPERVISOR_FINALIZATION" => [
+            'status' => self::PENDING_SUPERVISOR_FINALIZATION,
+            'description' => 'The penalty will be assessed and finalized by supervisor'
+        ],
         "PENDING_PAYMENT" => [
             'status' => self::PENDING_PAYMENT,
             'description' => 'The penalty is up for payment'
@@ -28,10 +32,6 @@ class PENALIZED_TRANSAC_STATUS
         "PAID" => [
             'status' => self::PAID,
             'description' => 'The penalty is paid through the cashier'
-        ],
-        "SETTLED" => [
-            'status' => self::SETTLED,
-            'description' => 'The penalty is settled by the Finance Supervisor through promissory note etc.'
         ],
     ];
 }

@@ -43,6 +43,21 @@ class BorrowedItemStatusService
         return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::APPROVED);
     }
 
+    public static function getDamagedStatusId(): string|null
+    {
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::DAMAGED_BUT_REPAIRABLE);
+    }
+
+    public static function getUnrepairableStatusId(): string|null
+    {
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::UNREPAIRABLE);
+    }
+
+    public static function getLostStatusId(): string|null
+    {
+        return BorrowedItemStatus::getIdByStatus(BORROWED_ITEM_STATUS::LOST);
+    }
+
     public static function getActiveStatuses(): array
     {
         return [
@@ -53,8 +68,13 @@ class BorrowedItemStatusService
         ];
     }
 
-    // TODO
-    public static function getPenalizedStatuses() {
-        
+    public static function getPenalizedStatuses()
+    {
+        return [
+            self::getDamagedStatusId(),
+            self::getUnrepairableStatusId(),
+            self::getUnreturnedStatusId(),
+            self::getLostStatusId()
+        ];
     }
 }

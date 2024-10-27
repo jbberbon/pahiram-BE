@@ -17,6 +17,13 @@ return new class extends Migration {
             $table->foreign('status_id')->references('id')->on('penalized_transaction_statuses')
                 ->onDelete('restrict')
                 ->cascadeOnUpdate();
+
+            $table->foreign('payment_receiver_id')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
+            $table->foreign('balance_finalized_by')->references('id')->on('users')
+                ->onDelete('restrict')
+                ->cascadeOnUpdate();
         });
     }
 

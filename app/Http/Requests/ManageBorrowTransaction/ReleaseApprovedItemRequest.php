@@ -6,7 +6,7 @@ use App\Exceptions\RequestExtraPayloadMsg;
 use App\Exceptions\RequestValidationFailedMsg;
 use App\Rules\ManageTransactionRules\IsBorrowApproverFromCorrectOffice;
 use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
-use App\Rules\ManageTransactionRules\IsEarlyToReleaseItem;
+use App\Rules\ManageTransactionRules\IsEarlyOrLateToReleaseItem;
 use App\Rules\ManageTransactionRules\IsItemApproved;
 use App\Rules\ManageTransactionRules\IsThereItemLeftToRelease;
 use App\Rules\ManageTransactionRules\IsTransactionApprovedOrOngoingStatus;
@@ -18,6 +18,7 @@ class ReleaseApprovedItemRequest extends FormRequest
     private $errorCode = 422;
     public function rules(): array
     {
+        $transactionId = $this->input('transactionId');
         return [
             'transactionId' => [
                 'required',
@@ -70,7 +71,7 @@ class ReleaseApprovedItemRequest extends FormRequest
                 'exists:borrowed_items,id',
                 new IsBorrowedItemPartOfTransaction($this->all()),
                 new IsItemApproved($this->all()),
-                new IsEarlyToReleaseItem // Disallow release if current time > return date
+                new IsEarlyOrLateToReleaseItem($this->all()) // Disallow release if current time > return date
             ],
             'items.*.is_released' => [
                 'required',
