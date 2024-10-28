@@ -19,7 +19,6 @@ class BorrowTransactionCollection extends ResourceCollection
             'current_page' => $this->currentPage(),
             'last_page' => $this->lastPage(),
             'next_page_url' => $this->nextPageUrl(),
-            'path' => $this->path(),
             'per_page' => $this->perPage(),
             'prev_page_url' => $this->previousPageUrl(),
             'to' => $this->lastItem(),
