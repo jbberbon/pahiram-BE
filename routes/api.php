@@ -44,9 +44,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/user/borrow-request', [ManageBorrowingRequestController::class, 'index']);
     Route::patch('/user/borrow-request/{borrowRequest}/cancel', [ManageBorrowingRequestController::class, 'cancelBorrowRequest']);
     Route::get('/user/borrow-request/{borrowRequest}', [ManageBorrowingRequestController::class, 'getBorrowRequest']);
-    Route::get('/user/penalized-transaction', [ManagePenaltyController::class, 'index']);
+    // Route::get('/user/penalized-transaction', [ManagePenaltyController::class, 'index']);
     Route::group(['middleware' => ['is_penalized_transaction_existent']], function () {
-        Route::get('/user/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
+        // Route::get('/user/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
     });
 
     Route::get('/borrow-transaction/{transactionId}/borrowed-items', [GeneralBorrowTransactionController::class, 'getSpecificItemsOfBorrowTransaction']);
@@ -94,11 +94,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Is Finance Employee
     Route::group(['middleware' => ['is_finance_employee']], function () {
-        Route::get('/penalized-transaction', [ManagePenaltyController::class, 'index']);
+        // Route::get('/penalized-transaction', [ManagePenaltyController::class, 'index']);
 
         Route::group(['middleware' => ['is_penalized_transaction_existent']], function () {
-            Route::get('/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
-            Route::patch('/penalized-transaction/{penalizedTransactionId}/mark-as-paid', [ManagePenaltyController::class, 'payPenalty']);
+            // Route::get('/penalized-transaction/{penalizedTransactionId}', [ManagePenaltyController::class, 'show']);
+            // Route::patch('/penalized-transaction/{penalizedTransactionId}/mark-as-paid', [ManagePenaltyController::class, 'payPenalty']);
         });
 
 

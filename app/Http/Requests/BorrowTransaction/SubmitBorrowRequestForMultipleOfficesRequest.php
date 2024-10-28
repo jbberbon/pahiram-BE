@@ -56,7 +56,7 @@ class SubmitBorrowRequestForMultipleOfficesRequest extends FormRequest
                 'string',
                 'regex:/^[a-zA-Z0-9\s|]+$/',
                 'min:5',
-                'max:50'
+                'max:500'
             ],
 
             /**

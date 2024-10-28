@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->uuid('transac_status_id');
             $table->uuid('purpose_id');
 
-            $table->string('user_defined_purpose')->nullable();
+            $table->text('user_defined_purpose')->nullable();
             $table->decimal('penalty')->nullable();
             $table->string('remarks_by_endorser')->nullable();
             $table->string('remarks_by_approver')->nullable();

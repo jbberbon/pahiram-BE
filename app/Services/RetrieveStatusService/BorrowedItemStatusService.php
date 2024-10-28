@@ -68,13 +68,20 @@ class BorrowedItemStatusService
         ];
     }
 
-    public static function getPenalizedStatuses()
+    public static function getPenalizedStatusIds()
     {
-        return [
-            self::getDamagedStatusId(),
-            self::getUnrepairableStatusId(),
-            self::getUnreturnedStatusId(),
-            self::getLostStatusId()
-        ];
+        return BorrowedItemStatus::whereIn(
+            'borrowed_item_status',
+            array_values(BORROWED_ITEM_STATUS::PENALIZED_STATUSES)
+        )
+            ->pluck('id')
+            ->toArray();
+
+        // return [
+        //     self::getDamagedStatusId(),
+        //     self::getUnrepairableStatusId(),
+        //     self::getUnreturnedStatusId(),
+        //     self::getLostStatusId()
+        // ];
     }
 }
