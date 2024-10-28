@@ -7,9 +7,11 @@ use App\Exceptions\RequestValidationFailedMsg;
 use App\Rules\ManageTransactionRules\IsAuthorizedToViewTransaction;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\Rule;
 
 class GetSpecificItemsOfBorrowTransactionRequest extends FormRequest
 {
+    private $errorCode = 422;
     public function rules(): array
     {
         return [
@@ -18,6 +20,10 @@ class GetSpecificItemsOfBorrowTransactionRequest extends FormRequest
                 'exists:borrow_transactions,id',
                 new IsAuthorizedToViewTransaction
             ],
+            'include-penalty-data' => [
+                'sometimes',
+                Rule::in(['true'])
+            ]
         ];
     }
     public function all($keys = null)

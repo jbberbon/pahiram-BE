@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BorrowTransaction\ManageBorrowTransactionController;
 use App\Http\Controllers\BorrowTransaction\ManageEndorsementController;
 use App\Http\Controllers\Inventory\PLOManageInventory;
+use App\Http\Controllers\Penalty\ManagePenalizedLendingTransactionController;
 use App\Http\Controllers\Penalty\ManagePenaltyController;
 use App\Http\Controllers\ItemInventory\ItemInventoryController;
 use App\Http\Controllers\Category\ItemCategoryController;
@@ -79,6 +80,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // Facilitate Return
             Route::patch('/office/borrow-transaction/{transactionId}/facilitate-item-return', [ManageBorrowTransactionController::class, 'facilitateReturn']);
         });
+
+        // Get Penalized Transactions
+        Route::get('/office/penalized-borrow-transaction', [ManagePenalizedLendingTransactionController::class, 'index']);
+
     });
 
     // Is PLO Employee

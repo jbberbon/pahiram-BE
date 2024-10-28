@@ -88,7 +88,7 @@ class ManageBorrowTransactionController extends Controller
         $this->unreturnedTransacStatusId = BorrowTransactionStatus::getIdByStatus(TRANSAC_STATUS::UNRETURNED);
 
         // $this->pendingPenaltyPaymentStatusId = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_PAYMENT);
-        $this->pendingPenaltySupervisorFinalization = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_SUPERVISOR_FINALIZATION);
+        $this->pendingPenaltySupervisorFinalization = PenalizedTransactionStatuses::getIdByStatus(PENALIZED_TRANSAC_STATUS::PENDING_LENDING_SUPERVISOR_FINALIZATION);
 
         // Item inventory status
         $this->lostInventoryStatusId = ItemStatus::getIdByStatus(ITEM_STATUS::LOST);
@@ -110,7 +110,7 @@ class ManageBorrowTransactionController extends Controller
         if (!$userDepartment) {
             return response()->json([
                 'status' => false,
-                'message' => 'User department not found',
+                'message' => 'User does not belong to any department',
                 'method' => "GET"
             ], 404);
         }
@@ -166,7 +166,7 @@ class ManageBorrowTransactionController extends Controller
             'status' => true,
             'data' => new BorrowTransactionCollection($paginatedTransactions),
             'method' => "GET"
-        ]);
+        ], 200);
     }
 
     /**
