@@ -110,7 +110,7 @@ class ManageBorrowTransactionController extends Controller
         if (!$userDepartment) {
             return response()->json([
                 'status' => false,
-                'message' => 'User department not found',
+                'message' => 'User does not belong to any department',
                 'method' => "GET"
             ], 404);
         }
@@ -166,7 +166,7 @@ class ManageBorrowTransactionController extends Controller
             'status' => true,
             'data' => new BorrowTransactionCollection($paginatedTransactions),
             'method' => "GET"
-        ]);
+        ], 200);
     }
 
     /**

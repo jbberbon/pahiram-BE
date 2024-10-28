@@ -4,31 +4,39 @@ namespace App\Utils\Constants;
 
 class OFFICE_LIST
 {
+    const BMO = 'BMO';
+    const ESLO = 'ESLO';
+    const ITRO = 'ITRO';
+
+    const FAO = 'FAO';
+    const PLO = 'PLO';
+
+    
     const OFFICE_ARRAY = [
-        "BMO" => [
-            "department_acronym" => "BMO",
+        self::BMO => [
+            "department_acronym" => self::BMO,
             "department" => "Buidling Maintenance Office",
             "is_lending_office" => true,
         ],
-        "ESLO" => [
-            "department_acronym" => "ESLO",
+        self::ESLO => [
+            "department_acronym" => self::ESLO,
             "department" => "Engineering and Science Laboratory Office",
             "is_lending_office" => true,
         ],
-        "ITRO" => [
-            "department_acronym" => "ITRO",
+        self::ITRO => [
+            "department_acronym" => self::ITRO,
             "department" => "Information Technology and Resource Office",
             "is_lending_office" => true,
         ],
 
         // Non Lending Offices
-        "PLO" => [
-            "department_acronym" => "PLO",
+        self::PLO => [
+            "department_acronym" => self::PLO ,
             "department" => "Purchasing and Logistics Office",
             "is_lending_office" => false
         ],
-        "FAO" => [
-            "department_acronym" => "FAO",
+        self::FAO => [
+            "department_acronym" => self::FAO,
             "department" => "Finance and Accounting Office",
             "is_lending_office" => false
         ]

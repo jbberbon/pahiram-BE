@@ -8,12 +8,14 @@ use App\Models\BorrowTransaction;
 use App\Models\Department;
 use App\Models\Item;
 use App\Models\ItemGroup;
+use App\Models\PenalizedTransaction;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserDepartment;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\BorrowTransactionStatusService;
 use App\Services\RetrieveStatusService\ItemStatusService;
+use App\Services\RetrieveStatusService\PenalizedTransactionStatusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -37,6 +39,9 @@ class ReturnTransactionTest extends TestCase
     protected $beyondRepairInventoryItemStatusId;
     protected $unreturnedInventoryItemStatusId;
 
+    protected $pendingLendingSupApprovalStatusId;
+
+
 
     protected $completeTransactionStatusId;
     protected $unreturnedTransactionStatusId;
@@ -57,6 +62,8 @@ class ReturnTransactionTest extends TestCase
 
         $this->completeTransactionStatusId = BorrowTransactionStatusService::getCompletedTransactionId();
         $this->unreturnedTransactionStatusId = BorrowTransactionStatusService::getUnreturnedTransactionId();
+
+        $this->pendingLendingSupApprovalStatusId = PenalizedTransactionStatusService::getPendingLendingSupervisorFinalization();
 
         $this->forRepairInventoryItemStatusId = ItemStatusService::getForRepairStatusId();
         $this->activeInventoryItemStatusId = ItemStatusService::getActiveStatusId();
@@ -217,8 +224,16 @@ class ReturnTransactionTest extends TestCase
         $this->assertEquals(true, $response->json('status'));
 
         // Confirm that transaction status is complete
-        $transacStatusId = BorrowTransaction::first()->transac_status_id;
+        $transac = BorrowTransaction::first();
+        $transacStatusId = $transac->transac_status_id;
         $this->assertEquals($this->completeTransactionStatusId, $transacStatusId);
+
+        // Confirm transaction is added to Penalized transaction with correct status
+        $penalizedTransac = PenalizedTransaction::where('borrowing_transac_id', $transac->id)->first();
+        $this->assertTrue($penalizedTransac->exists());
+
+        // Confirm that penalized transac has a status of PENDING_LENDING_SUPERVISOR_APPROVAL
+        $this->assertEquals($this->pendingLendingSupApprovalStatusId, $penalizedTransac->status_id);
 
         // Confirm Borrowed items have correct status
         $borrowedItems = BorrowedItem::all();
@@ -294,8 +309,16 @@ class ReturnTransactionTest extends TestCase
         $this->assertEquals(true, $response->json('status'));
 
         // Confirm that transaction status is complete
-        $transacStatusId = BorrowTransaction::first()->transac_status_id;
+        $transac = BorrowTransaction::first();
+        $transacStatusId = $transac->transac_status_id;
         $this->assertEquals($this->completeTransactionStatusId, $transacStatusId);
+
+        // Confirm transaction is added to Penalized transaction with correct status
+        $penalizedTransac = PenalizedTransaction::where('borrowing_transac_id', $transac->id)->first();
+        $this->assertTrue($penalizedTransac->exists());
+
+        // Confirm that penalized transac has a status of PENDING_LENDING_SUPERVISOR_APPROVAL
+        $this->assertEquals($this->pendingLendingSupApprovalStatusId, $penalizedTransac->status_id);
 
         // Confirm Borrowed items have correct status
         $borrowedItems = BorrowedItem::all();
@@ -372,8 +395,16 @@ class ReturnTransactionTest extends TestCase
         $this->assertEquals(true, $response->json('status'));
 
         // Confirm that transaction status is UNRETURNED
-        $transacStatusId = BorrowTransaction::first()->transac_status_id;
+        $transac = BorrowTransaction::first();
+        $transacStatusId = $transac->transac_status_id;
         $this->assertEquals($this->unreturnedTransactionStatusId, $transacStatusId);
+
+        // Confirm transaction is added to Penalized transaction with correct status
+        $penalizedTransac = PenalizedTransaction::where('borrowing_transac_id', $transac->id)->first();
+        $this->assertTrue($penalizedTransac->exists());
+
+        // Confirm that penalized transac has a status of PENDING_LENDING_SUPERVISOR_APPROVAL
+        $this->assertEquals($this->pendingLendingSupApprovalStatusId, $penalizedTransac->status_id);
 
         // Confirm items are UNRETURNED
         $borrowedItems = BorrowedItem::all();

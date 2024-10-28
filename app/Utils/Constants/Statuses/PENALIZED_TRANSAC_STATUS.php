@@ -9,12 +9,15 @@ class PENALIZED_TRANSAC_STATUS
     const UNPAID = 'UNPAID';
     const PAID = 'PAID';
     const SETTLED_AT_LENDING_OFFICE = 'SETTLED_AT_LENDING_OFFICE';
+    const SETTLED_AT_FINANCE_OFFICE = 'SETTLED_AT_FINANCE_OFFICE';
 
     const STATUS_KEYS = [
+        self::PENDING_LENDING_SUPERVISOR_FINALIZATION,
         self::PENDING_PAYMENT,
-        self::SETTLED,
+        self::SETTLED_AT_FINANCE_OFFICE,
         self::UNPAID,
-        self::PAID
+        self::PAID,
+        self::SETTLED_AT_LENDING_OFFICE
     ];
 
     const PENALIZED_TRANSAC_STATUS_ARRAY = [
@@ -37,6 +40,10 @@ class PENALIZED_TRANSAC_STATUS
         'SETTLED_AT_LENDING_OFFICE' => [
             'status' => self::SETTLED_AT_LENDING_OFFICE,
             'description' => 'The penalty is settled at the borrow office level facilitated by the supervisor'
+        ],
+        'SETTLED_AT_FINANCE_OFFICE' => [
+            'status' => self::SETTLED_AT_FINANCE_OFFICE,
+            'description' => 'The penalty is settled at the finance department facilitated by the supervisor'
         ]
     ];
 }
