@@ -138,12 +138,15 @@ class ManagePenalizedLendingTransactionController extends Controller
                 $hasPenaltyChange = isset($validated['no_penalty_amt_change']);
 
                 $updatedValues = [
-                    'remarks_by_penalty_finalizer' => $item['remarks_by_penalty_finalizer']
+                    'remarks_by_penalty_finalizer' => $item['remarks_by_penalty_finalizer'],
+                    'penalty_finalized_by' => Auth::id()
                 ];
 
+                // \Log::info('CONTROLLER', [$validated]);
                 // Only add 'penalty' if there is no penalty change
-                if (!$hasPenaltyChange && isset($validated['penalty'])) {
-                    $updatedValues['penalty'] = $validated['penalty'];
+                if (!$hasPenaltyChange && isset($item['penalty'])) {
+                    \Log::info('CONTROLLER', [$item['penalty']]);
+                    $updatedValues['penalty'] = $item['penalty'];
                 }
 
                 BorrowedItem::where('id', $itemId)
