@@ -4,7 +4,6 @@ namespace App\Http\Controllers\BorrowTransaction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ManageBorrowTransaction\ApproveTransactionRequest;
-use App\Http\Requests\ManageBorrowTransaction\ApproveTransactionRequestV2;
 use App\Http\Requests\ManageBorrowTransaction\FacilitateReturnRequest;
 use App\Http\Requests\ManageBorrowTransaction\GetSpecificPendingTransactionRequest;
 use App\Http\Requests\ManageBorrowTransaction\ReleaseApprovedItemRequest;

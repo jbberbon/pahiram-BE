@@ -232,7 +232,7 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
         ]);
         $this->assertEquals(true, $response->json('status'));
 
-        // Confirm that penalty amt did not change
+        // Confirm that penalty amt did change
         $borrowedItems = BorrowedItem::all();
         $penalties = $borrowedItems->pluck('penalty');
         \Log::info('PENALTY TC2', [$penalties]);
@@ -255,6 +255,9 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
             $finalizer->toArray()
         );
 
+        // Confirm that total penalty in transac changed
+        $totalPenalty = BorrowTransaction::first()->penalty;
+        $this->assertEquals($totalPenalty, '3000.00');
     }
 
     // 03. Able to finalize penalty of all item without change in amt
@@ -370,5 +373,10 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
             return $finalizer === Auth::id();
         });
         $this->assertTrue($allItemsHaveFinalizers);
+
+
+        // Confirm that total penalty in transac changed
+        $totalPenalty = BorrowTransaction::first()->penalty;
+        $this->assertEquals($totalPenalty, '1000.00');
     }
 }
