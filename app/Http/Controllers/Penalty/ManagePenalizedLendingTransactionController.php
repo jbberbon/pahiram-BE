@@ -97,11 +97,11 @@ class ManagePenalizedLendingTransactionController extends Controller
                 ->join('penalized_transaction_statuses', 'penalized_transactions.status_id', '=', 'penalized_transaction_statuses.id')
                 ->select(
                     'borrow_transactions.id as id',
+                    'borrow_transactions.department_id',
                     'borrow_transactions.borrower_id',
                     'borrow_transactions.transac_status_id',
                     'borrow_transactions.purpose_id',
                     'borrow_transactions.user_defined_purpose',
-                    'borrow_transactions.remarks_by_return_facilitator',
                     'penalized_transaction_statuses.status as penalized_transaction_status',
                     'borrow_transactions.penalty',
                     'borrow_transactions.created_at',
@@ -113,9 +113,10 @@ class ManagePenalizedLendingTransactionController extends Controller
                 'data' => new PenalizedTransactionCollection($penalizedTransacs),
                 'method' => "GET"
             ], 200);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
+                'error' => $e,
                 'message' => "Something went wrong while fetching penalized transactions list.",
                 'method' => "GET"
             ], 500);
@@ -159,9 +160,10 @@ class ManagePenalizedLendingTransactionController extends Controller
                 'method' => "GET"
             ], 200);
 
-        } catch (\Exception) {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
+                'error' => $e->getMessage(),
                 'message' => "Something went wrong while finalizing penalty amount.",
                 'method' => "GET"
             ], 500);
