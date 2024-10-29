@@ -133,6 +133,7 @@ class ManagePenalizedLendingTransactionController extends Controller
             $transacId = $validated['transactionId'];
             $items = $validated['items'];
 
+            $changedPenaltyCount = 0;
             foreach ($items as $item) {
                 $itemId = $item['borrowed_item_id'];
                 $hasPenaltyChange = isset($validated['no_penalty_amt_change']);
@@ -145,19 +146,36 @@ class ManagePenalizedLendingTransactionController extends Controller
                 // \Log::info('CONTROLLER', [$validated]);
                 // Only add 'penalty' if there is no penalty change
                 if (!$hasPenaltyChange && isset($item['penalty'])) {
-                    \Log::info('CONTROLLER', [$item['penalty']]);
                     $updatedValues['penalty'] = $item['penalty'];
+                    $changedPenaltyCount += 1;
                 }
 
                 BorrowedItem::where('id', $itemId)
                     ->update($updatedValues);
             }
 
+            // Get all penalized items with penalties for the given transaction
+            $penalizedItems = BorrowedItem::where('borrowing_transac_id', $transacId)
+                ->whereIn('borrowed_item_status_id', $this->penalizedBorrowedItemStatusIds)
+                ->get(['penalty', 'penalty_finalized_by', 'borrowed_item_status_id']);
+
+            // Calculate total penalty
+            $totalPenalty = $penalizedItems->sum('penalty');
+
+
+            if ($changedPenaltyCount > 0) {
+                // Re-Calculate total penalty
+                $totalPenalty = $penalizedItems->sum('penalty');
+
+                BorrowTransaction::where('id', $transacId)->update([
+                    'penalty' => $totalPenalty
+                ]);
+            }
+
             // Check every penalized item of borrowed items in the transaction.
             // if all penalized items' penalty_finalized_by field is NOT NULL, 
             // Change Penalized Transac Status to Pending Payment
-            $adjustedPenaltyAmt = BorrowedItem::where('borrowing_transac_id', $transacId)
-                ->whereIn('borrowed_item_status_id', $this->penalizedBorrowedItemStatusIds)
+            $adjustedPenaltyAmt = $penalizedItems
                 ->whereNull('penalty_finalized_by')
                 ->count();
 
