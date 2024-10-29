@@ -150,7 +150,6 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
      */
 
     // 01. Able to finalize penalty amount of single item without change in amt
-    /*
     public function test_able_to_finalize_penalty_of_single_item_without_change_in_amt()
     {
         // Prepare the payload for the api
@@ -257,18 +256,23 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
         );
 
     }
-        */
 
     // 03. Able to finalize penalty of all item without change in amt
-    public function test_able_to_finalize_penalty_of_single_item_without_change_in_amt()
+    public function test_able_to_finalize_penalty_of_all_item_without_change_in_amt()
     {
         // Prepare the payload for the api
-        $borrowedItem = BorrowedItem::all();
+        $borrowedItems = BorrowedItem::all();
+        $borrowedItemIds = $borrowedItems->pluck('id')->toArray();
         $inputRemarks = 'FINALIZED FINALIZED FINALIZED';
         $requestBody = [
             'items' => [
                 [
-                    'borrowed_item_id' => $borrowedItem->id,
+                    'borrowed_item_id' => $borrowedItemIds[0],
+                    'no_penalty_amt_change' => true,
+                    'remarks_by_penalty_finalizer' => $inputRemarks
+                ],
+                [
+                    'borrowed_item_id' => $borrowedItemIds[1],
                     'no_penalty_amt_change' => true,
                     'remarks_by_penalty_finalizer' => $inputRemarks
                 ]
@@ -295,20 +299,76 @@ class FinalizeLendingOfficePenaltyTest extends TestCase
         });
         $this->assertTrue($allItemsHavePenalty);
 
-        // Confirm the remarks in one item has been updated
+        // Confirm the remarks in all items has been updated
         $remarks = $borrowedItems->pluck('remarks_by_penalty_finalizer');
-        $this->assertContains(
-            $inputRemarks,
-            $remarks->toArray()
-        );
+        $allItemsHaveRemarks = $remarks->every(function ($remark) {
+            return $remark === 'FINALIZED FINALIZED FINALIZED';
+        });
+        $this->assertTrue($allItemsHaveRemarks);
 
         // Confirm that ID of finalizer has been logged also
-        $finalizer = $borrowedItems->pluck('penalty_finalized_by');
+        $finalizers = $borrowedItems->pluck('penalty_finalized_by');
         // \Log::info('FINALIZERs', [$finalizer]);
-        $this->assertContains(
-            Auth::id(),
-            $finalizer->toArray()
-        );
+        $allItemsHaveFinalizers = $finalizers->every(function ($finalizer) {
+            return $finalizer === Auth::id();
+        });
+        $this->assertTrue($allItemsHaveFinalizers);
+    }
 
+    // 04. Able to finalize penalty of all item with change in amt
+    public function test_able_to_finalize_penalty_of_all_item_with_change_in_amt()
+    {
+        // Prepare the payload for the api
+        $borrowedItems = BorrowedItem::all();
+        $borrowedItemIds = $borrowedItems->pluck('id')->toArray();
+        $inputRemarks = 'FINALIZED FINALIZED FINALIZED';
+        $requestBody = [
+            'items' => [
+                [
+                    'borrowed_item_id' => $borrowedItemIds[0],
+                    'penalty' => 500,
+                    'remarks_by_penalty_finalizer' => $inputRemarks
+                ],
+                [
+                    'borrowed_item_id' => $borrowedItemIds[1],
+                    'penalty' => 500,
+                    'remarks_by_penalty_finalizer' => $inputRemarks
+                ]
+            ]
+        ];
+
+        // ACT: Submit request
+        $response = $this->patchJson("api/office/finalize-penalty/{$this->transac->id}/penalized-borrow-transaction", $requestBody);
+
+        // Assert
+        $response->assertJsonStructure([
+            'status',
+            'message',
+            'method'
+        ]);
+        $this->assertEquals(true, $response->json('status'));
+
+        // Confirm that penalty amt DID change
+        $borrowedItems = BorrowedItem::all();
+        $penalties = $borrowedItems->pluck('penalty');
+
+        $allItemsHavePenalty = $penalties->every(function ($penalty) {
+            return $penalty === '500.00';
+        });
+        $this->assertTrue($allItemsHavePenalty);
+
+        // Confirm the remarks in all items has been updated
+        $remarks = $borrowedItems->pluck('remarks_by_penalty_finalizer');
+        $allItemsHaveRemarks = $remarks->every(function ($remark) {
+            return $remark === 'FINALIZED FINALIZED FINALIZED';
+        });
+        $this->assertTrue($allItemsHaveRemarks);
+
+        // Confirm that ID of finalizer has been logged also
+        $finalizers = $borrowedItems->pluck('penalty_finalized_by');
+        $allItemsHaveFinalizers = $finalizers->every(function ($finalizer) {
+            return $finalizer === Auth::id();
+        });
+        $this->assertTrue($allItemsHaveFinalizers);
     }
 }
