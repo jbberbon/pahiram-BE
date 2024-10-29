@@ -114,11 +114,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Is Supervisor
     Route::group(['middleware' => ['is_supervisor']], function () {
+        Route::patch('/office/finalize-penalty/{transactionId}/penalized-borrow-transaction', [ManagePenalizedLendingTransactionController::class, 'finalizeLendingOfficePenalty']);
+
         // Route::get('/roles/supervisor', [RolesController::class, 'getSupervisor']);
         // Route::post('/roles/supervisor/assign', [RolesController::class, 'addSupervisor']);
         // Route::delete('/roles/supervisor/remove', [RolesController::class, 'deleteSupervisor']);
     });
-    
+
     Route::get('/item-model/{itemGroupId}/booked-dates', [ItemGroupController::class, 'retrieveBookedDates']);
 
     Route::get('/item-group', [ItemInventoryController::class, 'index']);

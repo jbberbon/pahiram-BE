@@ -12,6 +12,7 @@ use App\Models\UserDepartment;
 use App\Services\RetrieveStatusService\BorrowedItemStatusService;
 use App\Services\RetrieveStatusService\PenalizedTransactionStatusService;
 use Auth;
+use DB;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
@@ -101,6 +102,7 @@ class ManagePenalizedLendingTransactionController extends Controller
                     'borrow_transactions.borrower_id',
                     'borrow_transactions.transac_status_id',
                     'borrow_transactions.purpose_id',
+                    'borrow_transactions.endorsed_by',
                     'borrow_transactions.user_defined_purpose',
                     'penalized_transaction_statuses.status as penalized_transaction_status',
                     'borrow_transactions.penalty',
@@ -126,17 +128,26 @@ class ManagePenalizedLendingTransactionController extends Controller
     public function finalizeLendingOfficePenalty(FinalizeLendingOfficePenaltyRequest $request)
     {
         try {
+            DB::beginTransaction();
             $validated = $request->validated();
             $transacId = $validated['transactionId'];
             $items = $validated['items'];
 
             foreach ($items as $item) {
                 $itemId = $item['borrowed_item_id'];
+                $hasPenaltyChange = isset($validated['no_penalty_amt_change']);
+
+                $updatedValues = [
+                    'remarks_by_penalty_finalizer' => $item['remarks_by_penalty_finalizer']
+                ];
+
+                // Only add 'penalty' if there is no penalty change
+                if (!$hasPenaltyChange && isset($validated['penalty'])) {
+                    $updatedValues['penalty'] = $validated['penalty'];
+                }
+
                 BorrowedItem::where('id', $itemId)
-                    ->update([
-                        'penalty' => $item['penalty'],
-                        'remarks_by_penalty_finalizer' => $item['remarks_by_penalty_finalizer']
-                    ]);
+                    ->update($updatedValues);
             }
 
             // Check every penalized item of borrowed items in the transaction.
@@ -154,6 +165,7 @@ class ManagePenalizedLendingTransactionController extends Controller
                     ]);
             }
 
+            DB::commit();
             return response()->json([
                 'status' => true,
                 'message' => "Successfully finalized items' penalty amount.",
@@ -161,6 +173,7 @@ class ManagePenalizedLendingTransactionController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'error' => $e->getMessage(),

@@ -62,13 +62,6 @@ class BorrowTransactionResource extends JsonResource
                 'quantity' => $groupedItem->count(),
                 'start_date' => Carbon::parse($item->start_date)->format('Y-m-d H:i:s'),
                 'due_date' => Carbon::parse($item->due_date)->format('Y-m-d H:i:s'),
-                // 'details' => $groupedItem->map(function ($item) use ($apcId) {
-                //     return [
-                //         'borrowed_item_id' => $item->borrowed_item_id,
-                //         'borrowed_item_status' => $item->borrowed_item_status ?? 'Unknown',
-                //         'apc_id' => User::find($this->borrower_id)->apc_id,
-                //     ];
-                // })
             ]);
         }
 

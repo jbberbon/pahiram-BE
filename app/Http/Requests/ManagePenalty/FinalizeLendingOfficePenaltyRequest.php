@@ -12,9 +12,11 @@ use App\Rules\ManageTransactionRules\IsBorrowedItemPartOfTransaction;
 use App\Rules\UniqueBorrowedItemIds;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class FinalizeLendingOfficePenaltyRequest extends FormRequest
 {
+    private $errorCode = 422;
     public function rules(): array
     {
         return [
@@ -41,7 +43,8 @@ class FinalizeLendingOfficePenaltyRequest extends FormRequest
                     allowedFields: [
                         'borrowed_item_id',
                         'penalty',
-                        'remarks_by_penalty_finalizer'
+                        'remarks_by_penalty_finalizer',
+                        'no_penalty_amt_change'
                     ]
                 ),
             ],
@@ -58,6 +61,12 @@ class FinalizeLendingOfficePenaltyRequest extends FormRequest
                 'numeric',
                 'between:1,1000000',
             ],
+            'items.*.no_penalty_amt_change' => [
+                'boolean',
+                Rule::in([
+                    true
+                ])
+            ],
             'items.*.remarks_by_penalty_finalizer' => [
                 'required',
                 'string',
@@ -66,6 +75,13 @@ class FinalizeLendingOfficePenaltyRequest extends FormRequest
             ]
 
         ];
+    }
+    public function all($keys = null)
+    {
+        $data = parent::all($keys);
+        $data['transactionId'] = $this->route('transactionId');
+
+        return $data;
     }
 
     protected function passedValidation()

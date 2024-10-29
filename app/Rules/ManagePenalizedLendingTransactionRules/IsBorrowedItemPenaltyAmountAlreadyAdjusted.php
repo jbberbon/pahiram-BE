@@ -12,7 +12,7 @@ class IsBorrowedItemPenaltyAmountAlreadyAdjusted implements Rule
         // Instead of basing it on penalty amount
         // Let's base it on the Borrowed Item Status upon returned
         return BorrowedItem::where('id', $value)
-            ->whereNotNull('penalty_finalized_by')
+            ->whereNull('penalty_finalized_by')
             ->exists();
     }
 

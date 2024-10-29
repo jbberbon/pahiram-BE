@@ -20,6 +20,7 @@ class PenalizedTransactionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        \Log::info('ENDORSER', $request->toArray());
         $departmentAcronym = Department::getAcronymById($this->department_id);
         $borrower = User::find($this->borrower_id);
         $borrowerApcId = substr($borrower->apc_id, -6);
@@ -62,13 +63,6 @@ class PenalizedTransactionResource extends JsonResource
                 'quantity' => $groupedItem->count(),
                 'start_date' => Carbon::parse($item->start_date)->format('Y-m-d H:i:s'),
                 'due_date' => Carbon::parse($item->due_date)->format('Y-m-d H:i:s'),
-                // 'details' => $groupedItem->map(function ($item) use ($apcId) {
-                //     return [
-                //         'borrowed_item_id' => $item->borrowed_item_id,
-                //         'borrowed_item_status' => $item->borrowed_item_status ?? 'Unknown',
-                //         'apc_id' => User::find($this->borrower_id)->apc_id,
-                //     ];
-                // })
             ]);
         }
 
