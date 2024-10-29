@@ -77,7 +77,7 @@ class PenalizedTransactionResource extends JsonResource
             'borrower' => $borrower->first_name . ' ' . $borrower->last_name,
             'apc_id' => $borrowerApcId,
             'custom_transac_id' => $customTransacId,
-            'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+            'borrow_transaction_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
             'penalized_transaction_status' => $this->penalized_transaction_status,
             'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
             'user_defined_purpose' => $this->user_defined_purpose,
