@@ -70,13 +70,12 @@ class BorrowTransactionResource extends JsonResource
             'borrower' => $borrower->first_name . ' ' . $borrower->last_name,
             'apc_id' => $borrowerApcId,
             'custom_transac_id' => $customTransacId,
-            'status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
+            'borrow_transaction_status' => BorrowTransactionStatus::getStatusById($this->transac_status_id),
             'purpose' => BorrowPurpose::getPurposeById($this->purpose_id),
             'user_defined_purpose' => $this->user_defined_purpose,
             'created_at' => $this->created_at,
             'items' => $restructuredItems,
         ];
-
 
         if (isset($this->endorsed_by)) {
             // Include endorsed_by only if it's set
