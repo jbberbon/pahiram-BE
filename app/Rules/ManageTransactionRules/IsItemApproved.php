@@ -32,6 +32,6 @@ class IsItemApproved implements Rule
 
     public function message()
     {
-        return "Item is not approved yet";
+        return "Item status is not approved.";
     }
 }

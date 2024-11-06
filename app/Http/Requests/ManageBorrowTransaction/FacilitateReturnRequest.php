@@ -74,6 +74,7 @@ class FacilitateReturnRequest extends FormRequest
                 ]),
             ],
             'items.*.penalty' => [
+                'sometimes',
                 'numeric',
                 'between:1,1000000',
             ],

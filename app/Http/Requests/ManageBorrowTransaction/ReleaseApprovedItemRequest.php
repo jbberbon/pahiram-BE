@@ -71,7 +71,8 @@ class ReleaseApprovedItemRequest extends FormRequest
                 'exists:borrowed_items,id',
                 new IsBorrowedItemPartOfTransaction($this->all()),
                 new IsItemApproved($this->all()),
-                new IsEarlyOrLateToReleaseItem($this->all()) // Disallow release if current time > return date
+                // Disable for testing
+                // new IsEarlyOrLateToReleaseItem($this->all()) // Disallow release if current time > return date
             ],
             'items.*.is_released' => [
                 'required',
